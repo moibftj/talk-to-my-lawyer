@@ -33,16 +33,17 @@ export class SendGridProvider implements EmailProviderInterface {
     try {
       const from = message.from || { email: this.fromEmail, name: this.fromName }
 
-      const sgMessage: sgMail.MailDataRequired = {
+      // Build the message with required fields
+      const sgMessage = {
         to: message.to,
         from: { email: from.email, name: from.name || this.fromName },
         subject: message.subject,
-        text: message.text,
-        html: message.html,
-        replyTo: message.replyTo,
-        cc: message.cc,
-        bcc: message.bcc,
-      }
+        ...(message.text && { text: message.text }),
+        ...(message.html && { html: message.html }),
+        ...(message.replyTo && { replyTo: message.replyTo }),
+        ...(message.cc && { cc: message.cc }),
+        ...(message.bcc && { bcc: message.bcc }),
+      } as sgMail.MailDataRequired
 
       if (message.attachments?.length) {
         sgMessage.attachments = message.attachments.map(att => ({
