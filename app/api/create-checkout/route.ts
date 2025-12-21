@@ -5,7 +5,7 @@ import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redi
 import { validateCouponWithFraudDetection } from '@/lib/fraud-detection/coupon-fraud'
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-11-17.clover',
+  apiVersion: '2025-12-15.clover',
 }) : null
 
 const TEST_MODE = process.env.ENABLE_TEST_MODE === 'true'

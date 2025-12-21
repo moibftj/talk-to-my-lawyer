@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 import { sendTemplateEmail } from '@/lib/email/service'
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-11-17.clover',
+  apiVersion: '2025-12-15.clover',
 }) : null
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
