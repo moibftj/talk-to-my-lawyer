@@ -2,6 +2,17 @@ export const DEFAULT_LOGO_SRC = 'https://mxhccjykkxbdvchmpqej.supabase.co/storag
 export const DEFAULT_LOGO_ALT = 'Talk-To-My-Lawyer logo'
 
 /**
+ * Time conversion constants for readability
+ */
+export const TIME_CONSTANTS = {
+  SECONDS_PER_MINUTE: 60,
+  SECONDS_PER_HOUR: 3600,
+  SECONDS_PER_DAY: 86400,
+  SECONDS_PER_WEEK: 604800,
+  MILLISECONDS_PER_SECOND: 1000,
+} as const
+
+/**
  * Letter type definitions used across the application
  */
 export const LETTER_TYPES = [

@@ -2,6 +2,8 @@
  * Utility functions for formatting and data manipulation
  */
 
+import { TIME_CONSTANTS } from '@/lib/constants'
+
 /**
  * Format number as USD currency
  */
@@ -31,10 +33,7 @@ export function formatRelativeTime(isoDateString: string): string {
   const pastTime = new Date(isoDateString)
   const differenceInSeconds = Math.floor((currentTime.getTime() - pastTime.getTime()) / 1000)
 
-  const SECONDS_PER_MINUTE = 60
-  const SECONDS_PER_HOUR = 3600
-  const SECONDS_PER_DAY = 86400
-  const SECONDS_PER_WEEK = 604800
+  const { SECONDS_PER_MINUTE, SECONDS_PER_HOUR, SECONDS_PER_DAY, SECONDS_PER_WEEK } = TIME_CONSTANTS
 
   if (differenceInSeconds < SECONDS_PER_MINUTE) return 'just now'
   if (differenceInSeconds < SECONDS_PER_HOUR) {

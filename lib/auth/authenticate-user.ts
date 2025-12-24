@@ -37,17 +37,23 @@ export async function authenticateUser(): Promise<AuthenticationResult> {
 }
 
 /**
- * Authenticate user or throw error response
- * Convenience function for routes that need to return early on auth failure
+ * Authenticate user or return error response
  * 
- * @throws NextResponse with 401 status if authentication fails
- * @returns Authenticated user
+ * This is a convenience wrapper that either returns the authenticated user
+ * or returns an error response that can be sent directly from the API route.
+ * 
+ * @example
+ * const userOrError = await authenticateUserOrReturnError()
+ * if (userOrError instanceof NextResponse) return userOrError
+ * const user = userOrError
+ * 
+ * @returns Authenticated user or error NextResponse
  */
-export async function requireAuthentication(): Promise<User> {
+export async function authenticateUserOrReturnError(): Promise<User | NextResponse> {
   const result = await authenticateUser()
   
   if (!result.authenticated || !result.user) {
-    throw result.errorResponse
+    return result.errorResponse!
   }
   
   return result.user
