@@ -16,6 +16,14 @@
     "push": "git push origin main",
     "save": "npm run commit -- \"Auto-save: $(date)\" && npm run push"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@mzxrai/mcp-webresearch",
+      "core-js",
+      "sharp",
+      "supabase"
+    ]
+  },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.71",
     "@google/generative-ai": "^0.24.1",
