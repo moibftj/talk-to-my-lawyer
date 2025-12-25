@@ -166,13 +166,22 @@ export default function NewLetterPage() {
     setError(null)
 
     try {
+      const requestBody = {
+        letterType: selectedType,
+        senderName: formData.senderName,
+        senderAddress: formData.senderAddress,
+        recipientName: formData.recipientName,
+        recipientAddress: formData.recipientAddress,
+        issueDescription: formData.issueDescription,
+        desiredOutcome: formData.desiredOutcome,
+        amountDemanded: formData.amountDemanded || undefined,
+        supportingDocuments: formData.supportingDocuments || undefined,
+      }
+
       const response = await fetch("/api/generate-letter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          letterType: selectedType,
-          intakeData: formData,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
