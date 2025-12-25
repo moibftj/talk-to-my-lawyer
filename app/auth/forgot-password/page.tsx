@@ -113,7 +113,7 @@ export default function ForgotPasswordPage() {
             <div className="text-center space-y-4">
               <div className="flex justify-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <CheckCircle className="h-8 w-8 text-green-600 checkmark" />
                 </div>
               </div>
 
