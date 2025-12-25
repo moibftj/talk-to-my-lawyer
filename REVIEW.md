@@ -10,7 +10,7 @@
 - **Error handling patterns**: API routes wrap handlers in `try/catch`, return structured `NextResponse.json` payloads with explicit status codes, and log server-side failures with scoped tags (e.g., `[GenerateLetter]`, `[Checkout]`, `[AdminAuth]`). Validation failures return 4xx with details, while unexpected exceptions fall back to 500 responses without leaking sensitive data.
 
 ## Letter Workflow
-- **Generation**: `app/api/generate-letter/route.ts` applies per-IP rate limits, validates Supabase auth and subscriber role, checks allowances/free-trial status, deducts credits up front, writes a `letters` row in "generating" status, invokes OpenAI via retry wrapper, updates content/status to `pending_review`, increments totals, and logs audit entries; failures roll back allowances and mark the letter as `failed` with audit logging.
+- **Generation**: `app/api/generate-letter/route.ts` applies per-IP rate limits, validates Supabase auth and subscriber role, checks allowances/free-trial status, deducts credits upfront, writes a `letters` row in "generating" status, invokes OpenAI via retry wrapper, updates content/status to `pending_review`, increments totals, and logs audit entries; failures roll back allowances and mark the letter as `failed` with audit logging.
 - **Admin review**: `app/api/letters/[id]/approve/route.ts` exposes a CSRF-token GET helper, rate-limits POST, validates admin auth + CSRF, sanitizes final content/notes, updates status with audit trail and timestamps, and notifies the letter owner via templated email.
 
 ## Billing and Subscriptions
