@@ -1,294 +1,73 @@
-import type { EmailMessage, EmailResult, EmailProvider, EmailProviderInterface } from '../types'
-
-/**
- * Resend Email Provider
- * Implements email sending using Resend API
- */
-
-interface ResendEmailData {
-  from: string
-  to: string[]
-  subject: string
-  html?: string
-  text?: string
-  attachments?: Array<{
-    filename: string
-    content: Buffer | string
-    contentType?: string
-  }>
-}
-
-interface ResendResponse {
-  id: string
-  from: string
-  to: string[]
-  created_at: string
-}
+import { Resend } from 'resend'
+import type { EmailMessage, EmailResult, EmailProviderInterface } from '../types'
 
 export class ResendProvider implements EmailProviderInterface {
-  name: EmailProvider = 'resend'
-  private apiKey: string
-  private baseUrl = 'https://api.resend.com'
+  name = 'resend' as const
+  private client: Resend | undefined
   private fromEmail: string
   private fromName: string
 
-  constructor(apiKey: string, fromEmail?: string, fromName?: string) {
-    this.apiKey = apiKey
-    this.fromEmail = fromEmail || process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com'
-    this.fromName = fromName || process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer'
+  constructor() {
+    const apiKey = process.env.RESEND_API_KEY
+    if (apiKey) {
+      this.client = new Resend(apiKey)
+    }
+    this.fromEmail = process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com'
+    this.fromName = process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer'
   }
 
   isConfigured(): boolean {
-    return !!this.apiKey
+    return !!this.client
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {
-    const to = Array.isArray(message.to) ? message.to : [message.to]
-    const from = message.from 
+    if (!this.client) {
+      return {
+        success: false,
+        error: 'Resend is not configured',
+        provider: this.name,
+      }
+    }
+
+    const from = message.from
       ? `${message.from.name || this.fromName} <${message.from.email || this.fromEmail}>`
       : `${this.fromName} <${this.fromEmail}>`
 
-    const emailData: ResendEmailData = {
-      from,
-      to,
-      subject: message.subject,
-      html: message.html,
-      text: message.text,
-      attachments: message.attachments?.map(att => ({
-        filename: att.filename,
-        content: att.content,
-        contentType: att.type
-      }))
-    }
-
-    const result = await this.sendEmail(emailData)
-    return {
-      success: result.success,
-      messageId: result.messageId,
-      error: result.error,
-      provider: 'resend'
-    }
-  }
-
-  async sendEmail(emailData: ResendEmailData): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/emails`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: emailData.from,
-          to: emailData.to,
-          subject: emailData.subject,
-          html: emailData.html,
-          text: emailData.text,
-          attachments: emailData.attachments?.map(attachment => ({
-            filename: attachment.filename,
-            content: Buffer.isBuffer(attachment.content)
-              ? attachment.content.toString('base64')
-              : attachment.content,
-            content_type: attachment.contentType || 'application/octet-stream'
-          }))
-        }),
+      const result = await this.client.emails.send({
+        from,
+        to: message.to,
+        subject: message.subject,
+        html: message.html || '',
+        text: message.text,
+        attachments: message.attachments?.map(att => ({
+          filename: att.filename,
+          content: att.content,
+        })),
       })
 
-      const data: ResendResponse = await response.json()
-
-      if (!response.ok) {
-        // Handle specific Resend error responses
-        if (response.status === 401) {
-          return {
-            success: false,
-            error: 'Invalid API key or authentication failed'
-          }
-        } else if (response.status === 403) {
-          return {
-            success: false,
-            error: 'Access forbidden - check your API key permissions'
-          }
-        } else if (response.status === 422) {
-          return {
-            success: false,
-            error: `Invalid email data: ${data.id || 'Unknown validation error'}`
-          }
-        } else if (response.status === 429) {
-          return {
-            success: false,
-            error: 'Rate limit exceeded - please try again later'
-          }
-        } else {
-          return {
-            success: false,
-            error: `HTTP ${response.status}: ${data.id || 'Unknown error'}`
-          }
+      if (result.error) {
+        console.error('[EmailService] Resend error:', result.error)
+        return {
+          success: false,
+          error: result.error.message,
+          provider: this.name,
         }
       }
 
       return {
         success: true,
-        messageId: data.id
+        messageId: result.data?.id,
+        provider: this.name,
       }
-
-    } catch (error) {
-      console.error('[Resend] Email sending failed:', error)
-
-      if (error instanceof Error) {
-        // Handle network errors
-        if (error.message.includes('ECONNREFUSED')) {
-          return {
-            success: false,
-            error: 'Connection refused - check your network connection'
-          }
-        } else if (error.message.includes('ETIMEDOUT')) {
-          return {
-            success: false,
-            error: 'Request timeout - please try again'
-          }
-        } else if (error.message.includes('ENOTFOUND')) {
-          return {
-            success: false,
-            error: 'DNS lookup failed - check the API URL'
-          }
-        }
-      }
-
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      console.error('[EmailService] Resend error:', errorMessage)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: errorMessage,
+        provider: this.name,
       }
     }
   }
-
-  /**
-   * Test Resend API connection and authentication
-   */
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/domains`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (response.status === 401) {
-        return {
-          success: false,
-          error: 'Invalid API key'
-        }
-      }
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: `HTTP ${response.status}: API test failed`
-        }
-      }
-
-      return { success: true }
-
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Connection test failed'
-      }
-    }
-  }
-
-  /**
-   * Get Resend account information
-   */
-  async getAccountInfo(): Promise<{ success: boolean; data?: any; error?: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/account`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: `HTTP ${response.status}: Failed to get account info`
-        }
-      }
-
-      const data = await response.json()
-
-      return {
-        success: true,
-        data
-      }
-
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get account info'
-      }
-    }
-  }
-
-  /**
-   * Get available domains in Resend account
-   */
-  async getDomains(): Promise<{ success: boolean; domains?: any[]; error?: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/domains`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: `HTTP ${response.status}: Failed to get domains`
-        }
-      }
-
-      const data = await response.json()
-
-      return {
-        success: true,
-        domains: data.data || []
-      }
-
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to get domains'
-      }
-    }
-  }
-}
-
-/**
- * Validate Resend API key format
- */
-export function validateResendApiKey(apiKey: string): boolean {
-  // Resend API keys start with "re_" followed by 32+ characters
-  const resendKeyPattern = /^re_[a-zA-Z0-9]{32,}$/
-  return resendKeyPattern.test(apiKey)
-}
-
-/**
- * Create Resend provider instance with validation
- */
-export function createResendProvider(apiKey: string): ResendProvider {
-  if (!apiKey) {
-    throw new Error('Resend API key is required')
-  }
-
-  if (!validateResendApiKey(apiKey)) {
-    throw new Error('Invalid Resend API key format. Expected: re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-  }
-
-  return new ResendProvider(apiKey)
 }

@@ -21,10 +21,7 @@ class EmailService {
 
   constructor() {
     // Initialize Resend provider (primary)
-    const resendApiKey = process.env.RESEND_API_KEY
-    if (resendApiKey) {
-      this.providers.set('resend', new ResendProvider(resendApiKey))
-    }
+    this.providers.set('resend', new ResendProvider())
 
     // Initialize Brevo API provider
     this.providers.set('brevo', new BrevoProvider())
