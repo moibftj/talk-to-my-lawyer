@@ -2,7 +2,7 @@
 
 ## Overview
 
-The project uses GitHub Actions for continuous integration and testing. The pipeline runs on every push to `main` and on pull requests.
+The project uses GitHub Actions for continuous integration and testing. The pipeline runs on every push to `main` and on pull requests, using **GitHub Repository Secrets** for secure environment variable management.
 
 ## Pipeline Steps
 
@@ -12,25 +12,35 @@ The project uses GitHub Actions for continuous integration and testing. The pipe
 4. **Install dependencies** - Install all project dependencies
 5. **Run linter** - Check code quality and style
 6. **Security audit** - Check for high-severity vulnerabilities
-7. **Build project** - Create production build
+7. **Build project** - Create production build with real environment variables
 8. **Environment validation** - Validate environment configuration
 
-## Environment Variables for CI
+## GitHub Repository Secrets
 
-The CI pipeline uses dummy environment variables from `.env.ci` to validate the environment setup without requiring real secrets. This ensures:
+The CI pipeline uses GitHub Repository Secrets to securely provide environment variables.
 
-- The validation script works correctly
-- The build process can complete
-- No real credentials are exposed in CI logs
+### Required Secrets
 
-### CI Environment File (`.env.ci`)
+Add these in GitHub Repository Settings → Secrets and variables → Actions:
 
-Contains safe dummy values for:
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
+- `OPENAI_API_KEY` - OpenAI API key for letter generation
+- `STRIPE_SECRET_KEY` - Stripe secret key
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
+- `ADMIN_EMAIL` - Admin email address
+- `ADMIN_PORTAL_KEY` - Admin portal access key
+- `CRON_SECRET` - Cron job authentication secret
+- `KV_REST_API_URL` - Upstash Redis URL
+- `KV_REST_API_TOKEN` - Upstash Redis token
+- `RESEND_API_KEY` - Resend email service API key
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `OPENAI_API_KEY`
-- `ENABLE_TEST_MODE=true`
+### Optional Secrets
+
+- `NEXT_PUBLIC_APP_URL` - Production app URL (defaults to https://www.talk-to-my-lawyer.com)
+- `NEXT_PUBLIC_SITE_URL` - Site URL for metadata
 
 ## Environment Validation Modes
 
