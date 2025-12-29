@@ -2,7 +2,7 @@
 
 AI-powered legal letter generation platform with mandatory attorney review.
 
-## Tech Stack
+## Tech So
 
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui
 - **Backend**: Next.js API Routes
