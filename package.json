@@ -25,10 +25,7 @@
       "core-js",
       "sharp",
       "supabase"
-    ],
-    "overrides": {
-      "@modelcontextprotocol/sdk": "1.24.0"
-    }
+    ]
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.1",
