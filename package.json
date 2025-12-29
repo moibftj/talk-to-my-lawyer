@@ -14,6 +14,7 @@
     "validate-env": "node scripts/validate-env.js",
     "validate-env:ci": "cp .env.ci .env && CI=true node scripts/validate-env.js && rm .env",
     "test:ci": "cp .env.ci .env && pnpm lint && pnpm audit --audit-level=high && pnpm build && CI=true node scripts/validate-env.js && rm .env",
+    "setup:github-secrets": "./scripts/setup-github-secrets.sh",
     "db:migrate": "node scripts/run-migrations.js",
     "audit:security": "pnpm audit --audit-level=high",
     "audit:fix": "./scripts/fix-security.sh",
