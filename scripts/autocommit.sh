@@ -13,8 +13,8 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check if there are any changes
-if git diff --quiet && git diff --staged --quiet; then
+# Check if there are any changes (including untracked files)
+if git diff --quiet && git diff --staged --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
     echo "✅ No changes to commit"
     exit 0
 fi
