@@ -7,7 +7,10 @@ on:
 
 permissions:
   contents: read
-  deployments: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -37,11 +40,13 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Validate required secrets
+      - name: Validate required secrets (includes Vercel)
         run: |
+          set -e
           echo "Validating production secrets..."
+
           REQUIRED_SECRETS=(
             "NEXT_PUBLIC_SUPABASE_URL"
             "NEXT_PUBLIC_SUPABASE_ANON_KEY"
@@ -61,20 +66,20 @@ jobs:
             "VERCEL_PROJECT_ID"
           )
 
-          MISSING_SECRETS=()
-          for secret in "${REQUIRED_SECRETS[@]}"; do
-            if [ -z "${!secret:-}" ]; then
-              MISSING_SECRETS+=("$secret")
+          MISSING=()
+          for v in "${REQUIRED_SECRETS[@]}"; do
+            if [ -z "${!v:-}" ]; then
+              MISSING+=("$v")
             fi
           done
 
-          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
+          if [ ${#MISSING[@]} -gt 0 ]; then
             echo "❌ Missing secrets:"
-            printf '%s\n' "${MISSING_SECRETS[@]}"
+            printf '%s\n' "${MISSING[@]}"
             exit 1
           fi
 
-          echo "✅ All production secrets configured"
+          echo "✅ All required secrets configured"
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -106,9 +111,11 @@ jobs:
       - name: Deploy to Vercel (non-interactive)
         uses: amondnet/vercel-action@v25
         with:
+          vercel-version: 50.1.3
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
           working-directory: ./
           vercel-args: "--prod --yes"
 
