@@ -310,7 +310,7 @@ export default function HomePage() {
               }}
             >
               <motion.h1
-                className="text-5xl md:text-7xl font-bold mb-6"
+                className="text-5xl md:text-7xl font-bold mb-4"
                 style={{
                   background: 'linear-gradient(135deg, #0a2540 0%, #199df4 35%, #00d4ff 65%, #0a2540 100%)',
                   backgroundClip: 'text',
@@ -330,29 +330,56 @@ export default function HomePage() {
                   },
                 }}
               >
-                Need a Lawyer&apos;s
-                <motion.span
-                  className="block"
-                  variants={{
-                    hidden: { opacity: 0, y: 30 },
-                    visible: {
-                      opacity: 1,
-                      y: 0,
-                      transition: {
-                        duration: 0.8,
-                        delay: 0.2,
-                      }
-                    },
-                  }}
-                >
-                  <span className="text-gray-900">Voice Without the</span>
-                  <br />
-                  <span className="text-gray-900">Legal Bill?</span>
-                </motion.span>
+                Get professional lawyer-drafted letters for
               </motion.h1>
 
+              {/* Highlighted Service Types */}
+              <motion.div
+                className="flex flex-wrap justify-center gap-3 mb-8"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.1,
+                      delayChildren: 0.3,
+                    },
+                  },
+                }}
+              >
+                {[
+                  'Breach of Contract',
+                  'Demand for Payment',
+                  'Cease and Desist',
+                  'Pre-Litigation Settlement',
+                  'Debt Collection',
+                  'And more',
+                ].map((service, index) => (
+                  <motion.span
+                    key={service}
+                    className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm"
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.8 },
+                      visible: {
+                        opacity: 1,
+                        scale: 1,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 200,
+                          damping: 15,
+                        }
+                      },
+                    }}
+                  >
+                    {service}
+                  </motion.span>
+                ))}
+              </motion.div>
+
               <motion.p
-                className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
+                className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium"
                 variants={{
                   hidden: { opacity: 0, y: 20 },
                   visible: {
@@ -360,14 +387,12 @@ export default function HomePage() {
                     y: 0,
                     transition: {
                       duration: 0.6,
-                      delay: 0.4,
+                      delay: 0.5,
                     }
                   },
                 }}
               >
-                Get professional, lawyer-drafted letters for tenant disputes, debt collection, HR
-                issues, and more. Resolve conflicts quickly and affordably with the power of legal
-                communication.
+                Resolve conflicts quickly and affordably — only <span className="text-[#199df4] font-bold">$50 per letter</span>.
               </motion.p>
             </motion.div>
 
@@ -473,9 +498,9 @@ export default function HomePage() {
               }}
             >
               {[
-                { icon: CheckCircle, text: "No Legal Fees", color: "text-green-500" },
-                { icon: CheckCircle, text: "24-48 Hour Delivery", color: "text-green-500" },
-                { icon: CheckCircle, text: "Lawyer Reviewed", color: "text-green-500" },
+                { icon: CheckCircle, text: "PDF Download", color: "text-green-500" },
+                { icon: CheckCircle, text: "Up to 48 hours turnaround", color: "text-green-500" },
+                { icon: CheckCircle, text: "Attorney approved", color: "text-green-500" },
               ].map((item, index) => (
                 <motion.div
                   key={item.text}
