@@ -80,6 +80,7 @@ updates:
           - "next"
           - "next-*"
         update-types:
+          - "minor"
           - "patch"
       
       # Group TypeScript and types
@@ -121,14 +122,8 @@ updates:
     
     # Ignore specific dependencies or versions
     ignore:
-      # Example: Ignore major version updates for Next.js (manual review recommended)
+      # Ignore major version updates for Next.js (manual review recommended)
       - dependency-name: "next"
-        update-types: ["version-update:semver-major"]
-      
-      # Example: Ignore major React updates (breaking changes)
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
         update-types: ["version-update:semver-major"]
 
   # Monitor GitHub Actions for updates

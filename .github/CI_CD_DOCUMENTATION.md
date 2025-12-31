@@ -257,7 +257,7 @@ Edit `.github/dependabot.yml` and update the `groups` section under npm ecosyste
 Add these to your README.md to show CI/CD status:
 
 ```markdown
-![CI/CD Pipeline](https://github.com/moizjmj-pk/talk-to-my-lawyer/actions/workflows/ci-cd.yml/badge.svg)
+![CI/CD Pipeline](https://github.com/[your-username]/[your-repo]/actions/workflows/ci-cd.yml/badge.svg)
 ```
 
 ## Support

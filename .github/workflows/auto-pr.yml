@@ -80,22 +80,10 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: automated updates'
-          title: 'chore: automated updates'
-          body: |
-            ## Automated Updates
-            
-            This PR contains automated updates and fixes.
-            
-            ### Changes
-            - Auto-fixed linting issues
-            - Updated lock file
-            
-            ### Notes
-            - This PR was automatically created by GitHub Actions
-            - Please review the changes before merging
-            - CI checks will run automatically
-          branch: automated-updates
+          commit-message: "${{ github.event.inputs.title || 'chore: automated updates' }}"
+          title: "${{ github.event.inputs.title || 'chore: automated updates' }}"
+          body: "${{ github.event.inputs.body || 'This PR contains automated updates and fixes.\n\n### Changes\n- Auto-fixed linting issues\n- Updated lock file\n\n### Notes\n- This PR was automatically created by GitHub Actions\n- Please review the changes before merging\n- CI checks will run automatically' }}"
+          branch: "${{ github.event.inputs.branch || 'automated-updates' }}"
           delete-branch: true
           labels: |
             automated

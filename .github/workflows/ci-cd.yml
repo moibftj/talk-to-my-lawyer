@@ -9,14 +9,6 @@ on:
     branches:
       - main
 
-# Global permissions for the workflow
-# These allow automated commits, PR creation, and issue management
-permissions:
-  contents: write        # Allow pushing commits and tags
-  pull-requests: write   # Allow creating and updating pull requests
-  issues: write         # Allow creating and updating issues
-  checks: write         # Allow creating check runs
-
 # Environment variables used across all jobs
 env:
   NODE_VERSION: '20'
@@ -28,6 +20,8 @@ jobs:
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only need to read code
     
     steps:
       - name: Checkout code
@@ -52,11 +46,11 @@ jobs:
         
       - name: Run ESLint
         run: pnpm lint
-        continue-on-error: true
+        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
         
       - name: Type check
         run: pnpm exec tsc --noEmit
-        continue-on-error: true
+        continue-on-error: ${{ github.ref != 'refs/heads/main' }}
 
   # Job 2: Build Application
   # Ensures the Next.js application builds successfully
@@ -64,6 +58,8 @@ jobs:
     name: Build Application
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
+    permissions:
+      contents: read  # Only need to read code
     
     steps:
       - name: Checkout code
@@ -93,11 +89,6 @@ jobs:
           
       - name: Build Next.js application
         run: CI=1 pnpm build
-        env:
-          # Add any additional build-time environment variables here
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -111,6 +102,8 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Only need to read code
     
     steps:
       - name: Checkout code
@@ -142,15 +135,16 @@ jobs:
     name: Auto-fix & Commit
     runs-on: ubuntu-latest
     needs: [lint-and-typecheck, build]
-    # Only run on push events to non-main branches to avoid conflicts
-    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+    # Only run on push events to non-main branches to avoid conflicts and skip forked PR branches
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main' && (github.event.pull_request == null || github.event.pull_request.head.repo.full_name == github.repository)
+    permissions:
+      contents: write  # Need write to commit and push changes
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.head_ref || github.ref }}
           
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -168,7 +162,6 @@ jobs:
         
       - name: Run ESLint with auto-fix
         run: pnpm lint --fix
-        continue-on-error: true
         
       - name: Configure Git
         run: |
@@ -194,6 +187,9 @@ jobs:
     needs: [lint-and-typecheck, build, security-audit]
     # Only deploy on pushes to main branch
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read       # Read code for deployment
+      pull-requests: write # Write comments on commits
     environment:
       name: production
       url: ${{ steps.deploy.outputs.url }}
@@ -213,25 +209,26 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           
-      - name: Install Vercel CLI
-        run: pnpm add -g vercel@latest
-        
       - name: Pull Vercel Environment Information
         id: vercel-env
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        continue-on-error: true
+        run: npx vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         
       - name: Build Project Artifacts
         id: build-vercel
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        continue-on-error: true
+        run: npx vercel build --prod --token=$VERCEL_TOKEN
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(npx vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
           echo "url=$url" >> $GITHUB_OUTPUT
           echo "Deployed to: $url"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           
       - name: Deployment Status Comment
         if: always()
@@ -239,11 +236,19 @@ jobs:
         with:
           script: |
             const status = '${{ steps.deploy.outcome }}';
-            const url = '${{ steps.deploy.outputs.url }}';
-            const emoji = status === 'success' ? '✅' : '❌';
-            const message = status === 'success' 
-              ? `${emoji} Deployment successful!\n\nURL: ${url}`
-              : `${emoji} Deployment failed. Check logs for details.`;
+            const urlOutput = '${{ steps.deploy.outputs.url }}';
+            const isSuccess = status === 'success';
+            const hasUrl = isSuccess && urlOutput && urlOutput.trim().length > 0;
+            const emoji = isSuccess ? '✅' : '❌';
+            
+            let message;
+            if (isSuccess && hasUrl) {
+              message = `${emoji} Deployment successful!\n\nURL: ${urlOutput}`;
+            } else if (isSuccess) {
+              message = `${emoji} Deployment successful, but no deployment URL was reported.`;
+            } else {
+              message = `${emoji} Deployment failed. Check logs for details.`;
+            }
             
             // Post comment on the commit
             github.rest.repos.createCommitComment({

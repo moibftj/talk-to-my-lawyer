@@ -97,7 +97,7 @@ git push origin main
 
 Add to README.md:
 ```markdown
-![CI/CD](https://github.com/moizjmj-pk/talk-to-my-lawyer/actions/workflows/ci-cd.yml/badge.svg)
+![CI/CD](https://github.com/[your-username]/[your-repo]/actions/workflows/ci-cd.yml/badge.svg)
 ```
 
 ## 🔐 Secrets Required
