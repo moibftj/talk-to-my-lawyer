@@ -67,11 +67,12 @@ export async function updateSession(request: NextRequest) {
     const pathname = request.nextUrl.pathname
 
     // Admin Portal Protection (BEFORE regular auth checks)
+    // Admin uses separate authentication, skip Supabase auth for admin routes
     const adminPortalRoute = process.env.ADMIN_PORTAL_ROUTE || 'secure-admin-gateway'
     if (pathname.startsWith(`/${adminPortalRoute}`)) {
-      // Allow login page
+      // Allow login page without auth
       if (pathname === `/${adminPortalRoute}/login`) {
-        return supabaseResponse
+        return NextResponse.next({ request })
       }
 
       // Verify admin session for all other admin portal routes
@@ -82,7 +83,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      return supabaseResponse
+      return NextResponse.next({ request })
     }
 
     // Block access to old admin routes completely

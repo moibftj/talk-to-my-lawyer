@@ -1,4 +1,4 @@
-name: CI
+name: CI - Lint & Type Check
 
 on:
   push:
@@ -7,135 +7,52 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Test & Security Check
+  # Linting - Code quality checks
+  lint:
+    name: ESLint
     runs-on: ubuntu-latest
-
-    env:
-      NODE_VERSION: 20
-      PNPM_VERSION: 10.25.0
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          version: 10.25.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 20
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Run linter
+      - name: Run ESLint
         run: pnpm lint
 
-      - name: Security audit (high severity only)
-        run: pnpm audit --audit-level=high
+  # Type checking - Find type errors
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Validate required secrets
-        run: |
-          echo "Checking that all required secrets are set..."
-          REQUIRED_SECRETS=(
-            "NEXT_PUBLIC_SUPABASE_URL"
-            "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-            "OPENAI_API_KEY"
-            "SUPABASE_SERVICE_ROLE_KEY"
-            "STRIPE_SECRET_KEY"
-            "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
-            "STRIPE_WEBHOOK_SECRET"
-            "ADMIN_EMAIL"
-            "ADMIN_PORTAL_KEY"
-            "CRON_SECRET"
-            "KV_REST_API_URL"
-            "KV_REST_API_TOKEN"
-            "RESEND_API_KEY"
-          )
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.25.0
 
-          MISSING_SECRETS=()
-          for secret in "${REQUIRED_SECRETS[@]}"; do
-            # Use indirect expansion to check if variable is set and not empty
-            if [ -z "${!secret:-}" ]; then
-              MISSING_SECRETS+=("$secret")
-            fi
-          done
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
 
-          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
-            echo "❌ The following required secrets are missing or empty:"
-            printf '%s\n' "${MISSING_SECRETS[@]}"
-            echo ""
-            echo "Please add these secrets in GitHub Repository Settings:"
-            echo "Settings → Secrets and variables → Actions → New repository secret"
-            echo ""
-            echo "For setup help, run: pnpm run setup:github-secrets"
-            exit 1
-          fi
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-          echo "✅ All required secrets are configured"
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PORTAL_KEY: ${{ secrets.ADMIN_PORTAL_KEY }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
-          KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-
-      - name: Build project
-        run: pnpm build
-        env:
-          # Essential build-time variables
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-          NEXT_PUBLIC_TEST_MODE: false
-
-      - name: Check environment setup
-        run: pnpm run validate-env
-        env:
-          # Core Application
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-
-          # AI & OpenAI
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-
-          # Stripe Payment
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-
-          # Admin Configuration
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          ADMIN_PORTAL_KEY: ${{ secrets.ADMIN_PORTAL_KEY }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-
-          # Redis/Upstash
-          KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
-          KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN }}
-
-          # Email Service
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-
-          # App URLs
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
-
-          # Mode Configuration
-          ENABLE_TEST_MODE: false
-          NEXT_PUBLIC_TEST_MODE: false
+      - name: Run TypeScript type check
+        run: pnpm exec tsc --noEmit

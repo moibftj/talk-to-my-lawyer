@@ -78,8 +78,8 @@ const nextConfig = {
         {
           key: 'Content-Security-Policy',
           value: process.env.NODE_ENV === 'production'
-            ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://vercel.live; frame-src 'self' https://js.stripe.com https://vercel.live; frame-ancestors 'none';"
-            : "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://vercel.live ws://localhost:* ws://127.0.0.1:*; frame-src 'self' https://js.stripe.com https://vercel.live; frame-ancestors 'none';"
+            ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://vercel.live; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://vercel.live; frame-src 'self' https://js.stripe.com https://vercel.live; frame-ancestors 'none';"
+            : "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://vercel.live; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://vercel.live ws://localhost:* ws://127.0.0.1:*; frame-src 'self' https://js.stripe.com https://vercel.live; frame-ancestors 'none';"
         }
       ]
     })
