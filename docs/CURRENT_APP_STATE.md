@@ -326,13 +326,13 @@ Status: approved/rejected → Email to user
 
 ## 🤖 AI Integration
 
-### Provider
+### AI Provider
 
 - **Gateway**: Vercel AI Gateway
 - **Model**: OpenAI GPT-4 Turbo
 - **API Key**: Configured in environment
 
-### Features
+### AI Features
 
 - Letter generation with retry logic
 - Prompt injection prevention
