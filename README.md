@@ -1,26 +1,30 @@
-# Talk-To-My-Lawyer
+# Talk-To-My-Lawyer 🚀
+
+**Status**: ✅ **LIVE PRODUCTION** - Real payment processing active
 
 AI-powered legal letter generation platform with mandatory attorney review.
 
-## Tech Stack
+🌐 **Live Site**: https://www.talk-to-my-lawyer.com  
+⚖️ **Admin Portal**: https://www.talk-to-my-lawyer.com/secure-admin-gateway  
+📊 **System Status**: https://www.talk-to-my-lawyer.com/api/health
 
-- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Next.js API Routes
-- **Database**: Supabase (PostgreSQL with RLS)
-- **Authentication**: Supabase Auth
-- **Payments**: Stripe
-- **AI**: OpenAI GPT-4 Turbo via Vercel AI Gateway
-- **Email**: Resend (primary), Brevo, SendGrid, or SMTP (configurable via EMAIL_PROVIDER)
-- **Rate Limiting**: Upstash Redis
+## 🎯 Production Features (LIVE)
 
-## Features
+- ✅ **Real Payment Processing** - Stripe Live Mode with actual transactions
+- ✅ **AI Letter Generation** - OpenAI GPT-4 Turbo integration
+- ✅ **Attorney Review Workflow** - Multi-admin letter approval system
+- ✅ **Subscription Management** - Monthly/Yearly plans with credit system
+- ✅ **Employee Referrals** - 5% commission system with payout requests
+- ✅ **Production Email System** - Professional templates via Resend
+- ✅ **Security & Rate Limiting** - Upstash Redis protection
+- ✅ **Admin Analytics** - Revenue, user, and performance dashboards
 
-- AI-generated legal letters with attorney review workflow
-- Subscription-based access with Stripe integration
-- Employee referral system with commission tracking
-- **Multi-admin portal** - Multiple admins can share letter review duties
-- Email queue system for reliable delivery
-- GDPR compliance (data export/deletion)
+## 💳 Payment Plans (Live Production)
+
+- **Single Letter**: $299 (1 letter, one-time payment)
+- **Monthly Plan**: $299/month (4 letters per month) 
+- **Yearly Plan**: $599/year (52 letters per year)
+- **Free Trial**: First letter free for new users
 
 ## Getting Started
 

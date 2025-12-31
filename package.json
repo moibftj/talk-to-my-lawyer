@@ -13,6 +13,7 @@
     "start": "next start",
     "start:prod": "node scripts/validate-env.js && NODE_ENV=production next start -p ${PORT:-3000}",
     "health-check": "node scripts/health-check.js",
+    "health-check:production": "./scripts/production-health-check.sh",
     "validate-env": "node scripts/validate-env.js",
     "validate-env:ci": "cp .env.ci .env && CI=true node scripts/validate-env.js && rm .env",
     "test:ci": "cp .env.ci .env && pnpm lint && pnpm audit --audit-level=high && pnpm build && CI=true node scripts/validate-env.js && rm .env",
