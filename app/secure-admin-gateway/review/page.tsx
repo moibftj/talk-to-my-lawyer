@@ -1,6 +1,4 @@
 import { createClient } from '@/lib/supabase/server'
-import { isAdminAuthenticated } from '@/lib/auth/admin-session'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,12 +7,6 @@ import { Clock, FileText, User } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default async function ReviewCenterPage() {
-  // Verify admin authentication
-  const authenticated = await isAdminAuthenticated()
-  if (!authenticated) {
-    redirect('/secure-admin-gateway/login')
-  }
-
   const supabase = await createClient()
 
   // Fetch all letters needing review (pending_review and under_review)
