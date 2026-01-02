@@ -45,6 +45,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { getAdminCsrfToken } from '@/lib/admin/csrf-client'
 import Link from 'next/link'
 
 interface Letter {
@@ -156,9 +157,13 @@ export default function AllLettersPage() {
 
     setProcessing(true)
     try {
+      const csrfToken = await getAdminCsrfToken()
       const response = await fetch('/api/admin/letters/batch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
         body: JSON.stringify({
           letterIds: Array.from(selectedIds),
           action: batchAction,

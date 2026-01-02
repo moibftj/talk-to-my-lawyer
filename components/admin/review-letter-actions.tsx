@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, CheckCircle, XCircle, Edit3, Sparkles } from "lucide-react"
 import { toast } from "sonner"
+import { getAdminCsrfToken } from "@/lib/admin/csrf-client"
 
 interface ReviewLetterActionsProps {
   letter: {
@@ -113,14 +114,16 @@ export default function ReviewLetterActions({ letter }: ReviewLetterActionsProps
   const handleImproveWithAI = async () => {
     setIsSubmitting(true)
     try {
+      const csrfToken = await getAdminCsrfToken()
       const response = await fetch("/api/letters/" + letter.id + "/improve", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken
         },
         body: JSON.stringify({
           content: editedContent,
-          instructions: "Please improve this letter for clarity, professionalism, and legal effectiveness."
+          instruction: "Please improve this letter for clarity, professionalism, and legal effectiveness."
         })
       })
 

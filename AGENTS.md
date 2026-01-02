@@ -291,6 +291,7 @@ Auth and profile:
 Admin auth:
 - `POST /api/admin-auth/login` - admin sign-in + portal key.
 - `POST /api/admin-auth/logout` - clear admin session.
+- `GET /api/admin/csrf` - admin CSRF token for protected actions.
 
 Letters:
 - `POST /api/generate-letter` - generate AI draft.

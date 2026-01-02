@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { sendTemplateEmail } from '@/lib/email/service'
+import { validateAdminAction } from '@/lib/admin/letter-actions'
 
 export const runtime = 'nodejs'
 
@@ -20,9 +20,8 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse
     }
 
-    // Admin auth check
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const validationError = await validateAdminAction(request)
+    if (validationError) return validationError
 
     const body: BatchOperation = await request.json()
     const { letterIds, action, notes } = body
@@ -112,9 +111,11 @@ export async function POST(request: NextRequest) {
         // Log audit trail
         await supabase.rpc('log_letter_audit', {
           p_letter_id: letterId,
-          p_user_id: null, // Admin action
           p_action: `batch_${action}`,
-          p_details: { batch: true, notes }
+          p_old_status: letter.status,
+          p_new_status: newStatus,
+          p_notes: notes || `Batch action: ${action}`,
+          p_metadata: { batch: true }
         })
 
         // Send email notification for approve/reject

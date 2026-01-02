@@ -40,6 +40,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { getAdminCsrfToken } from '@/lib/admin/csrf-client'
 
 interface EmailQueueItem {
   id: string
@@ -90,9 +91,13 @@ export default function EmailQueuePage() {
   const handleAction = async (action: string, emailId?: string) => {
     setProcessing(true)
     try {
+      const csrfToken = await getAdminCsrfToken()
       const response = await fetch('/api/admin/email-queue', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
         body: JSON.stringify({ action, emailId })
       })
 

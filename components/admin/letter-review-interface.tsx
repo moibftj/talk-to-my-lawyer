@@ -41,6 +41,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import type { Letter, LetterAuditTrail } from "@/lib/types/letter.types"
+import { getAdminCsrfToken } from "@/lib/admin/csrf-client"
 
 interface LetterReviewInterfaceProps {
   letter: Letter
@@ -212,9 +213,13 @@ export function LetterReviewInterface({ letter, auditTrail }: LetterReviewInterf
   const handleImproveWithAI = async () => {
     setIsLoading(true)
     try {
+      const csrfToken = await getAdminCsrfToken()
       const response = await fetch("/api/letters/improve", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken
+        },
         body: JSON.stringify({
           letterId: letter.id,
           content: editedContent

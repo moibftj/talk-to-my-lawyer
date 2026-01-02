@@ -2,12 +2,17 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { openai } from '@ai-sdk/openai'
+import { letterGenerationRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { checkGenerationEligibility, deductLetterAllowance, shouldSkipDeduction } from '@/lib/services/allowance-service'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, 5, '1 h')
+    if (rateLimitResponse) return rateLimitResponse
+
     const { id } = await params
     const supabase = await createClient()
 
@@ -40,27 +45,15 @@ export async function POST(
       }, { status: 400 })
     }
 
-    // Check subscription/credits (same logic as generate-letter)
-    const { count } = await supabase.from("letters").select("*", { count: "exact", head: true }).eq("user_id", user.id)
-    const isFreeTrial = (count || 0) === 0
-
-    if (!isFreeTrial) {
-      const { data: subscription } = await supabase
-        .from("subscriptions")
-        .select("credits_remaining, status")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .single()
-
-      if (!subscription || (subscription.credits_remaining || 0) <= 0) {
-        return NextResponse.json(
-          {
-            error: "No letter credits remaining. Please upgrade your plan.",
-            needsSubscription: true,
-          },
-          { status: 403 }
-        )
-      }
+    const eligibility = await checkGenerationEligibility(user.id)
+    if (!eligibility.canGenerate) {
+      return NextResponse.json(
+        {
+          error: eligibility.reason || 'No letter credits remaining. Please upgrade your plan.',
+          needsSubscription: true,
+        },
+        { status: 403 }
+      )
     }
 
     // Update letter status back to generating
@@ -103,13 +96,11 @@ export async function POST(
 
       if (finalUpdateError) throw finalUpdateError
 
-      // Deduct credit if not free trial
-      if (!isFreeTrial) {
-        const { data: canDeduct, error: deductError } = await supabase.rpc("deduct_letter_allowance", {
-          user_uuid: user.id,
-        })
+      // Deduct credit if needed
+      if (!shouldSkipDeduction(eligibility)) {
+        const deduction = await deductLetterAllowance(user.id)
 
-        if (deductError || !canDeduct) {
+        if (!deduction.success || !deduction.wasDeducted) {
           // Mark as failed if can't deduct
           await supabase
             .from('letters')
@@ -117,7 +108,7 @@ export async function POST(
             .eq('id', id)
 
           return NextResponse.json(
-            { error: 'No letter credits remaining. Please upgrade your plan.' },
+            { error: deduction.error || 'No letter credits remaining. Please upgrade your plan.' },
             { status: 403 }
           )
         }

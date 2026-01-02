@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getEmailService } from '@/lib/email'
 import { generateLetterPdf } from '@/lib/pdf'
+import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { sanitizeEmail, sanitizeString } from '@/lib/security/input-sanitizer'
 
 type LetterRecord = {
   id: string
@@ -46,6 +48,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 100, '1 m')
+    if (rateLimitResponse) return rateLimitResponse
+
     const { id } = await params
     const supabase = await createClient()
 
@@ -83,8 +88,8 @@ export async function POST(
       return NextResponse.json({ error: 'Recipient email is required' }, { status: 400 })
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(recipientEmail)) {
+    const sanitizedRecipientEmail = sanitizeEmail(recipientEmail)
+    if (!sanitizedRecipientEmail) {
       return NextResponse.json({ error: 'Invalid email address format' }, { status: 400 })
     }
 
@@ -113,10 +118,11 @@ export async function POST(
 
     const safeTitle = sanitizeFileName(letter.title)
     const letterOwner = letter.profiles?.full_name || 'Your legal team'
-    const customMessage = message?.toString().trim() || 'Please review the attached approved letter.'
+    const sanitizedMessage = message ? sanitizeString(message.toString(), 2000) : ''
+    const customMessage = sanitizedMessage || 'Please review the attached approved letter.'
 
     const emailResult = await emailService.send({
-      to: recipientEmail,
+      to: sanitizedRecipientEmail,
       subject: `Legal Letter: ${letter.title}`,
       text: `${customMessage}\n\nLetter prepared by ${letterOwner}.\nTitle: ${letter.title}\n\nThe reviewed letter is attached as a PDF.`,
       html: `
@@ -161,7 +167,7 @@ export async function POST(
         p_action: 'email_sent',
         p_old_status: letter.status,
         p_new_status: letter.status,
-        p_notes: `Letter emailed to ${recipientEmail}`,
+        p_notes: `Letter emailed to ${sanitizedRecipientEmail}`,
       })
     } catch (err) {
       console.warn('[SendEmail] Audit log failed:', err)

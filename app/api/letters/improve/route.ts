@@ -2,27 +2,18 @@ import { createClient } from "@/lib/supabase/server"
 import { openai } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { NextRequest, NextResponse } from "next/server"
+import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { validateAdminAction } from '@/lib/admin/letter-actions'
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '15 m')
+    if (rateLimitResponse) return rateLimitResponse
+
+    const validationError = await validateAdminAction(request)
+    if (validationError) return validationError
+
     const supabase = await createClient()
-
-    // Authentication check
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    // Role check - must be admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
-
-    if (profile?.role !== "admin") {
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
-    }
 
     const body = await request.json()
     const { letterId, content } = body

@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
-import { randomBytes } from 'crypto'
+import { validateAdminAction } from '@/lib/admin/letter-actions'
 
 export const runtime = 'nodejs'
 
@@ -31,9 +30,8 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse
     }
 
-    // Admin auth check
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const validationError = await validateAdminAction(request)
+    if (validationError) return validationError
 
     const body: CreateCouponRequest = await request.json()
     const { code, discountPercent, maxUses, expiresAt, description } = body
@@ -126,8 +124,8 @@ export async function PATCH(request: NextRequest) {
     const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 20, '1 m')
     if (rateLimitResponse) return rateLimitResponse
 
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const validationError = await validateAdminAction(request)
+    if (validationError) return validationError
 
     const { couponId, isActive } = await request.json()
 

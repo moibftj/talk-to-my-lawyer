@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export const runtime = 'nodejs'
 
@@ -9,6 +10,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 100, '1 m')
+    if (rateLimitResponse) return rateLimitResponse
+
     const { id } = await params
     const supabase = await createClient()
 
@@ -62,9 +66,11 @@ export async function DELETE(
     try {
       await supabase.rpc('log_letter_audit', {
         p_letter_id: id,
-        p_user_id: user.id,
         p_action: 'deleted',
-        p_details: { title: letter.title, previousStatus: letter.status }
+        p_old_status: letter.status,
+        p_new_status: 'deleted',
+        p_notes: `Letter deleted: ${letter.title || 'Untitled'}`,
+        p_metadata: { title: letter.title }
       })
     } catch (err) {
       console.warn('[DeleteLetter] Audit log failed:', err)

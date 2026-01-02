@@ -9,6 +9,7 @@ import { Input } from './ui/input'
 import { RichTextEditor } from './ui/rich-text-editor'
 import type { Letter } from '@/lib/database.types'
 import { Wand2, Loader2 } from 'lucide-react'
+import { getAdminCsrfToken } from '@/lib/admin/csrf-client'
 
 export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { full_name: string; email: string } } }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -24,6 +25,14 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
   const [showAiInput, setShowAiInput] = useState(false)
   const router = useRouter()
 
+  const getAdminHeaders = async (includeContentType = true) => {
+    const csrfToken = await getAdminCsrfToken()
+    return {
+      ...(includeContentType ? { 'Content-Type': 'application/json' } : {}),
+      'x-csrf-token': csrfToken,
+    }
+  }
+
   // Helper function to convert HTML to plain text for API
   const htmlToPlainText = (html: string): string => {
     const tempDiv = document.createElement('div')
@@ -37,8 +46,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
     // Transition letter to under_review status
     if (letter.status === 'pending_review') {
       try {
+        const headers = await getAdminHeaders(false)
         await fetch(`/api/letters/${letter.id}/start-review`, {
-          method: 'POST'
+          method: 'POST',
+          headers
         })
         router.refresh()
       } catch (error) {
@@ -55,9 +66,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
 
     setAiImproving(true)
     try {
+      const headers = await getAdminHeaders()
       const response = await fetch(`/api/letters/${letter.id}/improve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           content: htmlToPlainText(finalContent),
           instruction: aiInstruction
@@ -106,9 +118,10 @@ export function ReviewLetterModal({ letter }: { letter: Letter & { profiles?: { 
         ? { finalContent: htmlToPlainText(finalContent), reviewNotes }
         : { rejectionReason, reviewNotes }
 
+      const headers = await getAdminHeaders()
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(body)
       })
 

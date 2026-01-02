@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
+import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -14,6 +15,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 100, '1 m')
+    if (rateLimitResponse) return rateLimitResponse
+
     const { id } = await params
     
     // Authenticate user
@@ -69,7 +73,7 @@ export async function POST(
 
       // Deduct allowance for non-free-trial users
       const { data: canDeduct, error: deductError } = await supabase
-        .rpc('deduct_letter_allowance', { user_uuid: user.id })
+        .rpc('deduct_letter_allowance', { u_id: user.id })
 
       if (deductError || !canDeduct) {
         return NextResponse.json({ 

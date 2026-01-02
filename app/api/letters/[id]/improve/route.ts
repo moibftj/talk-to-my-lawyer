@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth } from '@/lib/auth/admin-session'
 import { openai } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { validateAdminAction } from '@/lib/admin/letter-actions'
+import { sanitizeString } from '@/lib/security/input-sanitizer'
 
 export async function POST(
   request: NextRequest,
@@ -16,18 +16,24 @@ export async function POST(
       return rateLimitResponse
     }
 
-    // Verify admin authentication
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const validationError = await validateAdminAction(request)
+    if (validationError) return validationError
 
     const { id } = await params
-    const supabase = await createClient()
 
     const body = await request.json()
-    const { content, instruction } = body
+    const instruction = body?.instruction || body?.instructions
+    const content = body?.content
 
     if (!content || !instruction) {
       return NextResponse.json({ error: 'Content and instruction are required' }, { status: 400 })
+    }
+
+    const sanitizedContent = sanitizeString(content, 20000)
+    const sanitizedInstruction = sanitizeString(instruction, 2000)
+
+    if (!sanitizedContent || !sanitizedInstruction) {
+      return NextResponse.json({ error: 'Invalid content or instruction' }, { status: 400 })
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -36,7 +42,7 @@ export async function POST(
     }
 
     // Call OpenAI API for content improvement using AI SDK
-    const prompt = buildImprovementPrompt(content, instruction)
+    const prompt = buildImprovementPrompt(sanitizedContent, sanitizedInstruction)
 
     const { text: improvedContent } = await generateText({
       model: openai("gpt-4-turbo"),

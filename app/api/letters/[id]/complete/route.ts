@@ -1,19 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
+import { validateAdminAction } from '@/lib/admin/letter-actions'
+import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify admin authentication
-    const authError = await requireAdminAuth()
-    if (authError) return authError
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '15 m')
+    if (rateLimitResponse) return rateLimitResponse
+
+    const validationError = await validateAdminAction(request)
+    if (validationError) return validationError
 
     const { id } = await params
     const supabase = await createClient()
-    const adminSession = await getAdminSession()
 
     // Get current letter status
     const { data: letter } = await supabase

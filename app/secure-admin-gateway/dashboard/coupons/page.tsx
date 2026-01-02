@@ -43,6 +43,7 @@ import {
   Cell,
   Legend
 } from 'recharts'
+import { getAdminCsrfToken } from '@/lib/admin/csrf-client'
 
 interface CouponData {
   id: string
@@ -92,9 +93,13 @@ export default function CouponsAnalyticsPage() {
 
     setCreating(true)
     try {
+      const csrfToken = await getAdminCsrfToken()
       const response = await fetch('/api/admin/coupons/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
         body: JSON.stringify({
           code: newCoupon.code || undefined,
           discountPercent: newCoupon.discountPercent,
@@ -122,9 +127,13 @@ export default function CouponsAnalyticsPage() {
 
   const handleToggleCoupon = async (couponId: string, currentStatus: boolean) => {
     try {
+      const csrfToken = await getAdminCsrfToken()
       const response = await fetch('/api/admin/coupons/create', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
         body: JSON.stringify({ couponId, isActive: !currentStatus })
       })
 

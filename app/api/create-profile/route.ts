@@ -48,22 +48,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate required fields
-    if (!email || !role || !fullName) {
+    if (!email || !fullName) {
       return NextResponse.json(
-        { error: "Missing required fields: email, role, fullName" },
+        { error: "Missing required fields: email, fullName" },
         { status: 400 }
       )
     }
 
-    // Validate role
-    if (!['subscriber', 'employee', 'admin'].includes(role)) {
+    const requestedRole = role || 'subscriber'
+
+    // Prevent role escalation from client requests
+    if (requestedRole !== 'subscriber') {
       return NextResponse.json(
-        { error: "Invalid role. Must be subscriber, employee, or admin" },
-        { status: 400 }
+        { error: "Only subscriber profiles can be created via this endpoint" },
+        { status: 403 }
       )
     }
 
     // Use service role client for profile creation (elevated permissions)
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: "Server configuration error" },
+        { status: 500 }
+      )
+    }
+
     const serviceClient = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -74,7 +83,7 @@ export async function POST(request: NextRequest) {
       .upsert({
         id: user.id,
         email: email.toLowerCase().trim(),
-        role: role,
+        role: requestedRole,
         full_name: fullName.trim()
       }, {
         onConflict: 'id',
