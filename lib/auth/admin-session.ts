@@ -125,16 +125,11 @@ export async function verifyAdminCredentials(
 
   console.log('[AdminAuth] Portal key verification:', {
     hasExpectedKey: !!expectedPortalKey,
-    expectedKeyLength: expectedPortalKey?.length || 0,
-    receivedKeyLength: trimmedPortalKey.length,
     keysMatch: expectedPortalKey === trimmedPortalKey
   })
 
   if (!expectedPortalKey || trimmedPortalKey !== expectedPortalKey) {
-    console.warn('[AdminAuth] Portal key mismatch', {
-      expected: expectedPortalKey?.substring(0, 10) + '...',
-      received: trimmedPortalKey.substring(0, 10) + '...'
-    })
+    console.warn('[AdminAuth] Portal key mismatch')
     return { success: false, error: 'Invalid admin portal key' }
   }
 

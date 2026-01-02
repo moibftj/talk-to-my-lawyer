@@ -150,10 +150,41 @@ export async function refundLetterAllowance(
     amount,
   })
 
-  if (error) {
+  if (!error) {
+    return { success: true }
+  }
+
+  console.warn('[Allowance] add_letter_allowances RPC failed, falling back to manual refund:', error.message)
+
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from('subscriptions')
+    .select('id, credits_remaining, remaining_letters')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (subscriptionError || !subscription) {
     return {
       success: false,
-      error: error.message,
+      error: subscriptionError?.message || 'No active subscription found for refund',
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from('subscriptions')
+    .update({
+      credits_remaining: (subscription.credits_remaining || 0) + amount,
+      remaining_letters: (subscription.remaining_letters || 0) + amount,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', subscription.id)
+
+  if (updateError) {
+    return {
+      success: false,
+      error: updateError.message,
     }
   }
 

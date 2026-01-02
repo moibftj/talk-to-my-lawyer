@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { createStripeClient } from '@/lib/stripe/client'
-
-const STRIPE_API_VERSION: Stripe.LatestApiVersion = '2025-12-15.clover'
+import { authenticateUser } from '@/lib/auth/authenticate-user'
+import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 function getStripeClient(): Stripe {
   const stripe = createStripeClient()
@@ -33,6 +33,15 @@ function getSupabaseServiceClient() {
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, 3, '1 h')
+    if (rateLimitResponse) return rateLimitResponse
+
+    const authResult = await authenticateUser()
+    if (!authResult.authenticated || !authResult.user) {
+      return authResult.errorResponse!
+    }
+    const user = authResult.user
+
     const { sessionId } = await request.json()
 
     if (!sessionId) {
@@ -47,6 +56,10 @@ export async function POST(request: NextRequest) {
 
     if (session.payment_status !== 'paid') {
       return NextResponse.json({ error: 'Payment not completed' }, { status: 400 })
+    }
+
+    if (session.client_reference_id && session.client_reference_id !== user.id) {
+      return NextResponse.json({ error: 'Session does not belong to this user' }, { status: 403 })
     }
 
     // Check if subscription already exists for this session
@@ -65,10 +78,14 @@ export async function POST(request: NextRequest) {
     }
 
     const metadata = session.metadata || {}
-    const userId = metadata.user_id
+    const userId = user.id
     const planType = metadata.plan_type
 
-    if (!userId || !planType) {
+    if (!metadata.user_id || metadata.user_id !== user.id) {
+      return NextResponse.json({ error: 'Session metadata invalid for this user' }, { status: 403 })
+    }
+
+    if (!planType) {
       return NextResponse.json({ error: 'Missing session metadata' }, { status: 400 })
     }
 
