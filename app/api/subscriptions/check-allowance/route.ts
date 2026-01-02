@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Call check_letter_allowance function
     const { data, error } = await supabase
       .rpc('check_letter_allowance', { u_id: user.id })
-      .single<{ has_allowance: boolean; remaining: number; plan_name: string; is_super: boolean }>();
+      .single<{ has_access: boolean; letters_remaining: number; plan_type: string; is_active: boolean }>();
 
     if (error) {
       console.error('[CheckAllowance] RPC error:', error);
@@ -29,10 +29,9 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      hasAllowance: data?.has_allowance,
-      remaining: data?.remaining,
-      plan: data?.plan_name,
-      isSuper: data?.is_super
+      hasAllowance: data?.has_access,
+      remaining: data?.letters_remaining,
+      plan: data?.plan_type
     });
 
   } catch (error) {

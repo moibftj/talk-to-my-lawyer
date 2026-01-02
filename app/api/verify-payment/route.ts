@@ -95,7 +95,6 @@ export async function POST(request: NextRequest) {
     const finalPrice = parseFloat(metadata.final_price ?? '0')
     const couponCode = metadata.coupon_code || null
     const employeeId = metadata.employee_id || null
-    const isSuperUserCoupon = metadata.is_super_user_coupon === 'true'
 
     // Create subscription in database
     const { data: subscription, error: subError } = await supabase
@@ -123,14 +122,6 @@ export async function POST(request: NextRequest) {
       throw subError
     }
 
-    // Mark user as super user if applicable
-    if (isSuperUserCoupon) {
-      await supabase
-        .from('profiles')
-        .update({ is_super_user: true })
-        .eq('id', userId)
-    }
-
     // Record coupon usage
     if (couponCode) {
       await supabase
@@ -146,7 +137,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create commission for employee
-    if (employeeId && subscription && !isSuperUserCoupon) {
+    if (employeeId && subscription) {
       const commissionAmount = finalPrice * 0.05
 
       await supabase

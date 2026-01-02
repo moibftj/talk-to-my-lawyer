@@ -121,7 +121,7 @@ export default async function SubscriptionPage() {
             </div>
           </div>
 
-          {subscription.credits_remaining <= 1 && !profile.is_super_user && (
+          {subscription.credits_remaining <= 1 && (
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-6">
               <h3 className="font-semibold text-foreground mb-2">Running Low on Credits?</h3>
               <p className="text-sm text-muted-foreground mb-4">
