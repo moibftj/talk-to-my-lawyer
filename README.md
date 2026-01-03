@@ -28,7 +28,16 @@ AI-powered legal letter generation platform with mandatory attorney review.
 
 ## 📚 Documentation
 
-Complete documentation is available in the `/docs` directory:
+Complete documentation is available in the `/docs` directory. See **[docs/README.md](./docs/README.md)** for a comprehensive documentation index.
+
+### Comprehensive Guides (Recommended Starting Point)
+
+- **[Setup & Configuration Guide](docs/SETUP_AND_CONFIGURATION.md)** - Environment setup, database, admin users, test mode
+- **[Architecture & Development Guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md)** - System architecture, workflows, development guidelines
+- **[API & Integrations Guide](docs/API_AND_INTEGRATIONS.md)** - Stripe, email, GitHub secrets, payment testing
+- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Production deployment, CI/CD, monitoring, runbooks
+
+### Topic-Specific Guides
 
 | Guide | Description |
 |-------|-------------|
@@ -41,6 +50,7 @@ Complete documentation is available in the `/docs` directory:
 | [**Testing**](./docs/TESTING.md) | Test mode, manual testing, and tracing |
 | [**Database**](./docs/DATABASE.md) | Database schema, migrations, and operations |
 | [**Security**](./docs/SECURITY.md) | Security audit, fixes, and best practices |
+| [**Tracing**](./docs/TRACING.md) | OpenTelemetry distributed tracing setup |
 
 ## Quick Start
 
@@ -65,7 +75,7 @@ pnpm install
 # Copy environment file
 cp .env.example .env.local
 
-# Configure environment variables (see docs/SETUP.md)
+# Configure environment variables (see docs/SETUP_AND_CONFIGURATION.md or docs/SETUP.md)
 # Edit .env.local with your credentials
 
 # Run database migrations
@@ -107,7 +117,7 @@ KV_REST_API_URL=
 KV_REST_API_TOKEN=
 ```
 
-See **[docs/SETUP.md](./docs/SETUP.md)** for complete environment variable documentation.
+See **[docs/SETUP_AND_CONFIGURATION.md](./docs/SETUP_AND_CONFIGURATION.md)** or **[docs/SETUP.md](./docs/SETUP.md)** for complete environment variable documentation.
 
 ## Essential Commands
 
@@ -136,7 +146,7 @@ The project uses GitHub Actions for CI/CD and deploys to Vercel:
 - **Pull requests** trigger preview deployments
 - **Dependabot** handles dependency updates weekly
 
-See **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** for complete deployment documentation.
+See **[docs/DEPLOYMENT_GUIDE.md](./docs/DEPLOYMENT_GUIDE.md)** or **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** for complete deployment documentation.
 
 ## Support
 
