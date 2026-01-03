@@ -37,6 +37,10 @@ fi
 echo "🔧 Fixing line endings..."
 find "$ZSH_CUSTOM" -type f \( -name "*.zsh" -o -name "*.sh" \) -exec sed -i 's/\r$//' {} \; 2>/dev/null || true
 
+# Create symlink for powerlevel10k theme (Oh My Zsh expects it directly in themes/)
+echo "🔗 Linking Powerlevel10k theme..."
+ln -sf "$ZSH_CUSTOM/themes/powerlevel10k/powerlevel10k.zsh-theme" "$ZSH_CUSTOM/themes/powerlevel10k.zsh-theme"
+
 echo "⚙️  Configuring .zshrc..."
 # Backup existing .zshrc
 [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$HOME/.zshrc.backup"
