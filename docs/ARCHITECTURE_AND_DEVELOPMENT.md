@@ -261,7 +261,7 @@ Key PostgreSQL functions:
 - `increment_total_letters(user_id)`
 
 **Admin:**
-- `is_super_admin()` - Check if user is system admin
+- `is_super_admin()` - Check if user is super admin
 - `is_attorney_admin()` - Check if user is attorney admin
 - `get_admin_dashboard_stats()` - Comprehensive stats for Super Admin
 

@@ -133,7 +133,7 @@ export default async function UsersManagementPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{admins}</div>
-            <p className="text-xs text-muted-foreground">System administrators</p>
+            <p className="text-xs text-muted-foreground">Super administrators</p>
           </CardContent>
         </Card>
       </div>

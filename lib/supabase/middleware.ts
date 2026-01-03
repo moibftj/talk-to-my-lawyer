@@ -103,7 +103,7 @@ export async function updateSession(request: NextRequest) {
 
       // Only attorney admins can access attorney portal
       if (adminSession.subRole !== 'attorney_admin') {
-        // System admins trying to access attorney portal are redirected to system admin portal
+        // Super admins trying to access attorney portal are redirected to super admin portal
         const url = request.nextUrl.clone()
         url.pathname = '/secure-admin-gateway/dashboard'
         return NextResponse.redirect(url)
@@ -112,8 +112,8 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.next({ request })
     }
 
-    // System Admin Portal Protection (BEFORE regular auth checks)
-    // System admin uses separate authentication, skip Supabase auth for admin routes
+    // Super Admin Portal Protection (BEFORE regular auth checks)
+    // Super admin uses separate authentication, skip Supabase auth for admin routes
     const adminPortalRoute = process.env.ADMIN_PORTAL_ROUTE || 'secure-admin-gateway'
     if (pathname.startsWith(`/${adminPortalRoute}`)) {
       // Allow login page without auth
@@ -129,10 +129,10 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      // Only system admins can access system admin portal
+      // Only super admins can access super admin portal
       // Note: Review center is accessible to both, handled separately below
       if (adminSession.subRole !== 'super_admin') {
-        // Attorney admins trying to access system admin portal are redirected to attorney portal
+        // Attorney admins trying to access super admin portal are redirected to attorney portal
         const url = request.nextUrl.clone()
         url.pathname = '/attorney-portal/review'
         return NextResponse.redirect(url)

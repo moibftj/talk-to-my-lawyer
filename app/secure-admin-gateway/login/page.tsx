@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         throw new Error(data.error || 'Authentication failed')
       }
 
-      // Use redirectUrl from response (handles both system admin and attorney admin routing)
+      // Use redirectUrl from response (handles both super admin and attorney admin routing)
       const redirectUrl = data.redirectUrl || '/secure-admin-gateway/dashboard'
       router.push(redirectUrl)
       router.refresh()

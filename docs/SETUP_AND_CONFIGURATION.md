@@ -227,7 +227,7 @@ The platform relies on these PostgreSQL functions:
 
 **Admin Analytics**:
 - `get_admin_dashboard_stats()` - Comprehensive dashboard stats
-- `is_super_admin()` - Check if user is system admin
+- `is_super_admin()` - Check if user is super admin
 - `is_attorney_admin()` - Check if user is attorney admin
 
 ---

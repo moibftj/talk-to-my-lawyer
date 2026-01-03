@@ -17,11 +17,11 @@ import type { EmailTemplate } from '@/lib/email/types'
 
 /**
  * Common authentication and validation for admin letter review routes
- * Accessible by both System Admin and Attorney Admin
+ * Accessible by both Super Admin and Attorney Admin
  * Returns null if valid, or error response if invalid
  */
 export async function validateAdminAction(request: NextRequest): Promise<NextResponse | null> {
-  // Verify admin authentication (both system and attorney admins can review letters)
+  // Verify admin authentication (both super and attorney admins can review letters)
   const authError = await requireAttorneyAdminAccess()
   if (authError) return authError
 
@@ -38,12 +38,12 @@ export async function validateAdminAction(request: NextRequest): Promise<NextRes
 }
 
 /**
- * Authentication and validation for system admin only routes
- * Accessible ONLY by System Admin
+ * Authentication and validation for super admin only routes
+ * Accessible ONLY by Super Admin
  * Returns null if valid, or error response if invalid
  */
 export async function validateSystemAdminAction(request: NextRequest): Promise<NextResponse | null> {
-  // Verify system admin authentication
+  // Verify super admin authentication
   const authError = await requireSuperAdminAuth()
   if (authError) return authError
 
