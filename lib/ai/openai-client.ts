@@ -10,7 +10,7 @@
  * - Fallback models
  */
 
-import { openai, createOpenAI } from "@ai-sdk/openai"
+import { createOpenAI } from "@ai-sdk/openai"
 
 /**
  * Get an OpenAI provider configured for Vercel AI Gateway (if available)
@@ -30,7 +30,8 @@ export function getOpenAIProvider() {
   }
 
   // Direct OpenAI connection (fallback)
-  return openai()
+  // Uses OPENAI_API_KEY environment variable by default
+  return createOpenAI()
 }
 
 /**
