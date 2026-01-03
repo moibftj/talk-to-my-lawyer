@@ -478,7 +478,7 @@ export async function checkOpenAIHealth(): Promise<{
 }> {
   const span = createAISpan('healthCheck', {
     'ai.operation': 'health_check',
-    'ai.model': 'gpt-4-turbo',
+    'ai.model': 'gpt-4o-mini',
   })
 
   try {
@@ -490,7 +490,7 @@ export async function checkOpenAIHealth(): Promise<{
       system: "You are a health check service.",
       temperature: 0,
       maxOutputTokens: 16,
-      model: "gpt-4-turbo"
+      model: "gpt-4o-mini"
     })
 
     const responseTime = Date.now() - startTime
