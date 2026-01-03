@@ -290,4 +290,4 @@ All letter-related endpoints under `/api/letters/[id]/`:
 4. **CSRF protection** - Admin routes use CSRF tokens via `/api/admin/csrf`
 5. **Rate limiting** - Redis-backed with in-memory fallback
 6. **Session security** - HTTP-only cookies, 30-minute timeout
-7. **Individual admin accounts** - No shared secrets; each admin uses own credentials
+7. **Individual admin accounts** - No shared secrets; each admin uses own credentials        
