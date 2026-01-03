@@ -1,6 +1,6 @@
 /**
  * Create an admin user with optional sub-role specification
- * Usage: npx tsx scripts/create-additional-admin.ts <email> <password> [--role=system|attorney]
+ * Usage: npx tsx scripts/create-additional-admin.ts <email> <password> [--role=super|attorney]
  *
  * Examples:
  *   npx tsx scripts/create-additional-admin.ts john@company.com SecurePass123!
@@ -23,22 +23,22 @@ const password = process.argv[3]
 const roleArg = process.argv.find(arg => arg.startsWith('--role='))
 
 // Determine admin sub-role
-let adminSubRole: 'system_admin' | 'attorney_admin' = 'system_admin'
+let adminSubRole: 'super_admin' | 'attorney_admin' = 'super_admin'
 if (roleArg) {
   const roleValue = roleArg.split('=')[1]?.toLowerCase()
   if (roleValue === 'attorney') {
     adminSubRole = 'attorney_admin'
   } else if (roleValue === 'system') {
-    adminSubRole = 'system_admin'
+    adminSubRole = 'super_admin'
   } else {
-    console.error('❌ Error: --role must be either "system" or "attorney"')
+    console.error('❌ Error: --role must be either "super" or "attorney"')
     console.error('   Example: --role=attorney')
     process.exit(1)
   }
 }
 
 if (!email || !password) {
-  console.error('❌ Usage: npx tsx scripts/create-additional-admin.ts <email> <password> [--role=system|attorney]')
+  console.error('❌ Usage: npx tsx scripts/create-additional-admin.ts <email> <password> [--role=super|attorney]')
   console.error('   Example: npx tsx scripts/create-additional-admin.ts john@company.com SecurePass123!')
   console.error('   Example: npx tsx scripts/create-additional-admin.ts attorney@company.com SecurePass123! --role=attorney')
   process.exit(1)
@@ -53,7 +53,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function createAdminUser() {
   console.log(`\n🔐 Creating admin user: ${email}`)
-  console.log(`   Sub-role: ${adminSubRole === 'system_admin' ? 'System Admin (full access)' : 'Attorney Admin (letter review only)'}`)
+  console.log(`   Sub-role: ${adminSubRole === 'super_admin' ? 'Super Admin (full access)' : 'Attorney Admin (letter review only)'}`)
 
   // Check if user already exists
   const { data: existingProfile } = await supabase
@@ -66,7 +66,7 @@ async function createAdminUser() {
     if (existingProfile.role === 'admin') {
       console.log('⚠️  User already exists and is already an admin!')
       console.log(`   User ID: ${existingProfile.id}`)
-      console.log(`   Current sub-role: ${existingProfile.admin_sub_role || 'system_admin'}`)
+      console.log(`   Current sub-role: ${existingProfile.admin_sub_role || 'super_admin'}`)
 
       // Update sub-role if different
       if (existingProfile.admin_sub_role !== adminSubRole) {
@@ -152,8 +152,8 @@ async function createAdminUser() {
   console.log('   Sub-role:', adminSubRole)
   console.log(`\n   Login URL: ${adminSubRole === 'attorney_admin' ? '/attorney-portal/login' : '/secure-admin-gateway/login'}`)
 
-  if (adminSubRole === 'system_admin') {
-    console.log('\n   🔧 System Admin has access to:')
+  if (adminSubRole === 'super_admin') {
+    console.log('\n   🔧 Super Admin has access to:')
     console.log('      - Analytics Dashboard')
     console.log('      - User Management')
     console.log('      - Coupon Management')

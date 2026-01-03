@@ -131,7 +131,7 @@ export async function updateSession(request: NextRequest) {
 
       // Only system admins can access system admin portal
       // Note: Review center is accessible to both, handled separately below
-      if (adminSession.subRole !== 'system_admin') {
+      if (adminSession.subRole !== 'super_admin') {
         // Attorney admins trying to access system admin portal are redirected to attorney portal
         const url = request.nextUrl.clone()
         url.pathname = '/attorney-portal/review'

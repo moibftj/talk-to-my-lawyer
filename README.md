@@ -6,16 +6,9 @@ AI-powered legal letter generation platform with mandatory attorney review.
 
 🌐 **Live Site**: https://www.talk-to-my-lawyer.com  
 ⚖️ **Admin Portal**: https://www.talk-to-my-lawyer.com/secure-admin-gateway  
-📊 **System Status**: https://www.talk-to-my-lawyer.com/api/health
+📊 **System Status**: https://www.talk-to-my-lawyer.com/api/health  
 
-## 📚 Documentation
-
-Comprehensive documentation is available in the `/docs` directory:
-
-- **[Setup & Configuration Guide](docs/SETUP_AND_CONFIGURATION.md)** - Environment setup, database, admin users, test mode
-- **[Architecture & Development Guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md)** - System architecture, workflows, development guidelines
-- **[API & Integrations Guide](docs/API_AND_INTEGRATIONS.md)** - Stripe, email, GitHub secrets, payment testing
-- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Production deployment, CI/CD, monitoring, runbooks
+---
 
 ## 🎯 Production Features (LIVE)
 
@@ -28,12 +21,44 @@ Comprehensive documentation is available in the `/docs` directory:
 - ✅ **Security & Rate Limiting** - Upstash Redis protection
 - ✅ **Admin Analytics** - Revenue, user, and performance dashboards
 
+---
+
 ## 💳 Payment Plans (Live Production)
 
 - **Single Letter**: $299 (1 letter, one-time payment)
-- **Monthly Plan**: $299/month (4 letters per month) 
+- **Monthly Plan**: $299/month (4 letters per month)
 - **Yearly Plan**: $599/year (52 letters per year)
 - **Free Trial**: First letter free for new users
+
+---
+
+## 📚 Documentation
+
+Complete documentation is available in the `/docs` directory. See **[docs/README.md](./docs/README.md)** for a comprehensive documentation index.
+
+### Comprehensive Guides (Recommended Starting Point)
+
+- **[Setup & Configuration Guide](docs/SETUP_AND_CONFIGURATION.md)** - Environment setup, database, admin users, test mode
+- **[Architecture & Development Guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md)** - System architecture, workflows, development guidelines
+- **[API & Integrations Guide](docs/API_AND_INTEGRATIONS.md)** - Stripe, email, GitHub secrets, payment testing
+- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Production deployment, CI/CD, monitoring, runbooks
+
+### Topic-Specific Guides
+
+| Guide | Description |
+|-------|-------------|
+| [**Setup Guide**](./docs/SETUP.md) | Complete installation and configuration |
+| [**Admin Guide**](./docs/ADMIN_GUIDE.md) | Admin user management and multi-admin system |
+| [**Development**](./docs/DEVELOPMENT.md) | Architecture, patterns, and development guide |
+| [**Deployment**](./docs/DEPLOYMENT.md) | CI/CD pipeline and Vercel deployment |
+| [**Operations**](./docs/OPERATIONS.md) | Production operations and monitoring |
+| [**Payments**](./docs/PAYMENTS.md) | Stripe integration and payment testing |
+| [**Testing**](./docs/TESTING.md) | Test mode, manual testing, and tracing |
+| [**Database**](./docs/DATABASE.md) | Database schema, migrations, and operations |
+| [**Security**](./docs/SECURITY.md) | Security audit, fixes, and best practices |
+| [**Tracing**](./docs/TRACING.md) | OpenTelemetry distributed tracing setup |
+
+---
 
 ## Quick Start
 
@@ -66,32 +91,3 @@ pnpm db:migrate
 
 # Start development server
 pnpm dev
-```
-
-Visit http://localhost:3000
-
-### Essential Commands
-
-```bash
-pnpm install          # Install dependencies
-pnpm dev              # Development server
-pnpm lint             # Linting (required before delivery)
-CI=1 pnpm build       # Production build with strict checks
-pnpm validate-env     # Validate environment variables
-```
-
-For detailed setup instructions, see **[Setup & Configuration Guide](docs/SETUP_AND_CONFIGURATION.md)**.
-
-
-## 📖 Additional Resources
-
-For more detailed information, see:
-
-- **[Setup & Configuration](docs/SETUP_AND_CONFIGURATION.md)** - Complete setup guide
-- **[Architecture & Development](docs/ARCHITECTURE_AND_DEVELOPMENT.md)** - System design and development
-- **[API & Integrations](docs/API_AND_INTEGRATIONS.md)** - Third-party integrations
-- **[Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Production deployment and operations
-
-## License
-
-Private - All rights reserved

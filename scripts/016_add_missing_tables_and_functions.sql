@@ -39,11 +39,6 @@ AS $$
 DECLARE
     sub_record RECORD;
 BEGIN
-    -- Check if user is super user
-    IF EXISTS (SELECT 1 FROM profiles WHERE id = u_id AND is_super_user = TRUE) THEN
-        RETURN TRUE;
-    END IF;
-
     -- Find active subscription for user
     SELECT id INTO sub_record
     FROM subscriptions

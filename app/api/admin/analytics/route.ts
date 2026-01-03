@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireSystemAdminAuth } from '@/lib/auth/admin-session'
+import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export async function GET(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const authError = await requireSystemAdminAuth()
+    const authError = await requireSuperAdminAuth()
     if (authError) return authError
 
     const supabase = await createClient()

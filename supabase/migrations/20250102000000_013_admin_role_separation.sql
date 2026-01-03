@@ -1,28 +1,28 @@
 /*
   # Admin Role Separation Migration
 
-  This migration implements separation between System Admin and Attorney Admin roles:
+  This migration implements separation between Super Admin and Attorney Admin roles:
 
-  1. New enum type `admin_sub_role` with values: 'system_admin', 'attorney_admin'
+  1. New enum type `admin_sub_role` with values: 'super_admin', 'attorney_admin'
   2. Add `admin_sub_role` column to profiles table
   3. Create helper function `get_admin_sub_role()` for permission checks
   4. Create helper function `get_admin_sub_role_by_id()` for server-side checks
-  5. Default existing admins to 'system_admin'
+  5. Default existing admins to 'super_admin'
 
   Role Permissions:
-  - System Admin: Full access to all features (analytics, users, coupons, commissions, email queue, letters)
+  - Super Admin: Full access to all features (analytics, users, coupons, commissions, email queue, letters)
   - Attorney Admin: Access ONLY to letter review/approval workflow
 */
 
 -- Create admin sub-role enum
-CREATE TYPE admin_sub_role AS ENUM ('system_admin', 'attorney_admin');
+CREATE TYPE admin_sub_role AS ENUM ('super_admin', 'attorney_admin');
 
 -- Add admin_sub_role column to profiles table (nullable - only admin users should have this populated)
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS admin_sub_role admin_sub_role;
 
 -- Add comment for documentation
-COMMENT ON COLUMN profiles.admin_sub_role IS 'Sub-role for admin users only: system_admin (full access), attorney_admin (letter review only). NULL for subscribers/employees.';
+COMMENT ON COLUMN profiles.admin_sub_role IS 'Sub-role for admin users only: super_admin (full access), attorney_admin (letter review only). NULL for subscribers/employees.';
 
 -- Create helper function to get current user's admin sub-role
 CREATE OR REPLACE FUNCTION public.get_admin_sub_role()
@@ -79,7 +79,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Create helper function to check if user is system admin
-CREATE OR REPLACE FUNCTION public.is_system_admin()
+CREATE OR REPLACE FUNCTION public.is_super_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
@@ -87,7 +87,7 @@ BEGIN
     FROM public.profiles
     WHERE id = auth.uid()
     AND role = 'admin'::user_role
-    AND admin_sub_role = 'system_admin'::admin_sub_role
+    AND admin_sub_role = 'super_admin'::admin_sub_role
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -119,9 +119,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Default existing admins to system_admin (if they don't have a sub-role set)
+-- Default existing admins to super_admin (if they don't have a sub-role set)
 UPDATE profiles
-SET admin_sub_role = 'system_admin'
+SET admin_sub_role = 'super_admin'
 WHERE role = 'admin'::user_role
 AND admin_sub_role IS NULL;
 
@@ -136,13 +136,13 @@ CHECK (
 -- Grant execute on helper functions
 GRANT EXECUTE ON FUNCTION public.get_admin_sub_role TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_admin_sub_role_by_id(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_system_admin TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_super_admin TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_attorney_admin TO authenticated;
 GRANT EXECUTE ON FUNCTION public.can_review_letters TO authenticated;
 
 -- Add comments
-COMMENT ON FUNCTION public.get_admin_sub_role IS 'Returns the current admin user''s sub-role (system_admin or attorney_admin)';
+COMMENT ON FUNCTION public.get_admin_sub_role IS 'Returns the current admin user''s sub-role (super_admin or attorney_admin)';
 COMMENT ON FUNCTION public.get_admin_sub_role_by_id IS 'Returns the admin sub-role for a specific user ID';
-COMMENT ON FUNCTION public.is_system_admin IS 'Returns true if current user is a system admin with full access';
+COMMENT ON FUNCTION public.is_super_admin IS 'Returns true if current user is a system admin with full access';
 COMMENT ON FUNCTION public.is_attorney_admin IS 'Returns true if current user is an attorney admin with letter review access only';
 COMMENT ON FUNCTION public.can_review_letters IS 'Returns true if current user is any type of admin (can access letter review)';

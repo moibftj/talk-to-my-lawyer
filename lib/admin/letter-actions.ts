@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import {
   requireAdminAuth,
-  requireSystemAdminAuth,
+  requireSuperAdminAuth,
   requireAttorneyAdminAccess,
   getAdminSession
 } from '@/lib/auth/admin-session'
@@ -44,7 +44,7 @@ export async function validateAdminAction(request: NextRequest): Promise<NextRes
  */
 export async function validateSystemAdminAction(request: NextRequest): Promise<NextResponse | null> {
   // Verify system admin authentication
-  const authError = await requireSystemAdminAuth()
+  const authError = await requireSuperAdminAuth()
   if (authError) return authError
 
   // CSRF Protection for admin actions

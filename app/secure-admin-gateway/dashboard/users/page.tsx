@@ -23,7 +23,6 @@ export default async function UsersManagementPage() {
       email,
       full_name,
       role,
-      is_super_user,
       created_at,
       updated_at,
       phone,
@@ -63,7 +62,6 @@ export default async function UsersManagementPage() {
   const subscribers = users?.filter(u => u.role === 'subscriber').length || 0
   const employees = users?.filter(u => u.role === 'employee').length || 0
   const admins = users?.filter(u => u.role === 'admin').length || 0
-  const superUsers = users?.filter(u => u.is_super_user).length || 0
 
   const roleColors: Record<string, string> = {
     'subscriber': 'bg-blue-100 text-blue-800 border-blue-300',
@@ -185,11 +183,6 @@ export default async function UsersManagementPage() {
                               <span className="font-medium text-foreground">
                                 {user.full_name || 'No Name'}
                               </span>
-                              {user.is_super_user && (
-                                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-300">
-                                  Super User
-                                </Badge>
-                              )}
                             </div>
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <Mail className="h-3 w-3" />

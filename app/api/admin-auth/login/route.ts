@@ -9,7 +9,7 @@ import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
  * Access is determined by:
  * 1. `role = 'admin'` in the profiles table
  * 2. `admin_sub_role` determines which portal they access:
- *    - 'system_admin' → /secure-admin-gateway (full access)
+ *    - 'super_admin' → /secure-admin-gateway (full access)
  *    - 'attorney_admin' → /attorney-portal (review only)
  *
  * Security benefits:
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create admin session with sub-role
-    const subRole: AdminSubRole = result.subRole || 'system_admin'
+    const subRole: AdminSubRole = result.subRole || 'super_admin'
     await createAdminSession(result.userId!, email, subRole)
 
     // Determine redirect URL based on sub-role

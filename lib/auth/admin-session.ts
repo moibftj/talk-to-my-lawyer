@@ -281,7 +281,7 @@ export async function getCurrentAdminSubRole(): Promise<AdminSubRole | null> {
  * - Commission payouts
  * - Email queue management
  */
-export async function requireSystemAdminAuth(): Promise<NextResponse | undefined> {
+export async function requireSuperAdminAuth(): Promise<NextResponse | undefined> {
   const session = await verifyAdminSession()
   if (!session) {
     return NextResponse.json(

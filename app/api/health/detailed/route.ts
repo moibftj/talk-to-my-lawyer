@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
 
 interface ServiceStatus {
   name: string
@@ -166,7 +167,11 @@ async function checkAuth(): Promise<ServiceStatus> {
   }
 }
 
-export async function GET(): Promise<NextResponse<HealthCheckResponse>> {
+export async function GET(request: NextRequest): Promise<NextResponse<HealthCheckResponse>> {
+  // Require Super Admin authentication to view detailed health information
+  const authError = await requireSuperAdminAuth()
+  if (authError) return authError
+
   try {
     const [dbStatus, emailStatus, storageStatus, authStatus] = await Promise.all([
       checkDatabase(),

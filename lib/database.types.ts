@@ -1,5 +1,5 @@
 export type UserRole = 'subscriber' | 'employee' | 'admin'
-export type AdminSubRole = 'system_admin' | 'attorney_admin'
+export type AdminSubRole = 'super_admin' | 'attorney_admin'
 
 export type LetterStatus =
   | 'draft'
