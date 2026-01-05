@@ -192,8 +192,8 @@ importers:
         specifier: 1.4.2
         version: 1.4.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       jspdf:
-        specifier: ^3.0.4
-        version: 3.0.4
+        specifier: ^4.0.0
+        version: 4.0.0
       lucide-react:
         specifier: ^0.454.0
         version: 0.454.0(react@19.2.3)
@@ -3750,8 +3750,8 @@ packages:
   jsonfile@6.2.0:
     resolution: {integrity: sha512-FGuPw30AdOIUTRMC2OMRtQV+jkVj2cfPqSeWXv1NEAJ1qZ5zb1X6z1mFhbfOB/iy3ssJCD+3KuZ8r8C3uVFlAg==}
 
-  jspdf@3.0.4:
-    resolution: {integrity: sha512-dc6oQ8y37rRcHn316s4ngz/nOjayLF/FFxBF4V9zamQKRqXxyiH1zagkCdktdWhtoQId5K20xt1lB90XzkB+hQ==}
+  jspdf@4.0.0:
+    resolution: {integrity: sha512-w12U97Z6edKd2tXDn3LzTLg7C7QLJlx0BPfM3ecjK2BckUl9/81vZ+r5gK4/3KQdhAcEZhENUxRhtgYBj75MqQ==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -8975,7 +8975,7 @@ snapshots:
     optionalDependencies:
       graceful-fs: 4.2.11
 
-  jspdf@3.0.4:
+  jspdf@4.0.0:
     dependencies:
       '@babel/runtime': 7.28.4
       fast-png: 6.4.0
