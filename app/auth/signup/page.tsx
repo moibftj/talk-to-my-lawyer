@@ -84,43 +84,12 @@ export default function SignUpPage() {
       if (signUpError) throw signUpError
 
       if (authData.user) {
-        // Create profile using server API with service role
-        // Pass access token to handle race condition where session cookie isn't set yet
-        try {
-          const response = await fetch('/api/create-profile', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              userId: authData.user.id,
-              email: authData.user.email || email,
-              role: role,
-              fullName: fullName,
-              accessToken: authData.session?.access_token || null
-            })
-          })
-
-          const result = await response.json()
-
-          if (!response.ok) {
-            console.error('Profile creation error:', result.error)
-            // Don't throw error immediately - try to continue
-            console.warn('Profile creation failed, but continuing with signup process')
-          } else {
-            console.log('Profile created successfully:', result.profile)
-          }
-        } catch (err) {
-          console.error('Unexpected error during profile creation:', err)
-          // Continue with signup even if profile creation fails
-          console.warn('Continuing with signup despite profile error')
-        }
-
-        // Note: Employee coupon is created automatically by the database trigger
-        // when the profile is created with role='employee' via /api/create-profile
-        // No need to create it here - it would cause duplicate/conflict issues
+        // Profile and employee coupon are created automatically by database triggers:
+        // - on_auth_user_created: Creates profile from user metadata (role, full_name)
+        // - trigger_create_employee_coupon: Creates coupon for employee roles
+        // No manual API call needed - triggers run immediately after auth.user insert
         if (role === 'employee') {
-          console.log('Employee signup complete - coupon will be auto-generated via database trigger')
+          console.log('Employee signup initiated - profile and coupon will be created by database triggers')
         }
       }
 
