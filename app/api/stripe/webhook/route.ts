@@ -62,84 +62,55 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'No metadata' }, { status: 400 })
         }
 
+        // First, get the pending subscription ID
+        const { data: pendingSubscription } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('user_id', metadata.user_id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (!pendingSubscription) {
+          console.error('[StripeWebhook] No pending subscription found for user:', metadata.user_id)
+          return NextResponse.json({ error: 'No pending subscription' }, { status: 400 })
+        }
+
+        // Use atomic transaction to complete subscription with commission
         const letters = parseInt(metadata.letters || '0')
         const finalPrice = parseFloat(metadata.final_price || '0')
         const basePrice = parseFloat(metadata.base_price || '0')
         const discount = parseFloat(metadata.discount || '0')
         const couponCode = metadata.coupon_code || null
         const employeeId = metadata.employee_id || null
-        
-        // Check if this is a super user coupon (typically TALK3 or similar promo codes with $0 payment)
-        const isSuperUserCoupon = couponCode === 'TALK3' || finalPrice === 0
 
-        // Update subscription status to active and set credits
-        const { data: subscription, error: updateError } = await supabase
-          .from('subscriptions')
-          .update({
-            status: 'active',
-            credits_remaining: letters,
-            remaining_letters: letters,
-            stripe_session_id: session.id,
-            stripe_customer_id: session.customer as string,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', metadata.user_id)
-          .eq('status', 'pending')
-          .select()
-          .single()
+        const { data: atomicResult, error: atomicError } = await supabase.rpc('complete_subscription_with_commission', {
+          p_user_id: metadata.user_id,
+          p_subscription_id: pendingSubscription.id,
+          p_stripe_session_id: session.id,
+          p_stripe_customer_id: session.customer as string,
+          p_plan_type: metadata.plan_type || 'unknown',
+          p_monthly_allowance: letters,
+          p_total_letters: letters,
+          p_final_price: finalPrice,
+          p_base_price: basePrice,
+          p_discount_amount: discount,
+          p_coupon_code: couponCode,
+          p_employee_id: employeeId,
+          p_commission_rate: 0.05,
+        })
 
-        if (updateError) {
-          console.error('[StripeWebhook] Failed to update subscription:', updateError)
-        }
+        if (atomicError || !atomicResult || !atomicResult[0]?.success) {
+          console.error('[StripeWebhook] Atomic subscription completion failed:', atomicError)
+          // Don't fail the webhook entirely - log but return success to avoid retries
+          // The subscription can be recovered manually
+        } else {
+          const result = atomicResult[0]
+          console.log('[StripeWebhook] Subscription completed atomically:', result.subscription_id)
 
-        // Record coupon usage
-        if (couponCode && subscription) {
-          const couponUsageData = {
-            user_id: metadata.user_id,
-            coupon_code: couponCode,
-            employee_id: employeeId,
-            subscription_id: subscription.id,
-            plan_type: metadata.plan_type || 'unknown',
-            discount_percent: basePrice > 0 ? Math.round((discount / basePrice) * 100) : 0,
-            amount_before: basePrice,
-            amount_after: finalPrice
-          }
-
-          console.log('[StripeWebhook] Recording coupon usage:', couponUsageData)
-
-          const { error: usageError } = await supabase
-            .from('coupon_usage')
-            .insert(couponUsageData)
-
-          if (usageError) {
-            console.error('[StripeWebhook] Failed to record coupon usage:', usageError)
-            // Don't fail the webhook, but log for monitoring
-          } else {
-            console.log('[StripeWebhook] Coupon usage recorded successfully for code:', couponCode)
-          }
-        }
-
-        // Create commission if employee referral (and not a super user coupon with 0 payment)
-        if (employeeId && subscription && finalPrice > 0 && !isSuperUserCoupon) {
-          const commissionAmount = finalPrice * 0.05
-
-          const { error: commissionError } = await supabase
-            .from('commissions')
-            .insert({
-              employee_id: employeeId,
-              subscription_id: subscription.id,
-              subscription_amount: finalPrice,
-              commission_rate: 0.05,
-              commission_amount: commissionAmount,
-              status: 'pending'
-            })
-
-          if (commissionError) {
-            console.error('[StripeWebhook] Failed to create commission:', commissionError)
-          } else {
-            console.log(`[StripeWebhook] Created commission: $${commissionAmount.toFixed(2)} for employee ${employeeId}`)
-
-            // Send commission earned email (non-blocking)
+          // Send commission earned email if commission was created
+          if (result.commission_id && employeeId) {
             const { data: employeeProfile } = await supabase
               .from('profiles')
               .select('email, full_name')
@@ -147,6 +118,7 @@ export async function POST(request: NextRequest) {
               .single()
 
             if (employeeProfile?.email) {
+              const commissionAmount = finalPrice * 0.05
               sendTemplateEmail('commission-earned', employeeProfile.email, {
                 userName: employeeProfile.full_name || 'there',
                 commissionAmount: commissionAmount,
@@ -156,41 +128,26 @@ export async function POST(request: NextRequest) {
               })
             }
           }
-
-          // Update employee coupon usage count atomically (skip for special promo codes)
-          if (couponCode && couponCode !== 'TALK3') {
-            const { error: incrementError } = await supabase.rpc('increment_coupon_usage_by_code', {
-              coupon_code: couponCode,
-            })
-
-            if (incrementError) {
-              console.error('[StripeWebhook] Failed to update coupon usage count:', incrementError)
-            } else {
-              console.log(`[StripeWebhook] Incremented usage count for coupon ${couponCode}`)
-            }
-          }
         }
 
         console.log('[StripeWebhook] Payment completed for user:', metadata.user_id)
 
         // Send subscription confirmation email (non-blocking)
-        if (subscription) {
-          const { data: userProfile } = await supabase
-            .from('profiles')
-            .select('email, full_name')
-            .eq('id', metadata.user_id)
-            .single()
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('email, full_name')
+          .eq('id', metadata.user_id)
+          .single()
 
-          if (userProfile?.email) {
-            const planName = metadata.plan_type || 'Subscription'
-            sendTemplateEmail('subscription-confirmation', userProfile.email, {
-              userName: userProfile.full_name || 'there',
-              subscriptionPlan: planName,
-              actionUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`,
-            }).catch(error => {
-              console.error('[StripeWebhook] Failed to send subscription confirmation email:', error)
-            })
-          }
+        if (userProfile?.email) {
+          const planName = metadata.plan_type || 'Subscription'
+          sendTemplateEmail('subscription-confirmation', userProfile.email, {
+            userName: userProfile.full_name || 'there',
+            subscriptionPlan: planName,
+            actionUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`,
+          }).catch(error => {
+            console.error('[StripeWebhook] Failed to send subscription confirmation email:', error)
+          })
         }
 
         break

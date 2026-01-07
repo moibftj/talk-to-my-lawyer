@@ -208,75 +208,34 @@ export async function POST(request: NextRequest) {
     // ===== TEST MODE: Simulate successful payment without Stripe =====
     if (TEST_MODE) {
       console.log('[Checkout] TEST MODE: Simulating payment for user:', user.id)
-      
-      // Create subscription directly as if payment succeeded
-      const { data: subscription, error: subError } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: user.id,
-          plan: planType,
-          plan_type: planType,
-          status: 'active',
-          price: finalPrice,
-          discount: discountAmount,
-          coupon_code: couponCode || null,
-          credits_remaining: selectedPlan.letters,
-          remaining_letters: selectedPlan.letters,
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .select()
-        .single()
 
-      if (subError) {
-        console.error('[Checkout] TEST MODE: Subscription creation error:', subError)
-        throw new Error(`Failed to create subscription: ${subError.message}`)
+      // Use atomic transaction function for test mode as well
+      const { data: atomicResult, error: atomicError } = await supabase.rpc('create_free_subscription', {
+        p_user_id: user.id,
+        p_plan_type: planType,
+        p_monthly_allowance: selectedPlan.letters,
+        p_total_letters: selectedPlan.letters,
+        p_final_price: finalPrice,
+        p_base_price: basePrice,
+        p_discount_amount: discountAmount,
+        p_coupon_code: couponCode || null,
+        p_employee_id: employeeId || null,
+        p_commission_rate: 0.05,
+      })
+
+      if (atomicError || !atomicResult || !atomicResult[0]?.success) {
+        console.error('[Checkout] TEST MODE: Atomic subscription creation failed:', atomicError)
+        throw new Error(`Failed to create subscription: ${atomicError?.message || atomicResult?.[0]?.error_message || 'Unknown error'}`)
       }
 
-      // Track coupon usage
-      if (couponCode) {
-        await supabase
-          .from('coupon_usage')
-          .insert({
-            user_id: user.id,
-            coupon_code: couponCode,
-            employee_id: employeeId,
-            discount_percent: discount,
-            amount_before: basePrice,
-            amount_after: finalPrice
-          })
-      }
-
-      // Create commission if employee referral
-      if (employeeId && subscription) {
-        const commissionAmount = finalPrice * 0.05
-        await supabase
-          .from('commissions')
-          .insert({
-            employee_id: employeeId,
-            subscription_id: subscription.id,
-            subscription_amount: finalPrice,
-            commission_rate: 0.05,
-            commission_amount: commissionAmount,
-            status: 'pending'
-          })
-
-        // Update coupon usage count atomically (prevents race condition)
-        if (couponCode) {
-          await supabase.rpc('increment_coupon_usage_by_code', {
-            coupon_code: couponCode,
-          }).catch((err) => {
-            console.error('[Checkout] TEST MODE: Coupon usage increment error:', err)
-          })
-        }
-      }
+      const result = atomicResult[0]
 
       console.log('[Checkout] TEST MODE: Payment simulated successfully')
-      
+
       return NextResponse.json({
         success: true,
         testMode: true,
-        subscriptionId: subscription.id,
+        subscriptionId: result.subscription_id,
         letters: selectedPlan.letters,
         message: 'TEST MODE: Subscription created successfully (simulated payment)',
         redirectUrl: `/dashboard/subscription?success=true&test=true`
