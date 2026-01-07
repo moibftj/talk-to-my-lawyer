@@ -11,6 +11,11 @@ const stripe = createStripeClient()
 
 const TEST_MODE = process.env.ENABLE_TEST_MODE === 'true'
 
+// Production guard: prevent test mode from being enabled in production
+if (TEST_MODE && process.env.NODE_ENV === 'production') {
+  throw new Error('[CRITICAL] Test mode is not allowed in production environment. Set ENABLE_TEST_MODE=false.')
+}
+
 export async function POST(request: NextRequest) {
   console.log('[Checkout] Request received, TEST_MODE:', TEST_MODE)
 

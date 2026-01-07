@@ -46,6 +46,25 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseServiceClient()
 
+    // Check idempotency - prevent duplicate processing on webhook retry
+    const { data: idempotencyCheck, error: idempotencyError } = await supabase.rpc('check_and_record_webhook', {
+      p_stripe_event_id: event.id,
+      p_event_type: event.type,
+      p_metadata: {
+        created: event.created,
+        api_version: event.api_version,
+      } || null,
+    })
+
+    if (idempotencyError) {
+      console.error('[StripeWebhook] Idempotency check failed:', idempotencyError)
+      // Continue processing if check fails - better to process twice than miss an event
+    } else if (idempotencyCheck && idempotencyCheck[0]?.already_processed) {
+      console.log('[StripeWebhook] Event already processed, skipping:', event.id)
+      // Return success to acknowledge receipt without re-processing
+      return NextResponse.json({ received: true, already_processed: true })
+    }
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
