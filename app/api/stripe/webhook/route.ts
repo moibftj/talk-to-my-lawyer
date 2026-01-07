@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
     const { data: idempotencyCheck, error: idempotencyError } = await supabase.rpc('check_and_record_webhook', {
       p_stripe_event_id: event.id,
       p_event_type: event.type,
-      p_metadata: {
+      p_metadata: event.created ? {
         created: event.created,
         api_version: event.api_version,
-      } || null,
+      } : null,
     })
 
     if (idempotencyError) {
