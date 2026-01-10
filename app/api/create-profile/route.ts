@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { createRateLimit } from "@/lib/rate-limit"
-import { queueTemplateEmail } from "@/lib/email"
+import { sendTemplateEmail } from "@/lib/email"
 
 // Rate limiting for profile creation
 const rateLimiter = createRateLimit({
@@ -173,17 +173,23 @@ export async function POST(request: NextRequest) {
       role
     })
 
-    // Queue welcome email for reliable delivery with automatic retries
-    queueTemplateEmail(
+    // Send welcome email directly (not queued) for immediate delivery
+    sendTemplateEmail(
       'welcome',
       email,
       {
         userName: fullName.split(' ')[0], // First name
-        actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://talk-to-my-lawyer.com'}/dashboard`
+        actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://talk-to-my-lawyer.com'}/dashboard`
       }
-    ).catch((error) => {
-      console.error('[CreateProfile] Failed to queue welcome email:', error)
-      // Don't fail the request if email queueing fails
+    ).then((result) => {
+      if (result.success) {
+        console.log('[CreateProfile] Welcome email sent successfully:', result.messageId)
+      } else {
+        console.error('[CreateProfile] Welcome email failed:', result.error)
+      }
+    }).catch((error) => {
+      console.error('[CreateProfile] Failed to send welcome email:', error)
+      // Don't fail the request if email sending fails
     })
 
     return NextResponse.json({
