@@ -71,6 +71,7 @@ export interface Subscription {
   current_period_start: string | null
   current_period_end: string | null
   remaining_letters: number | null
+  letters_remaining?: number | null
   credits_remaining: number | null
   last_reset_at: string | null
   created_at: string
