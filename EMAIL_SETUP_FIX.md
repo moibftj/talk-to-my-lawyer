@@ -66,26 +66,27 @@ The Resend integration is already set up correctly. You just need to resolve the
 
 To use your custom Resend integration for auth emails (signup confirmation, password reset):
 
-1. **Go to Supabase Dashboard**:
-   - Navigate to: Authentication → Email Templates → Settings
+**📖 Complete Setup Guide**: See [docs/SUPABASE_EMAIL_WEBHOOK_SETUP.md](docs/SUPABASE_EMAIL_WEBHOOK_SETUP.md) for detailed step-by-step instructions.
 
-2. **Enable Custom SMTP (Auth Hook)**:
-   - Under "SMTP Settings" or "Auth Hooks"
-   - Set the Send Email Hook URL to:
-     ```
-     https://your-domain.com/api/auth/send-email
-     ```
+**Quick Steps**:
 
-3. **Add Auth Hook Secret** (recommended):
-   - Generate a secure secret:
-     ```bash
-     openssl rand -hex 32
-     ```
-   - Add to your `.env.local`:
-     ```bash
-     SUPABASE_AUTH_HOOK_SECRET=your-generated-secret
-     ```
-   - Configure the same secret in Supabase Auth Hooks settings
+1. **Generate a webhook secret**:
+   ```bash
+   openssl rand -hex 32
+   ```
+
+2. **Add secret to your environment**:
+   ```bash
+   SUPABASE_AUTH_HOOK_SECRET=<your-generated-secret>
+   ```
+
+3. **Configure in Supabase Dashboard**:
+   - Go to: Authentication → Hooks → Send Email
+   - Enable the hook
+   - Set URL: `https://your-domain.com/api/auth/send-email`
+   - Add the secret you generated
+
+4. **Deploy and test**: Sign up a new user and verify email arrives
 
 ---
 
