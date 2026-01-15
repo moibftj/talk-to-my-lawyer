@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       options: {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://talk-to-my-lawyer.com'}/dashboard`,
       }
-    })
+    } as any)
 
     if (linkError) {
       console.error('[ResendConfirmation] Error generating link:', linkError)
