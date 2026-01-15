@@ -11,7 +11,13 @@ export type LetterStatus =
   | 'rejected'
   | 'failed'
 
-export type SubscriptionStatus = 'active' | 'canceled' | 'past_due'
+export type SubscriptionStatus =
+  | 'active'
+  | 'pending'
+  | 'canceled'
+  | 'past_due'
+  | 'payment_failed'
+  | 'trialing'
 export type CommissionStatus = 'pending' | 'paid'
 
 export interface Profile {
@@ -61,11 +67,11 @@ export interface Subscription {
   coupon_code: string | null
   stripe_subscription_id: string | null
   stripe_customer_id: string | null
+  stripe_session_id: string | null
   current_period_start: string | null
   current_period_end: string | null
   remaining_letters: number | null
   letters_remaining: number | null
-  letters_per_period: number | null
   credits_remaining: number | null
   last_reset_at: string | null
   created_at: string
