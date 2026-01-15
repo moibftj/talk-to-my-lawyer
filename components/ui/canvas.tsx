@@ -133,7 +133,7 @@ class Line {
 
 let ctx: CanvasContextExtended | null = null;
 let oscillator: Oscillator | null = null;
-let pos: Position = { x: 0, y: 0 };
+const pos: Position = { x: 0, y: 0 };
 let lines: Line[] = [];
 
 const E: EnvironmentConfig = {

@@ -1,31 +1,38 @@
-import { createRequire } from 'module'
-import babelParser from 'next/dist/compiled/babel/eslint-parser.js'
-
-const require = createRequire(import.meta.url)
+import nextPlugin from "@next/eslint-plugin-next";
+import reactPlugin from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
 
 export default [
   {
-    ignores: ['node_modules/**', '.next/**', 'public/**', 'pnpm-lock.yaml', 'package-lock.json'],
+    ignores: [
+      "node_modules/**",
+      ".next/**",
+      "public/**",
+      "pnpm-lock.yaml",
+      "package-lock.json",
+    ],
   },
+  ...tseslint.configs.recommended,
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
-    languageOptions: {
-      parser: babelParser,
-      parserOptions: {
-        requireConfigFile: false,
-        babelOptions: {
-          presets: [require.resolve('next/babel')],
-        },
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
+    files: ["**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      "@next/next": nextPlugin,
+      react: reactPlugin,
+      "react-hooks": reactHooksPlugin,
     },
     rules: {
-      'no-unused-vars': 'off',
-      'no-undef': 'off',
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "react/no-unescaped-entities": "off",
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
     },
   },
-]
+];

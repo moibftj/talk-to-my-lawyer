@@ -69,7 +69,7 @@ export function TimelineContent({
       custom={animationNum}
       variants={variants}
       className={className}
-      // @ts-ignore
+      // @ts-expect-error - motion.div doesn't have 'as' in types but works at runtime
       as={Component}
     >
       {children}

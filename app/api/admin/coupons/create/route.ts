@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     // Generate or validate coupon code
-    let couponCode = code?.toUpperCase().trim() || generateCouponCode()
+    const couponCode = code?.toUpperCase().trim() || generateCouponCode()
 
     // Check if code already exists
     const { data: existing } = await supabase
