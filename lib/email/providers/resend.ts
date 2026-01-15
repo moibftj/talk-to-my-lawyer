@@ -46,18 +46,29 @@ export class ResendProvider implements EmailProviderInterface {
         })),
       })
 
+      // Check for API errors
       if (result.error) {
-        console.error('[EmailService] Resend error:', result.error)
+        console.error('[EmailService] Resend API error:', result.error)
         return {
           success: false,
-          error: result.error.message,
+          error: result.error.message || 'Resend API error',
+          provider: this.name,
+        }
+      }
+
+      // Check if data is actually present
+      if (!result.data) {
+        console.error('[EmailService] Resend returned no data:', result)
+        return {
+          success: false,
+          error: 'No data returned from Resend API',
           provider: this.name,
         }
       }
 
       return {
         success: true,
-        messageId: result.data?.id,
+        messageId: result.data.id,
         provider: this.name,
       }
     } catch (error: unknown) {
