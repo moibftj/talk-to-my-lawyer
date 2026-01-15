@@ -52,6 +52,13 @@ export interface Letter {
   approved_at: string | null
   draft_metadata: Record<string, any> | null
   pdf_url: string | null
+  claimed_by: string | null
+  claimed_at: string | null
+  claimer?: {
+    id: string
+    full_name: string | null
+    email: string
+  }
   created_at: string
   updated_at: string
 }
