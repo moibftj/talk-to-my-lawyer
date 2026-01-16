@@ -565,7 +565,7 @@ The Talk-To-My-Lawyer Team
         </p>
 
         <p>Thank you for being part of Talk-To-My-Lawyer!</p>
-      `), data.unsubscribeUrl,
+      `, data.unsubscribeUrl,)
     }
   },
 
@@ -621,7 +621,7 @@ The Talk-To-My-Lawyer Team
         <p>If you continue to experience issues, please contact our support team.</p>
 
         <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
-      `), data.unsubscribeUrl,
+      `, data.unsubscribeUrl,)
     }
   },
 
@@ -718,7 +718,7 @@ The Talk-To-My-Lawyer Team
         <p>Upgrade before your trial ends to keep your access.</p>
 
         <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
-      `), data.unsubscribeUrl,
+      `, data.unsubscribeUrl,)
     }
   },
 
@@ -760,7 +760,7 @@ The Talk-To-My-Lawyer Team
         </p>
 
         <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
-      `), data.unsubscribeUrl,
+      `, data.unsubscribeUrl,)
     }
   },
 
@@ -837,7 +837,7 @@ The Talk-To-My-Lawyer Team
         <p>Status updates will be available in your dashboard.</p>
 
         <p>Best regards,<br>The Talk-To-My-Lawyer Team</p>
-      `), data.unsubscribeUrl,
+      `, data.unsubscribeUrl,)
     }
   },
   'admin-alert': (data) => ({
