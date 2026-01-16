@@ -5,7 +5,7 @@
 CREATE OR REPLACE FUNCTION get_pending_emails(p_limit INTEGER DEFAULT 10)
 RETURNS TABLE (
   id UUID,
-  to TEXT,
+  "to" TEXT,
   subject TEXT,
   html TEXT,
   text TEXT,
@@ -19,7 +19,7 @@ BEGIN
   RETURN QUERY
   SELECT
     eq.id,
-    eq.to,
+    eq."to",
     eq.subject,
     eq.html,
     eq.text,
@@ -35,7 +35,8 @@ END;
 $$;
 
 -- Mark email as sent
-CREATE OR REPLACE FUNCTION mark_email_sent(
+DROP FUNCTION IF EXISTS mark_email_sent(UUID, TEXT, INTEGER) CASCADE;
+CREATE FUNCTION mark_email_sent(
   p_email_id UUID,
   p_provider TEXT DEFAULT 'resend',
   p_response_time_ms INTEGER DEFAULT NULL
@@ -59,7 +60,8 @@ END;
 $$;
 
 -- Mark email as failed
-CREATE OR REPLACE FUNCTION mark_email_failed(
+DROP FUNCTION IF EXISTS mark_email_failed(UUID, TEXT, TEXT) CASCADE;
+CREATE FUNCTION mark_email_failed(
   p_email_id UUID,
   p_error_message TEXT,
   p_provider TEXT DEFAULT 'resend'
