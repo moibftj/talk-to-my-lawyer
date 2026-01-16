@@ -95,7 +95,7 @@ export interface Letter {
   updated_at: string;
 }
 
-export interface k[Subscription {
+export interface Subscription {
   id: string;
   user_id: string;
   plan: string | null;
