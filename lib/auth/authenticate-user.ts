@@ -4,7 +4,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import type { User } from '@supabase/supabase-js'
-import { errorResponses, AuthenticationError, AuthorizationError } from '@/lib/api/api-error-handler'
+import { AuthenticationError, AuthorizationError } from '@/lib/api/api-error-handler'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export interface AuthenticationResult {
