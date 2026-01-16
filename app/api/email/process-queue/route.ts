@@ -15,17 +15,21 @@ interface PendingEmail {
 }
 
 /**
- * Vercel Edge Function for processing email queue
+ * Unified Edge Email Processor
  *
- * Benefits over standard Node.js runtime:
- * - ~50ms cold start (vs ~250ms+)
+ * This is the primary email processing engine. Benefits:
+ * - ~50ms cold start (vs ~250ms+ Node.js)
  * - Runs at edge locations globally
- * - Better for cron jobs with tight schedules
+ * - Better concurrency for parallel email sending
+ * - Optimal for cron jobs with tight schedules
  *
- * Call this from:
- * - Vercel Cron (vercel.json)
- * - External cron service
- * - Supabase Database Webhooks (on email_queue insert)
+ * Called by:
+ * - Vercel Cron (vercel.json) 
+ * - Admin panel (/api/admin/email-queue POST action=process)
+ * - External cron services
+ * - Database webhooks (on email_queue insert)
+ *
+ * Uses atomic database functions to prevent race conditions.
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -35,7 +39,9 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const searchParams = request.nextUrl.searchParams;
     const providedSecret =
-      authHeader?.replace("Bearer ", "") || searchParams.get("secret");
+      authHeader?.replace("Bearer ", "") || 
+      searchParams.get("secret") ||
+      request.headers.get("x-cron-secret"); // Support multiple auth methods
     const expectedSecret = process.env.CRON_SECRET;
 
     if (expectedSecret && providedSecret !== expectedSecret) {
