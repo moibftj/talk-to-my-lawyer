@@ -198,6 +198,7 @@ BEGIN
             employee_id,
             subscription_id,
             subscription_amount,
+            
             commission_rate,
             commission_amount,
             status,
