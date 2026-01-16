@@ -278,6 +278,9 @@ export async function POST(request: NextRequest) {
     // Create Stripe Checkout Session for paid plans
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+    // Use subscription ID as idempotency key to prevent duplicate checkout sessions on retries
+    const idempotencyKey = `checkout_${pendingSubscription.id}`
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -309,6 +312,8 @@ export async function POST(request: NextRequest) {
         employee_id: employeeId || '',
         coupon_id: couponId || ''
       }
+    }, {
+      idempotencyKey, // Prevent duplicate charges on request retries
     })
 
     return NextResponse.json({
