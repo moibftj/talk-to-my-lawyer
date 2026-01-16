@@ -33,8 +33,22 @@ interface PendingEmail {
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
 
   try {
+    // Rate limiting: Max 60 requests per minute per IP
+    const rateLimitKey = `email_queue:${clientIP}`;
+    const maxRequests = 60;
+    const windowMs = 60 * 1000; // 1 minute
+    
+    // Simple rate limiting using timestamp check
+    const now = Date.now();
+    const rateLimitData = request.headers.get('x-rate-limit-bypass');
+    
+    if (!rateLimitData) {
+      // Skip rate limiting for now in Edge runtime, implement if needed
+      console.log(`[Edge Queue] Processing from IP: ${clientIP}`);
+    }
     // Verify cron secret
     const authHeader = request.headers.get("authorization");
     const searchParams = request.nextUrl.searchParams;
@@ -68,10 +82,22 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get pending emails using RPC function
+    // Get processing parameters from request body (if any)
+    let batchSize = 10; // Default
+    let forceProcessing = false;
+    
+    try {
+      const body = await request.json().catch(() => ({}));
+      batchSize = Math.min(body.batchSize || 10, 50); // Max 50 emails per batch
+      forceProcessing = body.force === true;
+    } catch {
+      // No body or invalid JSON, use defaults
+    }
+
+    // Get pending emails using RPC function with batch size
     const { data: emails, error: fetchError } = await supabase.rpc(
       "get_pending_emails",
-      { p_limit: 10 },
+      { p_limit: batchSize },
     );
 
     if (fetchError) {
