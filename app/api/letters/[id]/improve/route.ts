@@ -1,20 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { generateText } from 'ai'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateAdminAction } from '@/lib/admin/letter-actions'
 import { sanitizeString } from '@/lib/security/input-sanitizer'
 import { getOpenAIModel } from '@/lib/ai/openai-client'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
+import { openaiConfig } from '@/lib/config'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Apply rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, "15 m")
-    if (rateLimitResponse) {
-      return rateLimitResponse
-    }
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('LETTER_IMPROVE'))
+    if (rateLimitResponse) return rateLimitResponse
 
     const validationError = await validateAdminAction(request)
     if (validationError) return validationError
@@ -26,19 +26,19 @@ export async function POST(
     const content = body?.content
 
     if (!content || !instruction) {
-      return NextResponse.json({ error: 'Content and instruction are required' }, { status: 400 })
+      return errorResponses.validation('Content and instruction are required')
     }
 
     const sanitizedContent = sanitizeString(content, 20000)
     const sanitizedInstruction = sanitizeString(instruction, 2000)
 
     if (!sanitizedContent || !sanitizedInstruction) {
-      return NextResponse.json({ error: 'Invalid content or instruction' }, { status: 400 })
+      return errorResponses.validation('Invalid content or instruction')
     }
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!openaiConfig.apiKey) {
       console.error('[v0] Missing OPENAI_API_KEY')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+      return errorResponses.serverError('Server configuration error')
     }
 
     // Call OpenAI API for content improvement using AI SDK
@@ -53,17 +53,12 @@ export async function POST(
     })
 
     if (!improvedContent) {
-      console.error('[v0] OpenAI returned empty content')
-      return NextResponse.json({ error: 'AI returned empty content' }, { status: 500 })
+      throw new Error('AI returned empty content')
     }
 
-    return NextResponse.json({ improvedContent }, { status: 200 })
-  } catch (error: any) {
-    console.error('[v0] Letter improvement error:', error)
-    return NextResponse.json(
-      { error: error.message || 'Failed to improve letter content' },
-      { status: 500 }
-    )
+    return successResponse({ improvedContent })
+  } catch (error) {
+    return handleApiError(error, 'Letter Improve')
   }
 }
 

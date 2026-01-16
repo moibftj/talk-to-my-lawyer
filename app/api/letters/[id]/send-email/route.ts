@@ -1,9 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getEmailService } from '@/lib/email'
 import { generateLetterPdf } from '@/lib/pdf'
 import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { sanitizeEmail, sanitizeString } from '@/lib/security/input-sanitizer'
+import { requireAuth } from '@/lib/auth/authenticate-user'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 type LetterRecord = {
   id: string
@@ -48,25 +50,19 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 100, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, ...getRateLimitTuple('LETTER_EMAIL'))
     if (rateLimitResponse) return rateLimitResponse
 
     const { id } = await params
-    const supabase = await createClient()
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, supabase } = await requireAuth()
 
     const body = await request.json()
     const { recipientEmail, message } = body
 
     const emailService = getEmailService()
     if (!emailService.isConfigured()) {
-      return NextResponse.json({
-        error: 'Email service is not configured'
-      }, { status: 500 })
+      return errorResponses.serverError('Email service is not configured')
     }
 
     const { data: letter, error: letterError } = await supabase
@@ -77,20 +73,20 @@ export async function POST(
       .single<LetterRecord>()
 
     if (letterError || !letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     if (letter.status !== 'approved' && letter.status !== 'completed') {
-      return NextResponse.json({ error: 'Only approved letters can be sent' }, { status: 400 })
+      return errorResponses.validation('Only approved letters can be sent')
     }
 
     if (!recipientEmail || typeof recipientEmail !== 'string') {
-      return NextResponse.json({ error: 'Recipient email is required' }, { status: 400 })
+      return errorResponses.validation('Recipient email is required')
     }
 
     const sanitizedRecipientEmail = sanitizeEmail(recipientEmail)
     if (!sanitizedRecipientEmail) {
-      return NextResponse.json({ error: 'Invalid email address format' }, { status: 400 })
+      return errorResponses.validation('Invalid email address format')
     }
 
     const parties = extractParties(letter)
@@ -111,9 +107,7 @@ export async function POST(
 
     if (!pdfResult.success || !pdfResult.buffer) {
       console.error('[SendEmail] PDF generation failed:', pdfResult.error)
-      return NextResponse.json({
-        error: 'Failed to generate PDF attachment'
-      }, { status: 500 })
+      return errorResponses.serverError('Failed to generate PDF attachment')
     }
 
     const safeTitle = sanitizeFileName(letter.title)
@@ -156,9 +150,7 @@ export async function POST(
 
     if (!emailResult.success) {
       console.error('[SendEmail] Email send failed:', emailResult.error)
-      return NextResponse.json({
-        error: emailResult.error || 'Failed to send email'
-      }, { status: 502 })
+      return errorResponses.serverError(emailResult.error || 'Failed to send email')
     }
 
     try {
@@ -173,15 +165,11 @@ export async function POST(
       console.warn('[SendEmail] Audit log failed:', err)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       messageId: emailResult.messageId,
     })
   } catch (error) {
-    console.error('[SendEmail] Unexpected error:', error)
-    return NextResponse.json(
-      { error: 'Failed to send email' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Send Email')
   }
 }

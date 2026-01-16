@@ -1,13 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { requireAttorneyAdminAccess } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 30, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_READ'))
     if (rateLimitResponse) return rateLimitResponse
 
     const authError = await requireAttorneyAdminAccess()
@@ -43,11 +45,10 @@ export async function GET(request: NextRequest) {
     const { data: letters, error, count } = await query
 
     if (error) {
-      console.error('[AdminLetters] Fetch error:', error)
-      return NextResponse.json({ error: 'Failed to fetch letters' }, { status: 500 })
+      throw error
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       letters: letters || [],
       pagination: {
@@ -57,8 +58,7 @@ export async function GET(request: NextRequest) {
         hasMore: (offset + limit) < (count || 0)
       }
     })
-  } catch (error: any) {
-    console.error('[AdminLetters] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'Admin Letters')
   }
 }

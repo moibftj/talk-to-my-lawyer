@@ -1,7 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
-import { authenticateUser } from '@/lib/auth/authenticate-user'
+import { NextRequest } from 'next/server'
+import { requireAuth } from '@/lib/auth/authenticate-user'
 import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -15,19 +16,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 100, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, ...getRateLimitTuple('LETTER_SUBMIT'))
     if (rateLimitResponse) return rateLimitResponse
 
     const { id } = await params
-    
-    // Authenticate user
-    const authResult = await authenticateUser()
-    if (!authResult.authenticated || !authResult.user) {
-      return authResult.errorResponse!
-    }
-    const user = authResult.user
 
-    const supabase = await createClient()
+    const { user, supabase } = await requireAuth()
 
     // Fetch current letter to validate status transition
     const { data: letter, error: letterFetchError } = await supabase
@@ -38,7 +32,7 @@ export async function POST(
       .single()
 
     if (letterFetchError || !letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     const oldStatus = letter.status
@@ -47,9 +41,7 @@ export async function POST(
     // Validate status transition
     const allowedTransitions = VALID_TRANSITIONS[oldStatus] || []
     if (!allowedTransitions.includes(newStatus)) {
-      return NextResponse.json({ 
-        error: `Cannot transition from ${oldStatus} to ${newStatus}` 
-      }, { status: 400 })
+      return errorResponses.validation(`Cannot transition from ${oldStatus} to ${newStatus}`)
     }
 
     // Use atomic check for allowance
@@ -65,10 +57,7 @@ export async function POST(
 
     if (!isFreeTrial) {
       if (!allowance?.has_access || (allowance?.letters_remaining || 0) <= 0) {
-        return NextResponse.json({ 
-          error: 'No letter allowances remaining. Please purchase more letters or upgrade your plan.',
-          needsSubscription: true 
-        }, { status: 403 })
+        return errorResponses.forbidden('No letter allowances remaining. Please purchase more letters or upgrade your plan.')
       }
 
       // Deduct allowance for non-free-trial users
@@ -76,10 +65,7 @@ export async function POST(
         .rpc('deduct_letter_allowance', { u_id: user.id })
 
       if (deductError || !canDeduct) {
-        return NextResponse.json({ 
-          error: 'No letter allowances remaining. Please purchase more letters or upgrade your plan.',
-          needsSubscription: true 
-        }, { status: 403 })
+        return errorResponses.forbidden('No letter allowances remaining. Please purchase more letters or upgrade your plan.')
       }
     }
 
@@ -103,12 +89,8 @@ export async function POST(
       p_notes: 'Letter submitted for review by user'
     })
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
-    console.error('[v0] Letter submission error:', error)
-    return NextResponse.json(
-      { error: 'Failed to submit letter' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Letter Submit')
   }
 }

@@ -1,6 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { requireAuth } from '@/lib/auth/authenticate-user'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 export const runtime = 'nodejs'
 
@@ -10,17 +12,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 100, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, ...getRateLimitTuple('LETTER_DELETE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const { id } = await params
-    const supabase = await createClient()
 
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, supabase } = await requireAuth()
 
     // Fetch the letter to verify ownership and status
     const { data: letter, error: fetchError } = await supabase
@@ -30,23 +27,19 @@ export async function DELETE(
       .single()
 
     if (fetchError || !letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     // Verify ownership
     if (letter.user_id !== user.id) {
-      return NextResponse.json({ error: 'You can only delete your own letters' }, { status: 403 })
+      return errorResponses.forbidden('You can only delete your own letters')
     }
 
     // Only allow deletion of certain statuses
     const deletableStatuses = ['draft', 'rejected', 'failed']
     if (!deletableStatuses.includes(letter.status)) {
-      return NextResponse.json(
-        { 
-          error: 'Cannot delete letters that are pending review, approved, or completed. Only drafts, rejected, and failed letters can be deleted.',
-          status: letter.status
-        }, 
-        { status: 400 }
+      return errorResponses.validation(
+        'Cannot delete letters that are pending review, approved, or completed. Only drafts, rejected, and failed letters can be deleted.'
       )
     }
 
@@ -58,8 +51,7 @@ export async function DELETE(
       .eq('user_id', user.id) // Extra safety check
 
     if (deleteError) {
-      console.error('[DeleteLetter] Delete error:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete letter' }, { status: 500 })
+      throw deleteError
     }
 
     // Log the deletion in audit trail if function exists
@@ -76,12 +68,11 @@ export async function DELETE(
       console.warn('[DeleteLetter] Audit log failed:', err)
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: 'Letter deleted successfully'
     })
-  } catch (error: any) {
-    console.error('[DeleteLetter] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'Delete Letter')
   }
 }

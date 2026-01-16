@@ -7,6 +7,7 @@ import type {
 } from './types'
 import { ResendProvider } from './providers/resend'
 import { renderTemplate } from './templates'
+import { emailConfig } from '@/lib/config'
 
 class EmailService {
   private provider: EmailProviderInterface
@@ -17,8 +18,8 @@ class EmailService {
     // Resend is the only email provider
     this.provider = new ResendProvider()
 
-    this.fromEmail = process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com'
-    this.fromName = process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer'
+    this.fromEmail = emailConfig.from
+    this.fromName = emailConfig.fromName
 
     // Verify Resend is configured
     if (!this.provider.isConfigured()) {

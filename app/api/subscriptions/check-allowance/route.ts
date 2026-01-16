@@ -1,44 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextRequest } from "next/server"
+import { requireAuth } from '@/lib/auth/authenticate-user'
+import { handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-    
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    // Apply rate limiting for read-heavy endpoint
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, ...getRateLimitTuple('API_READ'))
+    if (rateLimitResponse) {
+      return rateLimitResponse
     }
+
+    const { user, supabase } = await requireAuth()
 
     // Call check_letter_allowance function
     const { data, error } = await supabase
       .rpc('check_letter_allowance', { u_id: user.id })
-      .single<{ has_access: boolean; letters_remaining: number; plan_type: string; is_active: boolean }>();
+      .single<{ has_access: boolean; letters_remaining: number; plan_type: string; is_active: boolean }>()
 
     if (error) {
-      console.error('[CheckAllowance] RPC error:', error);
-      return NextResponse.json(
-        { error: "Failed to check allowance" },
-        { status: 500 }
-      );
+      throw error
     }
 
-    return NextResponse.json({
+    return successResponse({
       hasAllowance: data?.has_access,
       remaining: data?.letters_remaining,
       plan: data?.plan_type
-    });
+    })
 
   } catch (error) {
-    console.error('[CheckAllowance] Error:', error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Check Allowance')
   }
 }

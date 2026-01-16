@@ -1,30 +1,23 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { generateText } from 'ai'
 import { letterGenerationRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { checkGenerationEligibility, deductLetterAllowance, shouldSkipDeduction } from '@/lib/services/allowance-service'
 import { getOpenAIModel } from '@/lib/ai/openai-client'
+import { requireAuth } from '@/lib/auth/authenticate-user'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, 5, '1 h')
+    const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, ...getRateLimitTuple('LETTER_GENERATE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const { id } = await params
-    const supabase = await createClient()
 
-    // Authenticate user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, supabase } = await requireAuth()
 
     // Get the letter and verify ownership
     const { data: letter, error: letterError } = await supabase
@@ -35,24 +28,18 @@ export async function POST(
       .single()
 
     if (letterError || !letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     // Can only resubmit rejected letters
     if (letter.status !== 'rejected') {
-      return NextResponse.json({
-        error: 'Only rejected letters can be resubmitted'
-      }, { status: 400 })
+      return errorResponses.validation('Only rejected letters can be resubmitted')
     }
 
     const eligibility = await checkGenerationEligibility(user.id)
     if (!eligibility.canGenerate) {
-      return NextResponse.json(
-        {
-          error: eligibility.reason || 'No letter credits remaining. Please upgrade your plan.',
-          needsSubscription: true,
-        },
-        { status: 403 }
+      return errorResponses.forbidden(
+        eligibility.reason || 'No letter credits remaining. Please upgrade your plan.'
       )
     }
 
@@ -107,9 +94,8 @@ export async function POST(
             .update({ status: 'failed', updated_at: new Date().toISOString() })
             .eq('id', id)
 
-          return NextResponse.json(
-            { error: deduction.error || 'No letter credits remaining. Please upgrade your plan.' },
-            { status: 403 }
+          return errorResponses.forbidden(
+            deduction.error || 'No letter credits remaining. Please upgrade your plan.'
           )
         }
       }
@@ -123,7 +109,7 @@ export async function POST(
         p_notes: 'Letter resubmitted after addressing rejection feedback'
       })
 
-      return NextResponse.json({
+      return successResponse({
         success: true,
         letterId: id,
         status: 'pending_review',
@@ -151,15 +137,13 @@ export async function POST(
         p_notes: `Resubmission failed: ${generationError.message}`
       })
 
-      return NextResponse.json(
-        { error: generationError.message || 'Failed to regenerate letter' },
-        { status: 500 }
+      return errorResponses.serverError(
+        generationError.message || 'Failed to regenerate letter'
       )
     }
 
-  } catch (error: any) {
-    console.error('[Resubmit] Error:', error)
-    return NextResponse.json({ error: error.message || 'Failed to resubmit letter' }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'Letter Resubmit')
   }
 }
 

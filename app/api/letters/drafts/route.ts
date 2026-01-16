@@ -1,19 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { requireAuth } from '@/lib/auth/authenticate-user'
 
 export const runtime = 'nodejs'
 
 // POST - Save draft letter content (auto-save)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, supabase } = await requireAuth()
 
     const body = await request.json()
     const { letterId, title, content, letterType, recipientInfo, senderInfo, metadata } = body
@@ -28,19 +22,16 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (fetchError || !existingLetter) {
-        return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+        return errorResponses.notFound('Draft')
       }
 
       if (existingLetter.user_id !== user.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+        return errorResponses.forbidden('Unauthorized')
       }
 
       // Only allow updating drafts
       if (existingLetter.status !== 'draft') {
-        return NextResponse.json(
-          { error: 'Can only auto-save draft letters' },
-          { status: 400 }
-        )
+        return errorResponses.validation('Can only auto-save draft letters')
       }
 
       // Update the draft
@@ -64,11 +55,10 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (updateError) {
-        console.error('[AutoSave] Update error:', updateError)
-        return NextResponse.json({ error: 'Failed to save draft' }, { status: 500 })
+        throw updateError
       }
 
-      return NextResponse.json({
+      return successResponse({
         success: true,
         message: 'Draft saved',
         letterId: updated.id,
@@ -97,32 +87,25 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (createError) {
-      console.error('[AutoSave] Create error:', createError)
-      return NextResponse.json({ error: 'Failed to create draft' }, { status: 500 })
+      throw createError
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: 'Draft created',
       letterId: newDraft.id,
       savedAt: newDraft.created_at,
       isNew: true
     })
-  } catch (error: any) {
-    console.error('[AutoSave] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'Draft Save')
   }
 }
 
 // GET - Get list of drafts
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { user, supabase } = await requireAuth()
 
     const { data: drafts, error } = await supabase
       .from('letters')
@@ -133,14 +116,14 @@ export async function GET(request: NextRequest) {
       .limit(10)
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to fetch drafts' }, { status: 500 })
+      throw error
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       drafts: drafts || []
     })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'Draft List')
   }
 }

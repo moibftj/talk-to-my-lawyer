@@ -1,13 +1,15 @@
 import { createClient } from "@/lib/supabase/server"
 import { generateText } from "ai"
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateAdminAction } from '@/lib/admin/letter-actions'
 import { getOpenAIModel } from '@/lib/ai/openai-client'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function POST(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '15 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('LETTER_IMPROVE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const validationError = await validateAdminAction(request)
@@ -19,10 +21,7 @@ export async function POST(request: NextRequest) {
     const { letterId, content } = body
 
     if (!letterId || !content) {
-      return NextResponse.json(
-        { error: "Letter ID and content are required" },
-        { status: 400 }
-      )
+      return errorResponses.validation("Letter ID and content are required")
     }
 
     // Fetch letter details for context
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (letterError || !letter) {
-      return NextResponse.json({ error: "Letter not found" }, { status: 404 })
+      return errorResponses.notFound("Letter")
     }
 
     // Improve letter content with AI
@@ -62,16 +61,12 @@ export async function POST(request: NextRequest) {
       maxOutputTokens: 4000,
     })
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       improvedContent
     })
 
-  } catch (error: any) {
-    console.error("[Letter Improve] Error:", error)
-    return NextResponse.json(
-      { error: error.message || "Failed to improve letter" },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, "Letter Improve")
   }
 }

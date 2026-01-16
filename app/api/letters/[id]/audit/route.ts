@@ -1,35 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextRequest } from "next/server"
+import { requireAuth } from '@/lib/auth/authenticate-user'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
+    const { user, supabase } = await requireAuth()
 
     // Verify user is admin or employee
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single();
+      .single()
 
     if (!profile || !['admin', 'employee'].includes(profile.role)) {
-      return NextResponse.json(
-        { error: "Admin or employee access required" },
-        { status: 403 }
-      );
+      return errorResponses.forbidden("Admin or employee access required")
     }
 
     const { id } = await params;
@@ -45,10 +33,7 @@ export async function GET(
         .single();
 
       if (!letter) {
-        return NextResponse.json(
-          { error: "Letter not found" },
-          { status: 404 }
-        );
+        return errorResponses.notFound("Letter")
       }
 
       // Check if this employee has any relationship to the letter owner
@@ -59,13 +44,10 @@ export async function GET(
         .eq('user_id', letter.user_id)
         .eq('employee_id', user.id)
         .limit(1)
-        .single();
+        .single()
 
       if (!relationship) {
-        return NextResponse.json(
-          { error: "You do not have permission to view this letter's audit trail" },
-          { status: 403 }
-        );
+        return errorResponses.forbidden("You do not have permission to view this letter's audit trail")
       }
     }
 
@@ -81,23 +63,15 @@ export async function GET(
         )
       `)
       .eq('letter_id', id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
 
     if (error) {
-      console.error('[AuditTrail] Query error:', error);
-      return NextResponse.json(
-        { error: "Failed to fetch audit trail" },
-        { status: 500 }
-      );
+      throw error
     }
 
-    return NextResponse.json({ auditTrail });
+    return successResponse({ auditTrail })
 
   } catch (error) {
-    console.error('[AuditTrail] Error:', error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Audit Trail')
   }
 }

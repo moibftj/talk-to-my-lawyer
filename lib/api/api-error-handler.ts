@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
+import { isDevelopment } from '@/lib/config/env'
 
 /**
  * Custom error classes for different error types
@@ -64,25 +65,34 @@ export interface ErrorResponse {
   error: string
   code?: string
   details?: unknown
+  requestId?: string
   stack?: string // Only in development
 }
 
 /**
  * Handle API errors and return appropriate NextResponse
  */
-export function handleApiError(error: unknown, context?: string): NextResponse {
-  const isDevelopment = process.env.NODE_ENV === 'development'
+export function handleApiError(
+  error: unknown,
+  context?: string,
+  requestId?: string
+): NextResponse {
+  const dev = isDevelopment()
 
-  // Log all errors with context
+  // Log all errors with context and request ID
   const errorContext = context ? `[${context}]` : ''
+  const requestContext = requestId ? `[${requestId}]` : ''
+  const logPrefix = `${errorContext}${requestContext}`
+
   if (error instanceof Error) {
-    console.error(`${errorContext} Error:`, {
+    console.error(`${logPrefix} Error:`, {
       name: error.name,
       message: error.message,
-      stack: isDevelopment ? error.stack : undefined,
+      requestId,
+      stack: dev ? error.stack : undefined,
     })
   } else {
-    console.error(`${errorContext} Unknown error:`, error)
+    console.error(`${logPrefix} Unknown error:`, {error, requestId})
   }
 
   // Handle known ApiErrors
@@ -90,13 +100,14 @@ export function handleApiError(error: unknown, context?: string): NextResponse {
     const response: ErrorResponse = {
       error: error.message,
       code: error.code,
+      requestId,
     }
 
     if (error.details) {
       response.details = error.details
     }
 
-    if (isDevelopment && error.stack) {
+    if (dev && error.stack) {
       response.stack = error.stack
     }
 
@@ -109,9 +120,10 @@ export function handleApiError(error: unknown, context?: string): NextResponse {
       error: 'Validation failed',
       code: 'VALIDATION_ERROR',
       details: error.issues,
+      requestId,
     }
 
-    if (isDevelopment) {
+    if (dev) {
       response.stack = error.stack
     }
 
@@ -120,11 +132,12 @@ export function handleApiError(error: unknown, context?: string): NextResponse {
 
   // Handle unknown errors
   const response: ErrorResponse = {
-    error: isDevelopment ? (error as Error).message || 'An unexpected error occurred' : 'Internal server error',
+    error: dev ? (error as Error).message || 'An unexpected error occurred' : 'Internal server error',
     code: 'INTERNAL_ERROR',
+    requestId,
   }
 
-  if (isDevelopment && error instanceof Error && error.stack) {
+  if (dev && error instanceof Error && error.stack) {
     response.stack = error.stack
   }
 

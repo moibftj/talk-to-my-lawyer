@@ -1,14 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { validateAdminAction } from '@/lib/admin/letter-actions'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '15 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const validationError = await validateAdminAction(request)
@@ -25,14 +27,12 @@ export async function POST(
       .single()
 
     if (!letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     // Can only complete approved letters
     if (letter.status !== 'approved') {
-      return NextResponse.json({
-        error: 'Letter must be approved before it can be completed'
-      }, { status: 400 })
+      return errorResponses.validation('Letter must be approved before it can be completed')
     }
 
     const { error: updateError } = await supabase
@@ -55,12 +55,8 @@ export async function POST(
       p_notes: 'Letter marked as completed'
     })
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
-    console.error('[v0] Complete letter error:', error)
-    return NextResponse.json(
-      { error: 'Failed to complete letter' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Complete Letter')
   }
 }

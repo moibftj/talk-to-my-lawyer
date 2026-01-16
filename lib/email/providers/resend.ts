@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import type { EmailMessage, EmailResult, EmailProviderInterface } from '../types'
+import { emailConfig } from '@/lib/config'
 
 export class ResendProvider implements EmailProviderInterface {
   name = 'resend' as const
@@ -8,12 +9,12 @@ export class ResendProvider implements EmailProviderInterface {
   private fromName: string
 
   constructor() {
-    const apiKey = process.env.RESEND_API_KEY
+    const apiKey = emailConfig.apiKey
     if (apiKey) {
       this.client = new Resend(apiKey)
     }
-    this.fromEmail = process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com'
-    this.fromName = process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer'
+    this.fromEmail = emailConfig.from
+    this.fromName = emailConfig.fromName
   }
 
   isConfigured(): boolean {

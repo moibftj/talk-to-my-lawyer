@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth/authenticate-user'
+import { errorResponses, handleApiError } from '@/lib/api/api-error-handler'
 
 export async function GET(
   _request: NextRequest,
@@ -8,12 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const supabase = await createClient()
-    
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+
+    const { user, supabase } = await requireAuth()
 
     // Fetch letter and verify ownership
     const { data: letter, error: letterError } = await supabase
@@ -23,7 +20,7 @@ export async function GET(
       .single()
 
     if (letterError || !letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     // Verify user can access this letter (owner or admin)
@@ -34,13 +31,11 @@ export async function GET(
       .single()
 
     if (letter.status !== 'approved') {
-      return NextResponse.json({ 
-        error: 'Only approved letters can be downloaded as PDF' 
-      }, { status: 403 })
+      return errorResponses.forbidden('Only approved letters can be downloaded as PDF')
     }
 
     if (letter.user_id !== user.id && profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return errorResponses.forbidden()
     }
 
     const content = letter.final_content || letter.ai_draft_content || ''
@@ -106,10 +101,6 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('[v0] PDF generation error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate PDF' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'PDF Generation')
   }
 }

@@ -1,15 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getAdminSession } from '@/lib/auth/admin-session'
 import { validateAdminAction } from '@/lib/admin/letter-actions'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '15 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const validationError = await validateAdminAction(request)
@@ -26,7 +28,7 @@ export async function POST(
       .single()
 
     if (!letter) {
-      return NextResponse.json({ error: 'Letter not found' }, { status: 404 })
+      return errorResponses.notFound('Letter')
     }
 
     const { error: updateError } = await supabase
@@ -48,12 +50,8 @@ export async function POST(
       p_notes: 'Admin started reviewing the letter'
     })
 
-    return NextResponse.json({ success: true })
+    return successResponse({ success: true })
   } catch (error) {
-    console.error('[v0] Start review error:', error)
-    return NextResponse.json(
-      { error: 'Failed to start review' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Start Review')
   }
 }
