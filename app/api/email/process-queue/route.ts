@@ -183,11 +183,27 @@ export async function POST(request: NextRequest) {
       failed: failCount,
       results,
       duration: Date.now() - startTime,
+      batchSize,
+      timestamp: new Date().toISOString(),
+      runtime: 'edge'
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Edge Queue] Error:", message);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const duration = Date.now() - startTime;
+    
+    console.error("[Edge Queue] Critical error:", {
+      error: message,
+      duration,
+      clientIP,
+      timestamp: new Date().toISOString()
+    });
+    
+    return NextResponse.json({ 
+      error: message, 
+      duration,
+      runtime: 'edge',
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 }
 
