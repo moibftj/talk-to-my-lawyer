@@ -23,7 +23,13 @@ class EmailService {
 
     // Verify Resend is configured
     if (!this.provider.isConfigured()) {
-      console.error('[EmailService] Resend is not configured! Set RESEND_API_KEY environment variable.')
+      const msg = 'Resend is not configured! Set RESEND_API_KEY environment variable.';
+      console.error('[EmailService]', msg);
+
+      // In production, fail fast - emails are critical
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`[EmailService] ${msg}`);
+      }
     }
   }
 
