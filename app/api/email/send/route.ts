@@ -92,7 +92,8 @@ export async function POST(request: NextRequest) {
 async function logDelivery(to: string, subject: string, responseTime: number) {
   const supabase = getServiceRoleClient();
 
-  await supabase.from("email_delivery_log").insert({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any).from("email_delivery_log").insert({
     recipient_email: Array.isArray(to) ? to.join(",") : to,
     subject,
     provider: "resend",

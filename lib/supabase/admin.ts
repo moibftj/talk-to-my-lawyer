@@ -1,13 +1,15 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/database.types";
 
-let serviceRoleClient: SupabaseClient<Database> | null = null;
+// Use untyped client to avoid type mismatches with database tables not in generated types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let serviceRoleClient: SupabaseClient<any> | null = null;
 
 /**
  * Gets a singleton Supabase client with Service Role privileges.
  * WARNING: This client bypasses RLS! Use only for admin/system tasks.
  */
-export function getServiceRoleClient(): SupabaseClient<Database> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function getServiceRoleClient(): SupabaseClient<any> {
   if (serviceRoleClient) return serviceRoleClient;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,14 +21,11 @@ export function getServiceRoleClient(): SupabaseClient<Database> {
     );
   }
 
-  serviceRoleClient = createClient<Database>(
-    supabaseUrl,
-    supabaseServiceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+  serviceRoleClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
     },
   );
 
