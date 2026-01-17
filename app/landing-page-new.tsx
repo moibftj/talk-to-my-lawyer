@@ -150,7 +150,7 @@ export default function NewLandingPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-cyan-50 to-teal-50 text-gray-900 grid-pattern">
+      <div className="min-h-screen bg-linear-to-br from-white via-cyan-50 to-teal-50 text-gray-900 grid-pattern">
         {/* Navigation Header */}
         <nav
           className={`glass-card backdrop-blur-lg border-b border-blue-200 sticky top-0 z-50 transition-all duration-300 ${
@@ -259,7 +259,7 @@ export default function NewLandingPage() {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 bg-gradient-to-r from-cyan-900 to-teal-900 text-white overflow-hidden">
+        <section className="py-16 bg-linear-to-r from-cyan-900 to-teal-900 text-white overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div className="scroll-reveal stagger-1 counter-animate">
@@ -399,7 +399,7 @@ export default function NewLandingPage() {
         {/* Pricing Section */}
         <section
           id="pricing"
-          className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-cyan-50 to-teal-50"
+          className="py-20 px-4 sm:px-6 lg:px-8 bg-linear-to-r from-cyan-50 to-teal-50"
         >
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16 scroll-reveal">
@@ -423,7 +423,7 @@ export default function NewLandingPage() {
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   {plan.popular && (
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs font-bold text-center py-2 rounded-t-lg">
+                    <div className="bg-linear-to-r from-blue-500 to-cyan-500 text-white text-xs font-bold text-center py-2 rounded-t-lg">
                       MOST POPULAR
                     </div>
                   )}
@@ -496,7 +496,7 @@ export default function NewLandingPage() {
         </section>
 
         {/* Footer */}
-        <footer className="bg-gradient-to-r from-cyan-900 to-teal-900 text-white py-16">
+        <footer className="bg-linear-to-r from-cyan-900 to-teal-900 text-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
