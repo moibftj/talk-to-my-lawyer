@@ -8,6 +8,7 @@ This repository uses AGENTS.md as the canonical source for AI/agent policies, wo
 
 - Canonical policies and workflows: [AGENTS.md](AGENTS.md)
 - Detailed routes list: [AGENTS.md](AGENTS.md#api-routes-detailed)
+- Types list: [AGENTS.md](AGENTS.md#types-centralized)
 
 ## Repo conventions (summary)
 

@@ -70,6 +70,66 @@ This repo implements an end-to-end supervised letter generation workflow where A
 
 Security & audit: prompts, model outputs, and review actions are retained for compliance; RLS and role checks ensure drafts are not exposed to unauthorized employees.
 
+## Types (centralized)
+
+The canonical type definitions live in `lib/types/` and are re-exported in `types/index.ts` for backward compatibility. Database types are generated in `lib/database.types.ts`.
+
+### Database types (from `lib/database.types.ts`)
+
+- Profile
+- Letter
+- Subscription
+- EmployeeCoupon
+- Commission
+- CouponUsage
+- LetterAuditTrail
+- LetterStatus
+- SubscriptionStatus
+- UserRole
+
+### API/types (from `lib/types/api.ts`)
+
+- ApiResponse
+- PaginatedResponse
+- RouteContext
+- LetterGenerationRequest
+- AdminReviewRequest
+- AdminReviewResponse
+- AuthUser
+- AdminSession
+- CheckoutRequest
+- CheckoutResponse
+- RateLimitConfig
+- RateLimitResult
+- SupabaseResult
+- SupabaseSuccessResult
+- SupabaseErrorResult
+- ApiHandler
+- ValidationError
+- ValidationResult
+
+### Letter types (from `lib/types/letter.types.ts`)
+
+- LetterType
+- LetterWithProfile
+- LetterUpdateRequest
+- DraftSaveRequest
+- LetterAllowance
+- AdminActionContext
+- LetterGenerationResponse
+
+### App-specific types (from `types/index.ts`)
+
+- LettersSearchParams
+- Plan
+
+### Constants / type helpers (from `lib/types/api.ts`)
+
+- LETTER_STATUSES
+- USER_ROLES
+- isSupabaseError
+- isSupabaseSuccess
+
 ## API Routes (detailed)
 
 ### Auth
