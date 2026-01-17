@@ -121,7 +121,10 @@ draft → generating → pending_review → under_review → approved/rejected/c
 | `lib/email/service.ts` | Provider-agnostic email with templates |
 | `lib/validation/` | Input validation schemas |
 | `lib/services/` | Business logic (allowance, subscriptions) |
-| `scripts/*.sql` | DB migrations (run in numeric order) |
+| `lib/types/` | Canonical TypeScript types (re-exported by `types/`) |
+| `types/` | Backward-compatible type exports |
+| `supabase/migrations/` | SQL migrations (timestamp order) |
+| `scripts/` | Automation scripts (includes db migration runner) |
 | `components/ui/` | shadcn/ui primitives |
 | `components/admin/` | Admin-specific components |
 

@@ -95,8 +95,7 @@ Run SQL migrations in order:
 pnpm db:migrate
 
 # Or manually in Supabase SQL Editor:
-# 1. Execute scripts/001-023.sql files in numeric order
-# 2. Execute supabase/migrations/*.sql files in order
+# Execute supabase/migrations/*.sql files in timestamp order
 ```
 
 ### 5. Validate Environment

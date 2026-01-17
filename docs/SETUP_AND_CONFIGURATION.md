@@ -158,39 +158,14 @@ The database setup requires running SQL migrations in sequence.
 pnpm db:migrate
 ```
 
-This runs all migrations in order from both:
-- `/scripts/*.sql` (001-023)
+This runs all migrations in timestamp order from:
 - `/supabase/migrations/*.sql`
 
 #### Option 2: Manual Migration
 
 1. Go to your Supabase Dashboard
 2. Navigate to SQL Editor
-3. Run scripts in order:
-
-**Core Schema**:
-```
-scripts/001_setup_schema.sql
-scripts/002_setup_rls.sql
-scripts/003_seed_data.sql
-scripts/004_create_functions.sql
-```
-
-**Key Features**:
-```
-scripts/005_letter_allowance_system.sql
-scripts/006_audit_trail.sql
-scripts/008_employee_coupon_auto_generation.sql
-scripts/011_security_hardening.sql
-```
-
-**Latest Enhancements**:
-```
-scripts/020_decrement_credits_atomic.sql
-scripts/021_add_total_letters_generated.sql
-scripts/022_fix_deduct_letter_allowance.sql
-scripts/023_add_fraud_detection_tables.sql
-```
+3. Run migrations in timestamp order from `supabase/migrations/` (e.g., `20251214022657_001_core_schema.sql`, `20251214022727_002_rls_policies.sql`, `20251214022758_003_database_functions.sql`). See the folder for the full ordered list.
 
 ### Verifying Database Setup
 
@@ -572,7 +547,7 @@ stripe trigger checkout.session.completed
 psql $DATABASE_URL
 
 # Run a specific migration
-psql $DATABASE_URL -f scripts/001_setup_schema.sql
+psql $DATABASE_URL -f supabase/migrations/20251214022657_001_core_schema.sql
 
 # Check migrations status
 psql $DATABASE_URL -c "SELECT * FROM supabase_migrations.schema_migrations ORDER BY version;"
