@@ -1,20 +1,29 @@
 #!/usr/bin/env node
 
 // Test script to send actual email via Resend
-import { Resend } from 'resend'
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+// Load .env.local
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, ".env.local") });
+
+import { Resend } from "resend";
 
 async function sendTestEmail() {
-  console.log('🚀 Testing Resend Email Service...\n')
+  console.log("🚀 Testing Resend Email Service...\n");
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    console.log('📧 Sending test email to moizj00@gmail.com...')
+    console.log("📧 Sending test email to moizj00@gmail.com...");
 
     const { data, error } = await resend.emails.send({
-      from: 'Talk-To-My-Lawyer <noreply@talk-to-my-lawyer.com>',
-      to: ['moizj00@gmail.com'],
-      subject: '✅ Email System Test - Talk-To-My-Lawyer',
+      from: "Talk-To-My-Lawyer <noreply@talk-to-my-lawyer.com>",
+      to: ["moizj00@gmail.com"],
+      subject: "✅ Email System Test - Talk-To-My-Lawyer",
       html: `
         <!DOCTYPE html>
         <html>
@@ -78,23 +87,24 @@ Sent at: ${new Date().toLocaleString()}
 
 Best regards,
 The Talk-To-My-Lawyer Team
-      `.trim()
-    })
+      `.trim(),
+    });
 
     if (error) {
-      console.error('❌ Error sending email:', error)
-      process.exit(1)
+      console.error("❌ Error sending email:", error);
+      process.exit(1);
     }
 
-    console.log('\n✅ Email sent successfully!')
-    console.log('📬 Message ID:', data.id)
-    console.log('📧 Check moizj00@gmail.com for the test email')
-    console.log('\n💡 Note: It may take a few seconds to arrive. Check spam folder if not in inbox.')
-
+    console.log("\n✅ Email sent successfully!");
+    console.log("📬 Message ID:", data.id);
+    console.log("📧 Check moizj00@gmail.com for the test email");
+    console.log(
+      "\n💡 Note: It may take a few seconds to arrive. Check spam folder if not in inbox.",
+    );
   } catch (error) {
-    console.error('❌ Failed to send email:', error.message)
-    process.exit(1)
+    console.error("❌ Failed to send email:", error.message);
+    process.exit(1);
   }
 }
 
-sendTestEmail()
+sendTestEmail();

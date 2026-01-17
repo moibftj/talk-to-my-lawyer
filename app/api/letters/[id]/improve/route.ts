@@ -36,9 +36,9 @@ export async function POST(
       return errorResponses.validation('Invalid content or instruction')
     }
 
-    if (!openaiConfig.apiKey) {
-      console.error('[v0] Missing OPENAI_API_KEY')
-      return errorResponses.serverError('Server configuration error')
+    if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
+      console.error('[Improve] OPENAI_API_KEY is not configured. Letter improvement requires a valid OpenAI API key.')
+      return errorResponses.serverError('Letter improvement is temporarily unavailable. Please contact support.')
     }
 
     // Call OpenAI API for content improvement using AI SDK

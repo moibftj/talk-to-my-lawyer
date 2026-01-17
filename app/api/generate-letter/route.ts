@@ -73,9 +73,9 @@ export async function POST(request: NextRequest) {
     const sanitizedIntakeData = validation.data!
 
     // 4. Check API configuration
-    if (!openaiConfig.apiKey) {
-      console.error("[GenerateLetter] Missing OPENAI_API_KEY")
-      return errorResponses.serverError("Server configuration error")
+    if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
+      console.error("[GenerateLetter] OPENAI_API_KEY is not configured. Letter generation requires a valid OpenAI API key.")
+      return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
     }
 
     // 5. Atomically check eligibility AND deduct allowance
