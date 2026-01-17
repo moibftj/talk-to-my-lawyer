@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceRoleClient } from "@/lib/supabase/admin";
 
 export const runtime = "edge";
 
@@ -90,12 +90,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function logDelivery(to: string, subject: string, responseTime: number) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) return;
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getServiceRoleClient();
 
   await supabase.from("email_delivery_log").insert({
     recipient_email: Array.isArray(to) ? to.join(",") : to,
