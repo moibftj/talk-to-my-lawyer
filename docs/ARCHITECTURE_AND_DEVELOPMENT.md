@@ -205,7 +205,10 @@ interface Profile {
   admin_sub_role: AdminSubRole | null  // For admin role separation
   phone: string | null
   company_name: string | null
+  free_trial_used: boolean
+  stripe_customer_id: string | null
   total_letters_generated: number
+  is_licensed_attorney: boolean
   created_at: string
   updated_at: string
 }
@@ -217,14 +220,21 @@ interface Letter {
   id: string
   user_id: string
   title: string
-  letter_type: string
+  letter_type: string | null
   status: LetterStatus
-  intake_data: Record<string, any>    // Form data from user
-  ai_draft_content: string | null     // AI-generated draft
-  final_content: string | null        // Attorney-approved content
-  reviewed_by: string | null          // Admin who reviewed
+  intake_data: Record<string, unknown> | null  // Form data from user
+  ai_draft_content: string | null             // AI-generated draft
+  final_content: string | null                // Attorney-approved content
+  draft_metadata: Record<string, unknown> | null
+  pdf_url: string | null
+  reviewed_by: string | null                  // Admin who reviewed
+  reviewed_at: string | null
   review_notes: string | null
+  rejection_reason: string | null
   approved_at: string | null
+  claimed_by: string | null
+  claimed_at: string | null
+  is_attorney_reviewed: boolean
   created_at: string
   updated_at: string
 }
@@ -235,17 +245,24 @@ interface Letter {
 interface Subscription {
   id: string
   user_id: string
-  plan_type: string              // single, monthly, yearly
-  status: SubscriptionStatus
-  price: number
-  discount: number
+  plan: string | null
+  plan_type: string | null            // single, monthly, yearly
+  status: SubscriptionStatus | null
+  price: number | null
+  discount: number | null
   coupon_code: string | null
-  employee_id: string | null
-  credits_remaining: number      // Letters remaining
-  current_period_start: string
-  current_period_end: string
+  stripe_subscription_id: string | null
   stripe_customer_id: string | null
+  stripe_session_id: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  remaining_letters: number | null
+  letters_remaining: number | null
+  letters_per_period: number | null
+  credits_remaining: number | null     // Letters remaining
+  last_reset_at: string | null
   created_at: string
+  updated_at: string
 }
 ```
 
@@ -605,7 +622,7 @@ This section is for AI coding assistants working on this repository.
 4. Add to API Routes list in documentation
 
 **Adding a new database function:**
-1. Create SQL file in `scripts/` with proper numbering
+1. Create SQL file in `supabase/migrations/` with a timestamped prefix
 2. Test locally via psql
 3. Document in this guide under Database RPC Functions
 4. Run migration: `pnpm db:migrate`
