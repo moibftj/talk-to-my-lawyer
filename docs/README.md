@@ -151,34 +151,6 @@ These documents cover specific technical or operational concerns:
 
 ---
 
-## Reports & Test Plans
-
-Historical audits, verification reports, and test plans:
-
-### [final_verification_report.md](final_verification_report.md)
-**Purpose**: Final verification report for Supabase project alignment  
-**Contents**:
-- Letter allowance tests
-- Admin role separation verification
-- Employee discount & commission model
-- Analytics functions verification
-
-### [letter_allowance_test_plan.md](letter_allowance_test_plan.md)
-**Purpose**: Test plan for letter allowance and credit functions  
-**Contents**:
-- Allowance check & deduction scenarios
-- Setup scripts
-- Expected results
-
-### [supabase_review_report.md](supabase_review_report.md)
-**Purpose**: Supabase project and repository review  
-**Contents**:
-- Data model discrepancies
-- Migration conflicts
-- Schema alignment recommendations
-
----
-
 ## Developer Tools
 
 ### `.github/copilot-instructions.md`
@@ -204,40 +176,6 @@ Historical audits, verification reports, and test plans:
 
 ---
 
-## Removed / Consolidated Files
-
-The following files were consolidated into the main guides:
-
-**Into Setup & Configuration**
-- ADMIN_SETUP.md
-- TEST_MODE_GUIDE.md
-
-**Into Architecture & Development**
-- ARCHITECTURE_PLAN.md
-- AGENTS.md
-- CLAUDE.md
-
-**Into API & Integrations**
-- GITHUB_SECRETS_SETUP.md
-- STRIPE_SETUP.md
-- TEST_PAYMENTS.md
-- docs/CI_SETUP.md
-
-**Into Deployment Guide**
-- PRODUCTION_LAUNCH_COMPLETE.md
-- VERCEL_DEPLOYMENT.md
-- PRODUCTION_DEPLOYMENT_CHECKLIST.md
-- PRODUCTION_MONITORING.md
-- PRODUCTION_RUNBOOK.md
-- CI_CD_DOCUMENTATION.md
-- IMPLEMENTATION_SUMMARY.md
-- QUICK_REFERENCE.md
-
-**Obsolete / Redundant**
-- REVIEW.md
-- SECURITY_AUDIT_FIX.md
-
----
 
 ## Documentation Maintenance Rules
 

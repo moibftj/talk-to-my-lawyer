@@ -146,22 +146,23 @@ Check available letter credits
 
 ```sql
 SELECT * FROM check_letter_allowance('USER_UUID');
--- Returns: has_allowance, remaining, plan_name
+-- Returns: has_access, letters_remaining
 ```
 
-#### deduct_letter_allowance(user_id)
-Atomically deduct one letter credit
+#### check_and_deduct_allowance(user_id)
+Atomically check eligibility and deduct one credit
 
 ```sql
-SELECT deduct_letter_allowance('USER_UUID');
--- Returns: true if successful, false if no credits
+SELECT * FROM check_and_deduct_allowance('USER_UUID');
+-- Returns: success, remaining, error_message, is_free_trial, is_super_admin
 ```
 
-#### add_letter_allowances(user_id, amount)
-Add credits based on plan type
+#### refund_letter_allowance(user_id, amount)
+Refund credits after failed generation
 
 ```sql
-SELECT add_letter_allowances('USER_UUID', 4);
+SELECT * FROM refund_letter_allowance('USER_UUID', 1);
+-- Returns: success, error_message
 ```
 
 ### Admin Helper Functions
@@ -267,23 +268,23 @@ VALUES ('00000000-0000-0000-0000-000000000001', 'active', 2, 2);
 
 -- Test 1: Check initial allowance
 SELECT * FROM check_letter_allowance('00000000-0000-0000-0000-000000000001');
--- Expected: true, 2, plan_name
+-- Expected: has_access=true, letters_remaining=2
 
--- Test 2: Deduct first letter
-SELECT deduct_letter_allowance('00000000-0000-0000-0000-000000000001');
--- Expected: true
+-- Test 2: Check + deduct first letter
+SELECT * FROM check_and_deduct_allowance('00000000-0000-0000-0000-000000000001');
+-- Expected: success=true, remaining=1
 
--- Test 3: Deduct last letter
-SELECT deduct_letter_allowance('00000000-0000-0000-0000-000000000001');
--- Expected: true
+-- Test 3: Check + deduct last letter
+SELECT * FROM check_and_deduct_allowance('00000000-0000-0000-0000-000000000001');
+-- Expected: success=true, remaining=0
 
 -- Test 4: Check depleted
 SELECT * FROM check_letter_allowance('00000000-0000-0000-0000-000000000001');
--- Expected: false, 0, plan_name
+-- Expected: has_access=false, letters_remaining=0
 
 -- Test 5: Attempt over-deduction
-SELECT deduct_letter_allowance('00000000-0000-0000-0000-000000000001');
--- Expected: false
+SELECT * FROM check_and_deduct_allowance('00000000-0000-0000-0000-000000000001');
+-- Expected: success=false, error_message='No letter credits remaining'
 
 -- Cleanup
 DELETE FROM subscriptions WHERE user_id = '00000000-0000-0000-0000-000000000001';

@@ -271,9 +271,9 @@ interface Subscription {
 Key PostgreSQL functions:
 
 **Letter Allowance:**
-- `check_letter_allowance(u_id)` - Returns `{has_allowance, remaining, plan_type, is_active}`
-- `deduct_letter_allowance(u_id)` - Atomic credit deduction, returns boolean
-- `add_letter_allowances(u_id, amount)` - Add credits
+- `check_and_deduct_allowance(u_id)` - Atomic check + deduct (returns success, remaining, error_message, is_free_trial)
+- `refund_letter_allowance(u_id, amount)` - Refund credits after failed generation
+- `check_letter_allowance(u_id)` - Legacy read-only check (returns has_access, letters_remaining)
 
 **Audit:**
 - `log_letter_audit(letter_id, action, old_status, new_status, notes)`
@@ -326,7 +326,7 @@ Create Letter Record (status: 'generating')
 AI Generation (OpenAI GPT-4 Turbo)
     ├─ Success → status: 'pending_review'
     ├─ Failure → status: 'failed' + refund allowance
-    └─ Update: ai_draft_content, increment_total_letters
+    └─ Update: ai_draft_content, status
     ↓
 Return {letterId, status, aiDraft}
 ```

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { PLAN_CONFIG } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,25 +41,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call add_letter_allowances function
-    const { error: rpcError } = await supabase
-      .rpc('add_letter_allowances', {
-        sub_id: subscriptionId,
-        plan: planType
-      });
-
-    if (rpcError) {
-      console.error('[ActivateSubscription] RPC error:', rpcError);
+    const selectedPlan = PLAN_CONFIG[planType];
+    if (!selectedPlan) {
       return NextResponse.json(
-        { error: "Failed to add allowances" },
-        { status: 500 }
+        { error: "Invalid planType" },
+        { status: 400 }
       );
     }
 
-    // Update subscription status to active
+    // Update subscription status and allowances
     const { error: updateError } = await supabase
       .from('subscriptions')
-      .update({ status: 'active', updated_at: new Date().toISOString() })
+      .update({
+        status: 'active',
+        credits_remaining: selectedPlan.letters,
+        remaining_letters: selectedPlan.letters,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', subscriptionId);
 
     if (updateError) {

@@ -188,13 +188,12 @@ psql $DATABASE_URL -c "SELECT * FROM check_letter_allowance('user-id-here');"
 The platform relies on these PostgreSQL functions:
 
 **Letter Allowance**:
-- `check_letter_allowance(u_id)` - Check remaining credits
-- `deduct_letter_allowance(u_id)` - Atomic credit deduction
-- `add_letter_allowances(u_id, amount)` - Add credits to subscription
+- `check_and_deduct_allowance(u_id)` - Atomic check + deduct
+- `refund_letter_allowance(u_id, amount)` - Refund credits on failure
+- `check_letter_allowance(u_id)` - Legacy read-only check
 
 **Audit Trail**:
 - `log_letter_audit(letter_id, action, ...)` - Log letter state changes
-- `increment_total_letters(user_id)` - Track total letters generated
 
 **Employee System**:
 - `get_employee_coupon(employee_id)` - Get coupon for employee

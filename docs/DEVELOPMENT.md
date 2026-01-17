@@ -105,8 +105,9 @@ draft → generating → pending_review → under_review → approved/rejected/c
 
 ### Key Database RPCs (Supabase)
 
-- `check_letter_allowance(user_id)` - Check remaining credits
-- `deduct_letter_allowance(user_id)` - Atomic credit deduction
+- `check_and_deduct_allowance(user_id)` - Atomic check + deduct
+- `refund_letter_allowance(user_id, amount)` - Refund credits on failure
+- `check_letter_allowance(user_id)` - Legacy read-only check
 - `log_letter_audit(letter_id, action, ...)` - Audit trail
 
 ## Directory Structure
@@ -137,7 +138,7 @@ draft → generating → pending_review → under_review → approved/rejected/c
 3. Deduct allowance BEFORE AI generation (prevents race conditions)
 4. AI generates draft content with retry logic
 5. Letter status updates: `draft` → `generating` → `pending_review`
-6. Increment user's total letters counter
+6. Total letters counter updated in allowance RPC
 7. Log audit trail
 
 ### Admin Review Flow

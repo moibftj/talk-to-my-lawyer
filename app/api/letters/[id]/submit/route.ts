@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/authenticate-user'
 import { apiRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { errorResponses, handleApiError, successResponse } from '@/lib/api/api-error-handler'
 import { getRateLimitTuple } from '@/lib/config'
+import { checkAndDeductAllowance, refundLetterAllowance } from '@/lib/services/allowance-service'
 
 // Valid status transitions
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -44,30 +45,15 @@ export async function POST(
       return errorResponses.validation(`Cannot transition from ${oldStatus} to ${newStatus}`)
     }
 
-    // Use atomic check for allowance
-    const { data: allowance } = await supabase.rpc('check_letter_allowance', { u_id: user.id })
-    
-    const { count: letterCount } = await supabase
-      .from('letters')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .not('status', 'eq', 'failed')
-
-    const isFreeTrial = (letterCount || 0) === 0
-
-    if (!isFreeTrial) {
-      if (!allowance?.has_access || (allowance?.letters_remaining || 0) <= 0) {
-        return errorResponses.forbidden('No letter allowances remaining. Please purchase more letters or upgrade your plan.')
-      }
-
-      // Deduct allowance for non-free-trial users
-      const { data: canDeduct, error: deductError } = await supabase
-        .rpc('deduct_letter_allowance', { u_id: user.id })
-
-      if (deductError || !canDeduct) {
-        return errorResponses.forbidden('No letter allowances remaining. Please purchase more letters or upgrade your plan.')
-      }
+    const deductionResult = await checkAndDeductAllowance(user.id)
+    if (!deductionResult.success) {
+      return errorResponses.forbidden(
+        deductionResult.errorMessage || 'No letter allowances remaining. Please purchase more letters or upgrade your plan.'
+      )
     }
+
+    const isFreeTrial = deductionResult.isFreeTrial
+    const isSuperAdmin = deductionResult.isSuperAdmin
 
     const { error: updateError } = await supabase
       .from('letters')
@@ -78,7 +64,12 @@ export async function POST(
       .eq('id', id)
       .eq('user_id', user.id)
 
-    if (updateError) throw updateError
+    if (updateError) {
+      if (!isFreeTrial && !isSuperAdmin) {
+        await refundLetterAllowance(user.id, 1)
+      }
+      throw updateError
+    }
 
     // Log audit trail for status change
     await supabase.rpc('log_letter_audit', {

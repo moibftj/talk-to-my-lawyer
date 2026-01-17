@@ -87,10 +87,10 @@ async function verifyDatabase() {
   const testId = '00000000-0000-0000-0000-000000000000';
 
   const rpcChecks = [
+    { name: 'check_and_deduct_allowance', params: { u_id: testId } },
+    { name: 'refund_letter_allowance', params: { u_id: testId, amount: 1 } },
     { name: 'check_letter_allowance', params: { u_id: testId } },
-    { name: 'deduct_letter_allowance', params: { u_id: testId } },
-    { name: 'add_letter_allowances', params: { u_id: testId, amount: 1 } },
-    { name: 'increment_total_letters', params: { u_id: testId } },
+    { name: 'increment_total_letters', params: { p_user_id: testId } },
     { name: 'reset_monthly_allowances', params: {} },
     { name: 'get_admin_dashboard_stats', params: {} }
   ];

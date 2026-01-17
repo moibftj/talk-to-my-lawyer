@@ -18,7 +18,6 @@ import { openaiConfig, getRateLimitTuple } from '@/lib/config'
 import {
   checkAndDeductAllowance,
   refundLetterAllowance,
-  incrementTotalLetters,
 } from '@/lib/services/allowance-service'
 import { logLetterStatusChange } from '@/lib/services/audit-service'
 import { generateLetterContent } from '@/lib/services/letter-generation-service'
@@ -139,10 +138,7 @@ export async function POST(request: NextRequest) {
         throw updateError
       }
 
-      // 9. Increment total letters generated
-      await incrementTotalLetters(user.id)
-
-      // 10. Log audit trail
+      // 9. Log audit trail
       await logLetterStatusChange(
         supabase,
         newLetter.id,
@@ -152,10 +148,10 @@ export async function POST(request: NextRequest) {
         'Letter generated successfully by AI'
       )
 
-      // 11. Notify admins
+      // 10. Notify admins
       await notifyAdminsNewLetter(newLetter.id, newLetter.title, sanitizedLetterType)
 
-      // 12. Return success response
+      // 11. Return success response
       return successResponse<LetterGenerationResponse>({
         success: true,
         letterId: newLetter.id,
