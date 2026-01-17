@@ -4,6 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { authRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis";
 import { sendTemplateEmail } from "@/lib/email";
 import { getServiceRoleClient } from "@/lib/supabase/admin";
+import type { Database } from "@/lib/database.types";
+
+type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,10 +103,10 @@ export async function POST(request: NextRequest) {
     // Use service role client for profile creation (elevated permissions)
     const serviceClient = getServiceRoleClient();
 
-    const profileInsert = {
+    const profileInsert: ProfileInsert = {
       id: user.id,
       email: email.toLowerCase().trim(),
-      role: requestedRole,
+      role: requestedRole as ProfileInsert["role"],
       full_name: fullName.trim(),
     };
 
