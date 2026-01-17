@@ -1,5 +1,5 @@
 export type UserRole = "subscriber" | "employee" | "admin";
-export type AdminSubRole = "system_admin" | "attorney_admin" | "super_admin";
+export type AdminSubRole = "super_admin" | "attorney_admin";
 
 export type LetterStatus =
   | "draft"
@@ -10,11 +10,10 @@ export type LetterStatus =
   | "completed"
   | "rejected"
   | "failed"
-  | "sent";
+  ;
 
 export type SubscriptionStatus =
   | "active"
-  | "pending"
   | "canceled"
   | "past_due"
   | "payment_failed"
