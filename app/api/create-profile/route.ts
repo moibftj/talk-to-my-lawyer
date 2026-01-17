@@ -130,14 +130,11 @@ export async function POST(request: NextRequest) {
     // We verify it was created successfully here.
     if (role === "employee") {
       // Wait a moment for trigger to complete, then verify coupon exists
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: couponData, error: couponCheckError } = (await (
-        serviceClient as any
-      )
+      const { data: couponData, error: couponCheckError } = await serviceClient
         .from("employee_coupons")
         .select("code")
         .eq("employee_id", user.id)
-        .single()) as { data: { code: string } | null; error: Error | null };
+        .single();
 
       if (couponCheckError || !couponData) {
         // Trigger may have failed - create coupon manually as fallback
@@ -153,8 +150,7 @@ export async function POST(request: NextRequest) {
         };
         const { error: couponInsertError } = await serviceClient
           .from("employee_coupons")
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .insert(couponInsert as any);
+          .insert(couponInsert);
 
         if (couponInsertError) {
           console.error(
