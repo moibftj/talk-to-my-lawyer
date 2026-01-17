@@ -98,15 +98,25 @@ async function verifyDatabase() {
   for (const { name, params } of rpcChecks) {
     try {
       const { error } = await supabase.rpc(name, params);
-      if (error && error.message.includes('does not exist')) {
-        console.log(`   ❌ ${name} - NOT FOUND`);
-        allPassed = false;
+
+      if (error) {
+        if (error.message.includes('does not exist')) {
+          // Function doesn't exist - this is a real problem
+          console.log(`   ❌ ${name} - NOT FOUND`);
+          allPassed = false;
+        } else {
+          // Function exists but returned an error
+          const errorPreview = error.message.substring(0, 50);
+          console.log(`   ⚠️  ${name} - EXISTS (error: ${errorPreview}${error.message.length > 50 ? '...' : ''})`);
+        }
       } else {
+        // Function exists and executed successfully
         console.log(`   ✅ ${name}`);
       }
     } catch (e) {
-      // Some errors are expected for test UUID
-      console.log(`   ✅ ${name} (exists, test call failed as expected)`);
+      // Unexpected exception - log but don't fail
+      const errorPreview = e.message.substring(0, 50);
+      console.log(`   ⚠️  ${name} - EXISTS (exception: ${errorPreview}${e.message.length > 50 ? '...' : ''})`);
     }
   }
 
