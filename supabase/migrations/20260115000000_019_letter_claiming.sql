@@ -224,5 +224,19 @@ COMMENT ON FUNCTION public.claim_letter IS 'Claims a letter for review. Returns 
 COMMENT ON FUNCTION public.release_letter_claim IS 'Releases a letter claim. Only the claim owner can release.';
 COMMENT ON FUNCTION public.get_pending_letters_count IS 'Returns the count of letters pending or under review';
 
--- Enable realtime on letters table for claim status updates
-ALTER PUBLICATION supabase_realtime ADD TABLE letters;
+-- Enable realtime on letters table for claim status updates (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_rel pr
+    JOIN pg_class c ON c.oid = pr.prrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    JOIN pg_publication p ON p.oid = pr.prpubid
+    WHERE p.pubname = 'supabase_realtime'
+      AND n.nspname = 'public'
+      AND c.relname = 'letters'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.letters;
+  END IF;
+END $$;
