@@ -10,7 +10,9 @@
  * - Fallback models
  */
 
-import { createOpenAI } from "@ai-sdk/openai"
+import { createOpenAI, OpenAIProvider } from "@ai-sdk/openai"
+
+let openAIProviderInstance: OpenAIProvider | null = null
 
 /**
  * Get an OpenAI provider configured for Vercel AI Gateway (if available)
@@ -19,19 +21,25 @@ import { createOpenAI } from "@ai-sdk/openai"
  * @returns OpenAI provider function (call with model name to get a model)
  */
 export function getOpenAIProvider() {
+  if (openAIProviderInstance) {
+    return openAIProviderInstance
+  }
+
   const gatewayApiKey = process.env.AI_GATEWAY_API_KEY
 
   if (gatewayApiKey) {
     // Route through Vercel AI Gateway for enhanced observability and control
-    return createOpenAI({
+    openAIProviderInstance = createOpenAI({
       baseURL: 'https://gateway.vercel.ai/api/providers/openai',
       apiKey: gatewayApiKey,
     })
+  } else {
+    // Direct OpenAI connection (fallback)
+    // Uses OPENAI_API_KEY environment variable by default
+    openAIProviderInstance = createOpenAI()
   }
 
-  // Direct OpenAI connection (fallback)
-  // Uses OPENAI_API_KEY environment variable by default
-  return createOpenAI()
+  return openAIProviderInstance
 }
 
 /**

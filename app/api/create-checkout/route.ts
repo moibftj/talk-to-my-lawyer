@@ -4,9 +4,7 @@ import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redi
 import { validateCouponWithFraudDetection } from '@/lib/fraud-detection/coupon-fraud'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { PLAN_CONFIG } from '@/lib/constants'
-import { createStripeClient } from '@/lib/stripe/client'
-
-const stripe = createStripeClient()
+import { getStripeClient } from '@/lib/stripe/client'
 
 const TEST_MODE = process.env.ENABLE_TEST_MODE === 'true'
 
@@ -247,6 +245,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ===== PRODUCTION MODE: Use Stripe for real payments =====
+    const stripe = getStripeClient()
     if (!stripe) {
       throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.')
     }

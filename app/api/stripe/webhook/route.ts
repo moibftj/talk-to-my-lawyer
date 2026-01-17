@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { queueTemplateEmail } from '@/lib/email/service'
-import { createStripeClient } from '@/lib/stripe/client'
-
-const stripe = createStripeClient()
+import { getStripeClient } from '@/lib/stripe/client'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -26,6 +24,8 @@ function getSupabaseServiceClient() {
 }
 
 export async function POST(request: NextRequest) {
+  const stripe = getStripeClient()
+
   if (!stripe || !webhookSecret) {
     console.error('[StripeWebhook] Stripe not configured')
     return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })

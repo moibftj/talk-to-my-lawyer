@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-import { createStripeClient } from '@/lib/stripe/client'
+import { getStripeClient } from '@/lib/stripe/client'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
-
-function getStripeClient(): Stripe {
-  const stripe = createStripeClient()
-
-  if (!stripe) {
-    throw new Error('Missing or invalid STRIPE_SECRET_KEY environment variable')
-  }
-
-  return stripe
-}
 
 function getSupabaseServiceClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -49,6 +39,9 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripeClient()
+    if (!stripe) {
+      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+    }
     const supabase = getSupabaseServiceClient()
 
     // Retrieve the session from Stripe
