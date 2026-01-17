@@ -71,6 +71,109 @@ This repo implements an end-to-end supervised letter generation workflow where A
 
 Security & audit: prompts, model outputs, and review actions are retained for compliance; RLS and role checks ensure drafts are not exposed to unauthorized employees.
 
+## Detailed API Routes
+
+### Auth
+
+- `POST /api/auth/resend-confirmation` — Resend confirmation email.
+- `POST /api/auth/reset-password` — Send a password reset email.
+- `POST /api/auth/send-email` — Send account-related email.
+- `POST /api/auth/update-password` — Update the user password after reset.
+
+### Admin auth
+
+- `POST /api/admin-auth/login` — Admin login (creates admin session; routes by sub-role).
+- `POST /api/admin-auth/logout` — Admin logout (clears admin session).
+
+### Profile
+
+- `POST /api/create-profile` — Create/update the user profile row after signup.
+
+### Checkout & billing
+
+- `POST /api/create-checkout` — Create a checkout flow (Stripe session or free flow) for a plan/coupon.
+- `POST /api/verify-payment` — Verify checkout and finalize subscription/credits.
+- `GET /api/subscriptions/check-allowance` — Return remaining letter credits/allowance.
+- `GET /api/subscriptions/billing-history` — Return billing history for the current user.
+- `POST /api/subscriptions/activate` — Activate the current user’s subscription and apply allowances.
+- `POST /api/subscriptions/reset-monthly` — Cron reset of monthly allowances.
+
+### Letters
+
+- `POST /api/generate-letter` — Generate an AI draft letter for a subscriber (for attorney review).
+- `POST /api/letters/drafts` — Create/update a draft letter (autosave).
+- `GET /api/letters/drafts` — List the user’s draft letters.
+
+- `POST /api/letters/[id]/submit` — Submit a letter for attorney review.
+- `POST /api/letters/[id]/start-review` — Mark a letter as under review (attorney/admin).
+
+- `GET /api/letters/[id]/approve` — Get CSRF token for the approve action.
+- `POST /api/letters/[id]/approve` — Approve a letter (attorney/admin action).
+- `POST /api/letters/[id]/reject` — Reject a letter with a reason (attorney/admin action).
+- `POST /api/letters/[id]/resubmit` — Resubmit a rejected letter.
+
+- `POST /api/letters/[id]/complete` — Mark a letter as completed.
+- `DELETE /api/letters/[id]/delete` — Delete a letter (draft/rejected/failed; user-owned).
+
+- `POST /api/letters/[id]/improve` — Improve a specific letter via AI.
+- `POST /api/letters/improve` — Improve provided letter content via AI (admin tool).
+
+- `GET /api/letters/[id]/pdf` — Generate/download a letter PDF.
+- `POST /api/letters/[id]/send-email` — Queue sending a letter by email.
+- `GET /api/letters/[id]/audit` — Fetch a letter’s audit trail.
+
+### Admin
+
+- `GET /api/admin/csrf` — Get a CSRF token for admin actions.
+- `GET /api/admin/letters` — List letters for admin review/management.
+- `POST /api/admin/letters/[id]/update` — Update a letter (admin edit).
+- `POST /api/admin/letters/batch` — Bulk update letters (admin).
+
+- `GET /api/admin/analytics` — Fetch admin analytics/stats.
+
+- `GET /api/admin/coupons` — List coupons and usage stats.
+- `POST /api/admin/coupons/create` — Create a promo coupon.
+- `PATCH /api/admin/coupons/create` — Toggle promo coupon active status.
+
+- `GET /api/admin/email-queue` — View email queue items + stats.
+- `POST /api/admin/email-queue` — Trigger queue processing or manage retries/cleanup.
+
+### Employee
+
+- `GET /api/employee/referral-link` — Get employee coupon + referral/share links.
+- `GET /api/employee/payouts` — Get employee commission/payout summary.
+- `POST /api/employee/payouts` — Request a commission payout.
+
+### GDPR
+
+- `POST /api/gdpr/accept-privacy-policy` — Record privacy policy acceptance/consents.
+- `GET /api/gdpr/accept-privacy-policy` — Check acceptance for a required version.
+
+- `POST /api/gdpr/export-data` — Create (and possibly immediately fulfill) a user data export request.
+- `GET /api/gdpr/export-data` — List recent export requests for the current user.
+
+- `POST /api/gdpr/delete-account` — Create an account deletion request.
+- `GET /api/gdpr/delete-account` — List deletion requests/status for the current user.
+- `DELETE /api/gdpr/delete-account` — Admin executes an approved deletion request.
+
+### Email (edge)
+
+- `POST /api/email/send` — Internal edge email send.
+- `POST /api/email/process-queue` — Process queued emails (edge).
+
+### Stripe
+
+- `POST /api/stripe/webhook` — Handle Stripe webhook events.
+
+### Health
+
+- `GET /api/health` — Basic service health check.
+- `GET /api/health/detailed` — Detailed health diagnostics.
+
+### Testing (test mode)
+
+- `POST /api/test/create-accounts` — Create test accounts.
+
 ### Common Email Issues
 
 | Issue                  | Solution                              | Where to Look                                                  |
