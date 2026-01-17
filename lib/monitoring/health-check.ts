@@ -181,8 +181,15 @@ export class HealthChecker {
 
       const responseTime = Date.now() - startTime
 
-      // Auth service is healthy if we get a response (even error is fine)
-      if (error && !error.message.includes('Invalid')) {
+      const isMissingSession = !!error && (
+        error.name === 'AuthSessionMissingError' ||
+        error.message.includes('Auth session missing') ||
+        error.message.includes('no session')
+      )
+      const isInvalidAuth = !!error && error.message.includes('Invalid')
+
+      // Auth service is healthy if we get a response, even without a session.
+      if (error && !(isMissingSession || isInvalidAuth)) {
         return {
           status: 'unhealthy',
           responseTime,
@@ -196,7 +203,8 @@ export class HealthChecker {
         responseTime,
         details: {
           serviceAvailable: true,
-          authenticated: !!data.user
+          authenticated: !!data.user,
+          missingSession: isMissingSession
         }
       }
 
