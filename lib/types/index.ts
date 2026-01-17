@@ -55,8 +55,5 @@ export type {
   LetterGenerationResponse,
 } from "./letter.types";
 
-// Re-export constants
-export { LETTER_STATUSES, USER_ROLES } from "./api";
-
 // Re-export type guards
 export { isSupabaseError, isSupabaseSuccess } from "./api";

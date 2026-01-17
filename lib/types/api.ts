@@ -32,9 +32,6 @@ export type {
 // Import types for use in this file
 import type { LetterStatus, Profile } from "@/lib/database.types";
 
-// Re-export constants from centralized location (single source of truth)
-export { LETTER_STATUSES, USER_ROLES } from "@/lib/constants";
-
 // API Route Handler Types
 export interface RouteContext<TParams = Record<string, string>> {
   params: TParams;
