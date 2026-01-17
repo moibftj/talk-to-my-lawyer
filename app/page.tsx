@@ -208,7 +208,7 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30 text-gray-900 grid-pattern">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30 text-gray-900 grid-pattern">
         {/* Navigation Header */}
         <nav
           className={`glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 transition-all duration-300 ${
@@ -282,7 +282,7 @@ export default function HomePage() {
           <div className="absolute inset-0 overflow-hidden">
             {/* Large morphing gradient orb */}
             <motion.div
-              className="absolute w-[800px] h-[800px] rounded-full opacity-25 blur-3xl morphing-bg"
+              className="absolute w-200 h-200 rounded-full opacity-25 blur-3xl morphing-bg"
               style={{
                 background:
                   "radial-gradient(circle, #199df4 0%, #0d8ae0 40%, #0066cc 100%)",
@@ -302,7 +302,7 @@ export default function HomePage() {
 
             {/* Secondary orb with different timing */}
             <motion.div
-              className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-3xl morphing-bg"
+              className="absolute w-150 h-150 rounded-full opacity-20 blur-3xl morphing-bg"
               style={{
                 background:
                   "radial-gradient(circle, #199df4 0%, #4facfe 50%, #00f2fe 100%)",
@@ -407,7 +407,7 @@ export default function HomePage() {
                 ].map((service, index) => (
                   <motion.span
                     key={service}
-                    className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm"
+                    className="inline-flex items-center px-4 py-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm"
                     variants={{
                       hidden: { opacity: 0, scale: 0.8 },
                       visible: {
@@ -605,7 +605,7 @@ export default function HomePage() {
         </section>
 
         {/* Stats Section */}
-        <section className="py-16 bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white overflow-hidden">
+        <section className="py-16 bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div className="scroll-reveal stagger-1 counter-animate">
@@ -781,7 +781,7 @@ export default function HomePage() {
 
                     <CardHeader className="relative z-10">
                       <motion.div
-                        className={`w-14 h-14 rounded-xl bg-gradient-to-br ${type.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl transition-all duration-300`}
+                        className={`w-14 h-14 rounded-xl bg-linear-to-br ${type.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl transition-all duration-300`}
                         whileHover={{
                           rotate: [0, -5, 5, 0],
                           scale: 1.1,
@@ -872,7 +872,7 @@ export default function HomePage() {
         </section>
 
         {/* Footer */}
-        <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-16">
+        <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
