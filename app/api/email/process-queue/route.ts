@@ -24,7 +24,7 @@ interface PendingEmail {
  * - Optimal for cron jobs with tight schedules
  *
  * Called by:
- * - Vercel Cron (vercel.json) 
+ * - Vercel Cron (vercel.json)
  * - Admin panel (/api/admin/email-queue POST action=process)
  * - External cron services
  * - Database webhooks (on email_queue insert)
@@ -33,18 +33,18 @@ interface PendingEmail {
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  const clientIP = request.headers.get('x-forwarded-for') || 'unknown';
+  const clientIP = request.headers.get("x-forwarded-for") || "unknown";
 
   try {
     // Rate limiting: Max 60 requests per minute per IP
     const rateLimitKey = `email_queue:${clientIP}`;
     const maxRequests = 60;
     const windowMs = 60 * 1000; // 1 minute
-    
+
     // Simple rate limiting using timestamp check
     const now = Date.now();
-    const rateLimitData = request.headers.get('x-rate-limit-bypass');
-    
+    const rateLimitData = request.headers.get("x-rate-limit-bypass");
+
     if (!rateLimitData) {
       // Skip rate limiting for now in Edge runtime, implement if needed
       console.log(`[Edge Queue] Processing from IP: ${clientIP}`);
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
     const searchParams = request.nextUrl.searchParams;
     const providedSecret =
-      authHeader?.replace("Bearer ", "") || 
+      authHeader?.replace("Bearer ", "") ||
       searchParams.get("secret") ||
       request.headers.get("x-cron-secret"); // Support multiple auth methods
     const expectedSecret = process.env.CRON_SECRET;
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Get processing parameters from request body (if any)
     let batchSize = 10; // Default
     let forceProcessing = false;
-    
+
     try {
       const body = await request.json().catch(() => ({}));
       batchSize = Math.min(body.batchSize || 10, 50); // Max 50 emails per batch
@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get pending emails using RPC function with batch size
-    const { data: emails, error: fetchError } = await supabase.rpc(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: emails, error: fetchError } = await (supabase as any).rpc(
       "get_pending_emails",
       { p_limit: batchSize },
     );
@@ -185,25 +186,28 @@ export async function POST(request: NextRequest) {
       duration: Date.now() - startTime,
       batchSize,
       timestamp: new Date().toISOString(),
-      runtime: 'edge'
+      runtime: "edge",
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     const duration = Date.now() - startTime;
-    
+
     console.error("[Edge Queue] Critical error:", {
       error: message,
       duration,
       clientIP,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
-    return NextResponse.json({ 
-      error: message, 
-      duration,
-      runtime: 'edge',
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: message,
+        duration,
+        runtime: "edge",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 },
+    );
   }
 }
 
