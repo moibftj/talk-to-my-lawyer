@@ -73,19 +73,23 @@ Security & audit: prompts, model outputs, and review actions are retained for co
 ## API Routes (detailed)
 
 ### Auth
+
 - POST /api/auth/resend-confirmation
 - POST /api/auth/reset-password
 - POST /api/auth/send-email
 - POST /api/auth/update-password
 
 ### Admin auth
+
 - POST /api/admin-auth/login
 - POST /api/admin-auth/logout
 
 ### Profile
+
 - POST /api/create-profile
 
 ### Checkout & billing
+
 - POST /api/create-checkout
 - POST /api/verify-payment
 - GET /api/subscriptions/check-allowance
@@ -94,6 +98,7 @@ Security & audit: prompts, model outputs, and review actions are retained for co
 - POST /api/subscriptions/reset-monthly
 
 ### Letters
+
 - POST /api/generate-letter
 - GET /api/letters/drafts
 - POST /api/letters/drafts
@@ -112,6 +117,7 @@ Security & audit: prompts, model outputs, and review actions are retained for co
 - GET /api/letters/[id]/audit
 
 ### Admin
+
 - GET /api/admin/csrf
 - GET /api/admin/letters
 - POST /api/admin/letters/batch
@@ -124,11 +130,13 @@ Security & audit: prompts, model outputs, and review actions are retained for co
 - POST /api/admin/email-queue
 
 ### Employee
+
 - GET /api/employee/referral-link
 - GET /api/employee/payouts
 - POST /api/employee/payouts
 
 ### GDPR
+
 - GET /api/gdpr/accept-privacy-policy
 - POST /api/gdpr/accept-privacy-policy
 - GET /api/gdpr/export-data
@@ -138,21 +146,26 @@ Security & audit: prompts, model outputs, and review actions are retained for co
 - DELETE /api/gdpr/delete-account
 
 ### Email
+
 - POST /api/email/send
 - POST /api/email/process-queue
 
 ### Cron
+
 - GET /api/cron/process-email-queue
 - POST /api/cron/process-email-queue
 
 ### Stripe
+
 - POST /api/stripe/webhook
 
 ### Health
+
 - GET /api/health
 - GET /api/health/detailed
 
 ### Test
+
 - POST /api/test/create-accounts
 
 ### Common Email Issues

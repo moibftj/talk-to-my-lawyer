@@ -71,6 +71,91 @@ This repo implements an end-to-end supervised letter generation workflow where A
 
 Security & audit: prompts, model outputs, and review actions are retained for compliance; RLS and role checks ensure drafts are not exposed to unauthorized employees.
 
+## API Routes (detailed)
+
+### Auth
+- POST /api/auth/resend-confirmation
+- POST /api/auth/reset-password
+- POST /api/auth/send-email
+- POST /api/auth/update-password
+
+### Admin auth
+- POST /api/admin-auth/login
+- POST /api/admin-auth/logout
+
+### Profile
+- POST /api/create-profile
+
+### Checkout & billing
+- POST /api/create-checkout
+- POST /api/verify-payment
+- GET /api/subscriptions/check-allowance
+- GET /api/subscriptions/billing-history
+- POST /api/subscriptions/activate
+- POST /api/subscriptions/reset-monthly
+
+### Letters
+- POST /api/generate-letter
+- GET /api/letters/drafts
+- POST /api/letters/drafts
+- POST /api/letters/improve
+- POST /api/letters/[id]/submit
+- POST /api/letters/[id]/start-review
+- GET /api/letters/[id]/approve
+- POST /api/letters/[id]/approve
+- POST /api/letters/[id]/reject
+- POST /api/letters/[id]/resubmit
+- POST /api/letters/[id]/complete
+- DELETE /api/letters/[id]/delete
+- POST /api/letters/[id]/improve
+- GET /api/letters/[id]/pdf
+- POST /api/letters/[id]/send-email
+- GET /api/letters/[id]/audit
+
+### Admin
+- GET /api/admin/csrf
+- GET /api/admin/letters
+- POST /api/admin/letters/batch
+- POST /api/admin/letters/[id]/update
+- GET /api/admin/analytics
+- GET /api/admin/coupons
+- POST /api/admin/coupons/create
+- PATCH /api/admin/coupons/create
+- GET /api/admin/email-queue
+- POST /api/admin/email-queue
+
+### Employee
+- GET /api/employee/referral-link
+- GET /api/employee/payouts
+- POST /api/employee/payouts
+
+### GDPR
+- GET /api/gdpr/accept-privacy-policy
+- POST /api/gdpr/accept-privacy-policy
+- GET /api/gdpr/export-data
+- POST /api/gdpr/export-data
+- GET /api/gdpr/delete-account
+- POST /api/gdpr/delete-account
+- DELETE /api/gdpr/delete-account
+
+### Email
+- POST /api/email/send
+- POST /api/email/process-queue
+
+### Cron
+- GET /api/cron/process-email-queue
+- POST /api/cron/process-email-queue
+
+### Stripe
+- POST /api/stripe/webhook
+
+### Health
+- GET /api/health
+- GET /api/health/detailed
+
+### Test
+- POST /api/test/create-accounts
+
 ### Common Email Issues
 
 | Issue                  | Solution                              | Where to Look                                                  |
