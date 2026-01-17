@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
-import { Analytics } from "@vercel/analytics/next"
+// TODO: Re-enable once Vercel fixes recursion issue with Analytics
+// import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const DEFAULT_APP_URL = 'https://www.talk-to-my-lawyer.com'
@@ -45,7 +46,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
-        <Analytics />
+        {/* <Analytics /> */}
       </body>
     </html>
   )

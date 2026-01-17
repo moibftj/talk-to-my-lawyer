@@ -1,35 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
-import { createStripeClient } from '@/lib/stripe/client'
+import { getStripeClient } from '@/lib/stripe/client'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
-
-function getStripeClient(): Stripe {
-  const stripe = createStripeClient()
-
-  if (!stripe) {
-    throw new Error('Missing or invalid STRIPE_SECRET_KEY environment variable')
-  }
-
-  return stripe
-}
-
-function getSupabaseServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('Missing Supabase service configuration')
-  }
-
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
-}
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,7 +24,10 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = getStripeClient()
-    const supabase = getSupabaseServiceClient()
+    if (!stripe) {
+      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+    }
+    const supabase = getServiceRoleClient()
 
     // Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId)

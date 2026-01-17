@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { EmailMessage } from './types'
 import { getEmailService } from './service'
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 // Database row type matching the actual schema (snake_case)
 interface EmailQueueRow {
@@ -43,10 +44,7 @@ export class EmailQueue {
   private tableName = 'email_queue' as const
 
   constructor() {
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    this.supabase = getServiceRoleClient()
   }
 
   /**
@@ -240,28 +238,67 @@ export function getEmailQueue(): EmailQueue {
 }
 
 /**
- * Process email queue and return results
- * Used by cron endpoint
+ * Process email queue using the optimized Edge processor
+ * This function is now a thin wrapper that delegates to the Edge runtime
  */
 export async function processEmailQueue(): Promise<{
   processed: number
+  sent: number
   failed: number
   remaining: number
 }> {
-  const queue = getEmailQueue()
-  
-  // Get initial stats
-  const beforeStats = await queue.getStats()
-  
-  // Process pending emails
-  await queue.processPending()
-  
-  // Get updated stats
-  const afterStats = await queue.getStats()
-  
-  return {
-    processed: beforeStats.pending - afterStats.pending,
-    failed: afterStats.failed - beforeStats.failed,
-    remaining: afterStats.pending
+  try {
+    // Delegate to the Edge processor for optimal performance
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}` 
+      : process.env.NEXTAUTH_URL || 'http://localhost:3000'
+    
+    const processorUrl = `${baseUrl}/api/email/process-queue`
+    const cronSecret = process.env.CRON_SECRET
+    
+    console.log('[EmailQueue] Delegating to Edge processor:', processorUrl)
+    
+    const response = await fetch(processorUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': cronSecret ? `Bearer ${cronSecret}` : '',
+        'Content-Type': 'application/json',
+        'x-rate-limit-bypass': 'internal'
+      },
+      body: JSON.stringify({ 
+        batchSize: 25, // Larger batch for internal processing
+        force: true 
+      })
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `Edge processor failed: ${response.status}`)
+    }
+    
+    const result = await response.json()
+    
+    // Map Edge processor response to legacy format
+    return {
+      processed: result.processed || 0,
+      sent: result.sent || 0,
+      failed: result.failed || 0,
+      remaining: 0 // Edge processor doesn't return this, would need a separate call
+    }
+  } catch (error) {
+    console.error('[EmailQueue] Edge processor failed, using fallback:', error)
+    
+    // Fallback to legacy processing only as last resort
+    const queue = getEmailQueue()
+    const beforeStats = await queue.getStats()
+    await queue.processPending()
+    const afterStats = await queue.getStats()
+    
+    return {
+      processed: beforeStats.pending - afterStats.pending,
+      sent: 0, // Legacy doesn't track this separately
+      failed: afterStats.failed - beforeStats.failed,
+      remaining: afterStats.pending
+    }
   }
 }

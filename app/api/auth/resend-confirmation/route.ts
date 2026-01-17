@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendTemplateEmail } from '@/lib/email'
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 /**
  * API endpoint to resend confirmation emails via Resend
@@ -24,17 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase admin client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
-    }
-
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
+    const supabase = getServiceRoleClient()
 
     // Get user by email
     const { data: users, error: listError } = await supabase.auth.admin.listUsers()

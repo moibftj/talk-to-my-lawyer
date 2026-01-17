@@ -54,3 +54,16 @@ export function createStripeClient(): Stripe | null {
     return null
   }
 }
+
+let stripeInstance: Stripe | null = null
+
+/**
+ * Gets the singleton Stripe client instance
+ * Use this instead of createStripeClient for better performance
+ */
+export function getStripeClient(): Stripe | null {
+  if (!stripeInstance) {
+    stripeInstance = createStripeClient()
+  }
+  return stripeInstance
+}

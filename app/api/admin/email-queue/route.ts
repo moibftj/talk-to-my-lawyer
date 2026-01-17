@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
-import { processEmailQueue } from '@/lib/email/queue'
 import { validateSystemAdminAction } from '@/lib/admin/letter-actions'
 
 export const runtime = 'nodejs'
@@ -86,13 +85,56 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
 
     if (action === 'process') {
-      // Process pending emails
-      const result = await processEmailQueue()
-      return NextResponse.json({
-        success: true,
-        message: 'Email queue processing triggered',
-        result
-      })
+      // Trigger the Edge-based email processor for better performance
+      const processorUrl = `${process.env.VERCEL_URL || request.nextUrl.origin}/api/email/process-queue`
+      const cronSecret = process.env.CRON_SECRET
+      
+      try {
+        const response = await fetch(processorUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': cronSecret ? `Bearer ${cronSecret}` : '',
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to trigger email processing')
+        }
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Email queue processing triggered via Edge runtime',
+          result
+        })
+      } catch (fetchError: any) {
+        console.error('[EmailQueue] Edge processor failed, falling back to direct processing:', fetchError)
+        
+        // Fallback to direct processing if Edge processor fails
+        const { data: emails, error: fetchError2 } = await supabase
+          .from('email_queue')
+          .select('*')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: true })
+          .limit(10)
+        
+        if (fetchError2 || !emails?.length) {
+          return NextResponse.json({
+            success: true,
+            message: 'No pending emails to process',
+            result: { processed: 0, sent: 0, failed: 0 }
+          })
+        }
+        
+        return NextResponse.json({
+          success: false,
+          message: 'Edge processor unavailable. Use external email processor.',
+          fallback: true,
+          pendingCount: emails.length
+        })
+      }
     }
 
     if (action === 'retry' && emailId) {

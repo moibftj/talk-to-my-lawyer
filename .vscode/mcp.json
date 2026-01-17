@@ -1,4 +1,12 @@
 {
+	"inputs": [
+		{
+			"id": "token",
+			"type": "promptString",
+			"description": "GitHub Personal Access Token",
+			"password": true
+		}
+	],
 	"servers": {
 		"io.github.vercel/next-devtools-mcp": {
 			"type": "stdio",
@@ -14,7 +22,20 @@
 			"url": "https://mcp.vercel.com",
 			"gallery": "https://api.mcp.github.com",
 			"version": "0.0.3"
+		},
+		"io.github.github/github-mcp-server": {
+			"type": "stdio",
+			"command": "docker",
+			"args": [
+				"run",
+				"-i",
+				"--rm",
+				"-e",
+				"GITHUB_PERSONAL_ACCESS_TOKEN=${input:token}",
+				"ghcr.io/github/github-mcp-server:0.28.1"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.28.1"
 		}
-	},
-	"inputs": []
+	}
 }

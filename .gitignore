@@ -117,3 +117,10 @@ vercel-env.json
 *.crt
 *.p12
 *.pfx
+
+# User requested ignores
+*.md
+test_reports/
+coverage/
+.nyc_output/
+junit.xml

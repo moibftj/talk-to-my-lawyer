@@ -4,84 +4,87 @@ import type {
   EmailProviderInterface,
   EmailTemplate,
   TemplateData,
-} from './types'
-import { ResendProvider } from './providers/resend'
-import { renderTemplate } from './templates'
-import { emailConfig } from '@/lib/config'
+} from "./types";
+import { ResendProvider } from "./providers/resend";
+import { renderTemplate } from "./templates";
+import { emailConfig } from "@/lib/config";
 
 class EmailService {
-  private provider: EmailProviderInterface
-  private fromEmail: string
-  private fromName: string
+  private provider: EmailProviderInterface;
+  private fromEmail: string;
+  private fromName: string;
 
   constructor() {
     // Resend is the only email provider
-    this.provider = new ResendProvider()
+    this.provider = new ResendProvider();
 
-    this.fromEmail = emailConfig.from
-    this.fromName = emailConfig.fromName
+    this.fromEmail = emailConfig.from;
+    this.fromName = emailConfig.fromName;
 
     // Verify Resend is configured
     if (!this.provider.isConfigured()) {
-      const msg = 'Resend is not configured! Set RESEND_API_KEY environment variable.';
-      console.error('[EmailService]', msg);
-
-      // In production, fail fast - emails are critical
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error(`[EmailService] ${msg}`);
-      }
+      console.error(
+        "[EmailService] Resend is not configured! Set RESEND_API_KEY environment variable.",
+      );
     }
   }
 
   isConfigured(): boolean {
-    return this.provider.isConfigured()
+    return this.provider.isConfigured();
   }
 
   getDefaultFrom(): { email: string; name: string } {
     return {
       email: this.fromEmail,
       name: this.fromName,
-    }
+    };
   }
 
   async send(message: EmailMessage): Promise<EmailResult> {
     const messageWithDefaults: EmailMessage = {
       ...message,
       from: message.from || this.getDefaultFrom(),
-    }
+    };
 
     try {
-      const result = await this.provider.send(messageWithDefaults)
+      const result = await this.provider.send(messageWithDefaults);
 
       if (result.success) {
-        console.log(`[EmailService] Email sent successfully via ${result.provider}:`, {
-          to: message.to,
-          subject: message.subject,
-          messageId: result.messageId,
-        })
+        console.log(
+          `[EmailService] Email sent successfully via ${result.provider}:`,
+          {
+            to: message.to,
+            subject: message.subject,
+            messageId: result.messageId,
+          },
+        );
       } else {
-        console.error(`[EmailService] Failed to send email via ${result.provider}:`, result.error)
+        console.error(
+          `[EmailService] Failed to send email via ${result.provider}:`,
+          result.error,
+        );
       }
 
-      return result
+      return result;
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[EmailService] Unexpected error:', errorMessage)
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("[EmailService] Unexpected error:", errorMessage);
 
       return {
         success: false,
         error: errorMessage,
         provider: this.provider.name,
-      }
+      };
     }
   }
 
   async sendTemplate(
     template: EmailTemplate,
     to: string | string[],
-    data: TemplateData
+    data: TemplateData,
   ): Promise<EmailResult> {
-    const { subject, text, html } = renderTemplate(template, data)
+    const { subject, text, html } = renderTemplate(template, data);
 
     // Automatically add reply-to for better deliverability
     const message: EmailMessage = {
@@ -89,15 +92,15 @@ class EmailService {
       subject,
       text,
       html,
-    }
+    };
 
     // Add reply-to header if EMAIL_REPLY_TO is configured
-    const replyToEmail = process.env.EMAIL_REPLY_TO || process.env.ADMIN_EMAIL
+    const replyToEmail = process.env.EMAIL_REPLY_TO || process.env.ADMIN_EMAIL;
     if (replyToEmail && !this.isCriticalSecurityEmail(template)) {
-      message.replyTo = replyToEmail
+      message.replyTo = replyToEmail;
     }
 
-    return this.send(message)
+    return this.send(message);
   }
 
   /**
@@ -105,63 +108,68 @@ class EmailService {
    */
   private isCriticalSecurityEmail(template: EmailTemplate): boolean {
     const securityTemplates: EmailTemplate[] = [
-      'password-reset',
-      'security-alert',
-      'admin-alert',
-      'account-suspended',
-    ]
-    return securityTemplates.includes(template)
+      "password-reset",
+      "security-alert",
+      "admin-alert",
+      "account-suspended",
+    ];
+    return securityTemplates.includes(template);
   }
 
   async sendWithRetry(
     message: EmailMessage,
     maxRetries: number = 3,
-    delayMs: number = 1000
+    delayMs: number = 1000,
   ): Promise<EmailResult> {
-    let lastResult: EmailResult | null = null
+    let lastResult: EmailResult | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      const result = await this.send(message)
+      const result = await this.send(message);
 
       if (result.success) {
-        return result
+        return result;
       }
 
-      lastResult = result
-      console.warn(`[EmailService] Attempt ${attempt}/${maxRetries} failed:`, result.error)
+      lastResult = result;
+      console.warn(
+        `[EmailService] Attempt ${attempt}/${maxRetries} failed:`,
+        result.error,
+      );
 
       if (attempt < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, delayMs * attempt))
+        await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
       }
     }
 
-    return lastResult || {
-      success: false,
-      error: 'Max retries exceeded',
-      provider: this.provider.name,
-    }
+    return (
+      lastResult || {
+        success: false,
+        error: "Max retries exceeded",
+        provider: this.provider.name,
+      }
+    );
   }
 }
 
-let emailServiceInstance: EmailService | null = null
+let emailServiceInstance: EmailService | null = null;
 
 export function getEmailService(): EmailService {
   if (!emailServiceInstance) {
-    emailServiceInstance = new EmailService()
+    emailServiceInstance = new EmailService();
   }
-  return emailServiceInstance
+  return emailServiceInstance;
 }
 
 export async function sendEmail(message: EmailMessage): Promise<EmailResult> {
-  return getEmailService().send(message)
+  return getEmailService().send(message);
 }
 
 export async function sendTemplateEmail(
   template: EmailTemplate,
   to: string | string[],
-  data: TemplateData
+  data: TemplateData,
 ): Promise<EmailResult> {
-  return getEmailService().sendTemplate(template, to, data)
+  return getEmailService().sendTemplate(template, to, data);
 }
 
 /**
@@ -182,22 +190,25 @@ export async function queueTemplateEmail(
   template: EmailTemplate,
   to: string | string[],
   data: TemplateData,
-  maxRetries: number = 3
+  maxRetries: number = 3,
 ): Promise<string> {
-  const { renderTemplate } = await import('./templates')
-  const emailService = getEmailService()
+  const { renderTemplate } = await import("./templates");
+  const emailService = getEmailService();
 
   // Automatically add unsubscribe URL for marketing/transactional emails
-  const enhancedData = { ...data }
-  const shouldHaveUnsubscribe = shouldAddUnsubscribeLink(template)
+  const enhancedData = { ...data };
+  const shouldHaveUnsubscribe = shouldAddUnsubscribeLink(template);
 
   if (shouldHaveUnsubscribe && !enhancedData.unsubscribeUrl) {
     // Generate unsubscribe URL based on site URL
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://talk-to-my-lawyer.com'
-    enhancedData.unsubscribeUrl = `${siteUrl}/unsubscribe?email=${typeof to === 'string' ? to : to[0]}`
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      "https://talk-to-my-lawyer.com";
+    enhancedData.unsubscribeUrl = `${siteUrl}/unsubscribe?email=${typeof to === "string" ? to : to[0]}`;
   }
 
-  const { subject, text, html } = renderTemplate(template, enhancedData)
+  const { subject, text, html } = renderTemplate(template, enhancedData);
 
   // Build message with reply-to for better deliverability
   const message: EmailMessage = {
@@ -205,40 +216,53 @@ export async function queueTemplateEmail(
     subject,
     text,
     html,
-  }
+  };
 
   // Add reply-to header if EMAIL_REPLY_TO is configured
-  const replyToEmail = process.env.EMAIL_REPLY_TO || process.env.ADMIN_EMAIL
+  const replyToEmail = process.env.EMAIL_REPLY_TO || process.env.ADMIN_EMAIL;
   if (replyToEmail && !isCriticalSecurityEmail(template)) {
-    message.replyTo = replyToEmail
+    message.replyTo = replyToEmail;
   }
 
   // Try to send immediately first
   if (emailService.isConfigured()) {
     try {
-      const result = await emailService.send(message)
+      const result = await emailService.send(message);
 
       if (result.success) {
-        console.log('[Email] Sent immediately:', { to, subject, messageId: result.messageId })
-        return result.messageId || 'sent'
+        console.log("[Email] Sent immediately:", {
+          to,
+          subject,
+          messageId: result.messageId,
+        });
+        return result.messageId || "sent";
       }
 
-      console.warn('[Email] Immediate send failed, falling back to queue:', result.error)
+      console.warn(
+        "[Email] Immediate send failed, falling back to queue:",
+        result.error,
+      );
     } catch (error) {
-      console.warn('[Email] Immediate send error, falling back to queue:', error)
+      console.warn(
+        "[Email] Immediate send error, falling back to queue:",
+        error,
+      );
     }
   }
 
   // Fall back to queue for retry
-  const { getEmailQueue } = await import('./queue')
-  const queue = getEmailQueue()
+  const { getEmailQueue } = await import("./queue");
+  const queue = getEmailQueue();
 
-  return queue.enqueue({
-    to,
-    subject,
-    text,
-    html,
-  }, maxRetries)
+  return queue.enqueue(
+    {
+      to,
+      subject,
+      text,
+      html,
+    },
+    maxRetries,
+  );
 }
 
 /**
@@ -247,20 +271,20 @@ export async function queueTemplateEmail(
  */
 function shouldAddUnsubscribeLink(template: EmailTemplate): boolean {
   const marketingTemplates: EmailTemplate[] = [
-    'welcome',
-    'subscription-confirmation',
-    'subscription-renewal',
-    'subscription-cancelled',
-    'commission-earned',
-    'commission-paid',
-    'free-trial-ending',
-    'onboarding-complete',
-    'letter-generated',
-    'letter-approved',
-    'letter-rejected',
-    'letter-under-review',
-  ]
-  return marketingTemplates.includes(template)
+    "welcome",
+    "subscription-confirmation",
+    "subscription-renewal",
+    "subscription-cancelled",
+    "commission-earned",
+    "commission-paid",
+    "free-trial-ending",
+    "onboarding-complete",
+    "letter-generated",
+    "letter-approved",
+    "letter-rejected",
+    "letter-under-review",
+  ];
+  return marketingTemplates.includes(template);
 }
 
 /**
@@ -268,12 +292,69 @@ function shouldAddUnsubscribeLink(template: EmailTemplate): boolean {
  */
 function isCriticalSecurityEmail(template: EmailTemplate): boolean {
   const securityTemplates: EmailTemplate[] = [
-    'password-reset',
-    'security-alert',
-    'admin-alert',
-    'account-suspended',
-  ]
-  return securityTemplates.includes(template)
+    "password-reset",
+    "security-alert",
+    "admin-alert",
+    "account-suspended",
+  ];
+  return securityTemplates.includes(template);
 }
 
-export { EmailService }
+/**
+ * Send email via Edge Function for lower latency
+ * Falls back to direct send if edge function fails
+ */
+export async function sendViaEdge(
+  to: string | string[],
+  subject: string,
+  html: string,
+  text?: string,
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const serviceKey = process.env.INTERNAL_SERVICE_KEY;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL;
+
+  if (!serviceKey || !baseUrl) {
+    // Fall back to direct send
+    const emailService = getEmailService();
+    const result = await emailService.send({ to, subject, html, text });
+    return {
+      success: result.success,
+      messageId: result.messageId,
+      error: result.error,
+    };
+  }
+
+  try {
+    const response = await fetch(`${baseUrl}/api/email/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({ to, subject, html, text }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Edge function failed");
+    }
+
+    return {
+      success: true,
+      messageId: result.messageId,
+    };
+  } catch (error) {
+    console.error("[sendViaEdge] Failed, falling back to direct:", error);
+    // Fall back to direct send
+    const emailService = getEmailService();
+    const result = await emailService.send({ to, subject, html, text });
+    return {
+      success: result.success,
+      messageId: result.messageId,
+      error: result.error,
+    };
+  }
+}
+
+export { EmailService };

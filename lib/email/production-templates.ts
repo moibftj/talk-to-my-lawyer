@@ -213,7 +213,6 @@ export const PRODUCTION_EMAIL_CONFIG = {
   
   // Email provider settings
   provider: "resend", // Primary provider
-  fallbackProviders: ["brevo", "sendgrid"],
   
   // Queue settings
   queue: {

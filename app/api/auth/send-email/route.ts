@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendTemplateEmail, sendEmail } from '@/lib/email'
 import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 /**
  * Supabase Auth Hook for sending emails via Resend
@@ -16,7 +17,7 @@ import { createClient } from '@supabase/supabase-js'
  */
 
 // Verify the webhook signature from Supabase
-function verifyWebhookSignature(request: NextRequest): boolean {
+async function verifyWebhookSignature(request: NextRequest): Promise<boolean> {
   // In production, verify the signature using SUPABASE_AUTH_HOOK_SECRET
   const hookSecret = process.env.SUPABASE_AUTH_HOOK_SECRET
   if (!hookSecret) {
@@ -31,15 +32,33 @@ function verifyWebhookSignature(request: NextRequest): boolean {
     return false
   }
   
-  // TODO: Implement proper HMAC signature verification
-  // For now, just check if signature exists
-  return true
+  try {
+    const clonedReq = request.clone()
+    const bodyText = await clonedReq.text()
+    
+    // Create HMAC using sha256
+    const hmac = crypto.createHmac('sha256', hookSecret)
+    const digest = 'sha256=' + hmac.update(bodyText).digest('hex')
+    
+    // Constant time comparison to prevent timing attacks
+    const signatureBuffer = Buffer.from(signature)
+    const digestBuffer = Buffer.from(digest)
+    
+    if (signatureBuffer.length !== digestBuffer.length) {
+      return false
+    }
+    
+    return crypto.timingSafeEqual(signatureBuffer, digestBuffer)
+  } catch (error) {
+    console.error('[SendEmail] Signature verification failed:', error)
+    return false
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     // Verify webhook signature
-    if (!verifyWebhookSignature(request)) {
+    if (!await verifyWebhookSignature(request)) {
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }

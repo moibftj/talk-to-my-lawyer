@@ -30,8 +30,8 @@ export async function register() {
 
     shutdownManager.register('redis', async () => {
       console.log('[Shutdown] Closing Redis connections...')
-      // Redis connections are handled by ioredis
-      // They will be closed automatically by the graceful shutdown timeout
+      // Redis connections are handled by @upstash/redis (HTTP-based)
+      // No explicit cleanup needed
     })
 
     console.log('[Instrumentation] Server instrumentation complete')
