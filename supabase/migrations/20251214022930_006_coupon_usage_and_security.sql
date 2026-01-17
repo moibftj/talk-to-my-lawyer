@@ -58,21 +58,25 @@ CREATE INDEX IF NOT EXISTS idx_coupon_usage_created_at ON coupon_usage(created_a
 
 ALTER TABLE coupon_usage ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own coupon usage" ON coupon_usage;
 CREATE POLICY "Users can view own coupon usage"
     ON coupon_usage FOR SELECT
     TO authenticated
     USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Employees can view their coupon usage" ON coupon_usage;
 CREATE POLICY "Employees can view their coupon usage"
     ON coupon_usage FOR SELECT
     TO authenticated
     USING (auth.uid() = employee_id);
 
+DROP POLICY IF EXISTS "Admins can view all coupon usage" ON coupon_usage;
 CREATE POLICY "Admins can view all coupon usage"
     ON coupon_usage FOR SELECT
     TO authenticated
     USING (public.get_user_role() = 'admin');
 
+DROP POLICY IF EXISTS "System can insert coupon usage" ON coupon_usage;
 CREATE POLICY "System can insert coupon usage"
     ON coupon_usage FOR INSERT
     TO authenticated
@@ -98,6 +102,7 @@ CREATE TABLE IF NOT EXISTS security_config (
 
 ALTER TABLE security_config ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins only access security config" ON security_config;
 CREATE POLICY "Admins only access security config"
     ON security_config FOR ALL
     TO authenticated
@@ -126,11 +131,13 @@ CREATE INDEX IF NOT EXISTS idx_security_audit_created ON security_audit_log(crea
 
 ALTER TABLE security_audit_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admins view security audit log" ON security_audit_log;
 CREATE POLICY "Admins view security audit log"
     ON security_audit_log FOR SELECT
     TO authenticated
     USING (public.get_user_role() = 'admin');
 
+DROP POLICY IF EXISTS "System can insert security events" ON security_audit_log;
 CREATE POLICY "System can insert security events"
     ON security_audit_log FOR INSERT
     TO authenticated
