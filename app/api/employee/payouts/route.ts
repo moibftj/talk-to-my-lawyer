@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { queueTemplateEmail } from '@/lib/email/service'
 
 export const runtime = 'nodejs'
 
@@ -147,7 +148,20 @@ export async function POST(request: NextRequest) {
       throw insertError
     }
 
-    // TODO: Send email notification to admin about new payout request
+    // Send email notification to admin about new payout request
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@talk-to-my-lawyer.com'
+    
+    await queueTemplateEmail(
+      'admin-alert',
+      adminEmail,
+      {
+        alertType: 'New Payout Request',
+        message: `Employee ${profile.full_name} (${profile.email}) has requested a payout of $${amount}.`,
+        actionUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/secure-admin-gateway/commissions`
+      }
+    ).catch(error => {
+      console.error('[EmployeePayouts] Failed to send admin notification:', error)
+    })
 
     return NextResponse.json({
       success: true,
