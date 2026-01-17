@@ -23,6 +23,7 @@
 .env* text eol=lf
 .gitignore text eol=lf
 .gitattributes text eol=lf
+*.agent.md text eol=lf
 Dockerfile text eol=lf
 
 # Binary files (no conversion)

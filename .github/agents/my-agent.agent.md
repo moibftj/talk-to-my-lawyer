@@ -1,5 +1,5 @@
 ---
-name: ttml-architect
+name: my-agent
 description: Senior software architect and data analyst for the Talk to My Lawyer platform
 ---
 
