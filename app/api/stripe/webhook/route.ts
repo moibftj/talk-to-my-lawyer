@@ -3,25 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { queueTemplateEmail } from '@/lib/email/service'
 import { getStripeClient } from '@/lib/stripe/client'
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
-// Use service role client for webhooks (no user session context)
-function getSupabaseServiceClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('Missing Supabase service configuration')
-  }
-
-  return createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
-}
 
 export async function POST(request: NextRequest) {
   const stripe = getStripeClient()
@@ -44,7 +28,7 @@ export async function POST(request: NextRequest) {
     const event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
     console.log('[StripeWebhook] Event received:', event.type)
 
-    const supabase = getSupabaseServiceClient()
+    const supabase = getServiceRoleClient()
 
     // Check idempotency - prevent duplicate processing on webhook retry
     const { data: idempotencyCheck, error: idempotencyError } = await supabase.rpc('check_and_record_webhook', {

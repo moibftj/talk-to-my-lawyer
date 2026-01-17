@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 interface ServiceStatus {
   name: string
@@ -27,10 +28,7 @@ const startTime = Date.now()
 async function checkDatabase(): Promise<ServiceStatus> {
   const start = Date.now()
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = getServiceRoleClient()
 
     // Simple query to check database connectivity
     const { error } = await supabase.from('profiles').select('id').limit(1)
@@ -96,10 +94,7 @@ async function checkEmail(): Promise<ServiceStatus> {
 async function checkStorage(): Promise<ServiceStatus> {
   const start = Date.now()
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = getServiceRoleClient()
 
     // Check if we can access storage buckets
     const { data, error } = await supabase.storage.listBuckets()
@@ -133,10 +128,7 @@ async function checkStorage(): Promise<ServiceStatus> {
 async function checkAuth(): Promise<ServiceStatus> {
   const start = Date.now()
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = getServiceRoleClient()
 
     // Check if auth is accessible
     const { data, error } = await supabase.auth.admin.listUsers()

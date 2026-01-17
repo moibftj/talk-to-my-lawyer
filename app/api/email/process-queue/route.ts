@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceRoleClient } from "@/lib/supabase/admin";
 
 export const runtime = "edge";
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getServiceRoleClient();
 
     // Get processing parameters from request body (if any)
     let batchSize = 10; // Default
@@ -217,20 +217,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.json(
-      {
-        status: "error",
-        message: "Database not configured",
-      },
-      { status: 500 },
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getServiceRoleClient();
 
   // Get queue stats
   const { data: stats } = await supabase.rpc("get_email_queue_stats");

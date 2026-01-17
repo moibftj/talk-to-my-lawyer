@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { EmailMessage } from './types'
 import { getEmailService } from './service'
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 // Database row type matching the actual schema (snake_case)
 interface EmailQueueRow {
@@ -43,10 +44,7 @@ export class EmailQueue {
   private tableName = 'email_queue' as const
 
   constructor() {
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    this.supabase = getServiceRoleClient()
   }
 
   /**

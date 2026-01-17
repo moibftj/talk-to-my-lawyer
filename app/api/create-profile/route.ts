@@ -3,6 +3,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 import { authRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis"
 import { sendTemplateEmail } from "@/lib/email"
+import { getServiceRoleClient } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,17 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use service role client for profile creation (elevated permissions)
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 }
-      )
-    }
-
-    const serviceClient = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const serviceClient = getServiceRoleClient()
 
     const { data: profileData, error: profileError } = await serviceClient
       .from('profiles')

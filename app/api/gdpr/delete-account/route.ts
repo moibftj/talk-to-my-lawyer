@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
+import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 /**
  * POST /api/gdpr/delete-account
@@ -221,10 +221,7 @@ export async function DELETE(request: NextRequest) {
     await supabase.from('profiles').delete().eq('id', userId)
 
     // 6. Delete auth user (requires service role)
-    const supabaseServiceClient = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabaseServiceClient = getServiceRoleClient()
 
     const { error: deleteAuthError } = await supabaseServiceClient.auth.admin.deleteUser(userId)
 
