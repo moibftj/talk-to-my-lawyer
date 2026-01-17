@@ -88,7 +88,18 @@ GRANT EXECUTE ON FUNCTION public.admin_exists TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_admin_user_id TO authenticated;
 
 -- Add comments
-COMMENT ON INDEX one_admin_only IS 'Enforces single admin architecture - only one user can have role=admin';
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname = 'one_admin_only'
+          AND n.nspname = 'public'
+    ) THEN
+        EXECUTE 'COMMENT ON INDEX public.one_admin_only IS ''Enforces single admin architecture - only one user can have role=admin''';
+    END IF;
+END $$;
 COMMENT ON FUNCTION public.admin_exists IS 'Returns true if an admin user exists in the system';
 COMMENT ON FUNCTION public.get_admin_user_id IS 'Returns the UUID of the single admin user';
 COMMENT ON FUNCTION public.enforce_single_admin IS 'Trigger function that prevents multiple admin users';

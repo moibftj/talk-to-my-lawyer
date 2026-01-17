@@ -23,19 +23,21 @@ CREATE TABLE IF NOT EXISTS privacy_policy_acceptances (
 );
 
 -- Index for user lookups
-CREATE INDEX idx_privacy_acceptances_user_id ON privacy_policy_acceptances(user_id);
-CREATE INDEX idx_privacy_acceptances_version ON privacy_policy_acceptances(policy_version);
+CREATE INDEX IF NOT EXISTS idx_privacy_acceptances_user_id ON privacy_policy_acceptances(user_id);
+CREATE INDEX IF NOT EXISTS idx_privacy_acceptances_version ON privacy_policy_acceptances(policy_version);
 
 -- Enable RLS
 ALTER TABLE privacy_policy_acceptances ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own acceptances
+DROP POLICY IF EXISTS "Users can view own privacy acceptances" ON privacy_policy_acceptances;
 CREATE POLICY "Users can view own privacy acceptances"
   ON privacy_policy_acceptances
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can insert their own acceptances
+DROP POLICY IF EXISTS "Users can insert own privacy acceptances" ON privacy_policy_acceptances;
 CREATE POLICY "Users can insert own privacy acceptances"
   ON privacy_policy_acceptances
   FOR INSERT
@@ -60,20 +62,22 @@ CREATE TABLE IF NOT EXISTS data_export_requests (
 );
 
 -- Index for user and status lookups
-CREATE INDEX idx_data_exports_user_id ON data_export_requests(user_id);
-CREATE INDEX idx_data_exports_status ON data_export_requests(status);
-CREATE INDEX idx_data_exports_expires ON data_export_requests(expires_at);
+CREATE INDEX IF NOT EXISTS idx_data_exports_user_id ON data_export_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_data_exports_status ON data_export_requests(status);
+CREATE INDEX IF NOT EXISTS idx_data_exports_expires ON data_export_requests(expires_at);
 
 -- Enable RLS
 ALTER TABLE data_export_requests ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own export requests
+DROP POLICY IF EXISTS "Users can view own export requests" ON data_export_requests;
 CREATE POLICY "Users can view own export requests"
   ON data_export_requests
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can create export requests
+DROP POLICY IF EXISTS "Users can create export requests" ON data_export_requests;
 CREATE POLICY "Users can create export requests"
   ON data_export_requests
   FOR INSERT
@@ -99,19 +103,21 @@ CREATE TABLE IF NOT EXISTS data_deletion_requests (
 );
 
 -- Index for user and status lookups
-CREATE INDEX idx_data_deletions_user_id ON data_deletion_requests(user_id);
-CREATE INDEX idx_data_deletions_status ON data_deletion_requests(status);
+CREATE INDEX IF NOT EXISTS idx_data_deletions_user_id ON data_deletion_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_data_deletions_status ON data_deletion_requests(status);
 
 -- Enable RLS
 ALTER TABLE data_deletion_requests ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own deletion requests
+DROP POLICY IF EXISTS "Users can view own deletion requests" ON data_deletion_requests;
 CREATE POLICY "Users can view own deletion requests"
   ON data_deletion_requests
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can create deletion requests
+DROP POLICY IF EXISTS "Users can create deletion requests" ON data_deletion_requests;
 CREATE POLICY "Users can create deletion requests"
   ON data_deletion_requests
   FOR INSERT
@@ -136,22 +142,24 @@ CREATE TABLE IF NOT EXISTS data_access_logs (
 );
 
 -- Indexes for efficient querying
-CREATE INDEX idx_data_access_user_id ON data_access_logs(user_id);
-CREATE INDEX idx_data_access_accessed_by ON data_access_logs(accessed_by);
-CREATE INDEX idx_data_access_type ON data_access_logs(access_type);
-CREATE INDEX idx_data_access_resource ON data_access_logs(resource_type, resource_id);
-CREATE INDEX idx_data_access_timestamp ON data_access_logs(accessed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_data_access_user_id ON data_access_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_data_access_accessed_by ON data_access_logs(accessed_by);
+CREATE INDEX IF NOT EXISTS idx_data_access_type ON data_access_logs(access_type);
+CREATE INDEX IF NOT EXISTS idx_data_access_resource ON data_access_logs(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_data_access_timestamp ON data_access_logs(accessed_at DESC);
 
 -- Enable RLS
 ALTER TABLE data_access_logs ENABLE ROW LEVEL SECURITY;
 
 -- Users can view access logs for their own data
+DROP POLICY IF EXISTS "Users can view own data access logs" ON data_access_logs;
 CREATE POLICY "Users can view own data access logs"
   ON data_access_logs
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Service can insert access logs
+DROP POLICY IF EXISTS "Service can insert access logs" ON data_access_logs;
 CREATE POLICY "Service can insert access logs"
   ON data_access_logs
   FOR INSERT
