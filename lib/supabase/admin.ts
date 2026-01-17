@@ -26,8 +26,7 @@ export function getServiceRoleClient(): SupabaseClient<any> {
       autoRefreshToken: false,
       persistSession: false,
     },
-    },
-  );
+  });
 
   return serviceRoleClient;
 }

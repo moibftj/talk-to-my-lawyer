@@ -100,8 +100,7 @@ export async function POST(request: NextRequest) {
     // Use service role client for profile creation (elevated permissions)
     const serviceClient = getServiceRoleClient();
 
-    // Note: We cast profileInsert to satisfy Supabase's typed client
-    // The database has default values for fields not specified here
+    // Note: The service client is untyped to handle all database tables
     const profileInsert = {
       id: user.id,
       email: email.toLowerCase().trim(),
@@ -111,8 +110,7 @@ export async function POST(request: NextRequest) {
 
     const { data: profileData, error: profileError } = await serviceClient
       .from("profiles")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .upsert(profileInsert as any, {
+      .upsert(profileInsert, {
         onConflict: "id",
         ignoreDuplicates: false,
       })
