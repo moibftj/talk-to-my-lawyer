@@ -79,16 +79,12 @@ The canonical type definitions live in `lib/types/` and are re-exported in `type
 
 ### Database types (from `lib/database.types.ts`)
 
-- Profile
-- Letter
-- Subscription
-- EmployeeCoupon
-- Commission
-- CouponUsage
-- LetterAuditTrail
-- LetterStatus
-- SubscriptionStatus
-- UserRole
+- Core tables: Profile, Letter, Subscription, EmployeeCoupon, Commission, CouponUsage, LetterAuditTrail
+- Role/status enums: UserRole, AdminSubRole, LetterStatus, SubscriptionStatus, CommissionStatus, EmailQueueStatus, EmailDeliveryStatus, PayoutStatus
+- GDPR tables: PrivacyPolicyAcceptance, DataExportRequest, DataDeletionRequest, DataAccessLog
+- Email tables: EmailQueue, EmailQueueLog, EmailDeliveryLog
+- Security/Fraud tables: SecurityAuditLog, SecurityConfig, FraudDetectionConfig, FraudDetectionLog, SuspiciousPattern
+- Other tables/views: AdminAuditLog, PayoutRequest, PromotionalCodeUsage, WebhookEvent, AdminCouponAnalytics
 
 ### API/types (from `lib/types/api.ts`)
 
