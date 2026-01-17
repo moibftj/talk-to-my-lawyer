@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { nanoid } from 'nanoid'
+import { randomUUID } from 'crypto'
 
 export const REQUEST_ID_HEADER = 'x-request-id'
 
@@ -13,7 +13,8 @@ export const REQUEST_ID_HEADER = 'x-request-id'
  * Generate a unique request ID
  */
 export function generateRequestId(): string {
-  return nanoid(16)
+  // Use crypto.randomUUID() - no external dependencies needed
+  return randomUUID().replace(/-/g, '').substring(0, 16)
 }
 
 /**
