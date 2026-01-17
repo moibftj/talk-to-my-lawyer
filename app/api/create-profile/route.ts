@@ -144,14 +144,16 @@ export async function POST(request: NextRequest) {
           "[CreateProfile] Coupon not found after trigger, creating manually...",
         );
         const couponCode = `EMP-${user.id.slice(0, 6).toUpperCase()}${Math.random().toString(36).substring(2, 4).toUpperCase()}`;
+        const couponInsert = {
+          employee_id: user.id,
+          code: couponCode,
+          discount_percent: 20,
+          is_active: true,
+        };
         const { error: couponInsertError } = await serviceClient
           .from("employee_coupons")
-          .insert({
-            employee_id: user.id,
-            code: couponCode,
-            discount_percent: 20,
-            is_active: true,
-          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert(couponInsert as any);
 
         if (couponInsertError) {
           console.error(
