@@ -219,7 +219,7 @@ export default function HomePage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-3 animate-fade-in">
+              <Link href="/" className="flex items-center space-x-3 animate-fade-in">
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
@@ -229,9 +229,9 @@ export default function HomePage() {
                   priority
                 />
                 <span className="text-xl font-bold text-gradient-animated">
-                  Talk-To-My-Lawyer
+                  TalkToMyLawyer.com
                 </span>
-              </div>
+              </Link>
               <div className="hidden md:flex items-center space-x-4">
                 <Button
                   variant="ghost"
@@ -247,6 +247,22 @@ export default function HomePage() {
                 >
                   Pricing
                 </Button>
+                <Link href="/how-it-works">
+                  <Button
+                    variant="ghost"
+                    className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                  >
+                    How It Works
+                  </Button>
+                </Link>
+                <Link href="/membership">
+                  <Button
+                    variant="ghost"
+                    className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                  >
+                    Membership
+                  </Button>
+                </Link>
                 <Link href="/auth/login">
                   <Button
                     variant="ghost"
@@ -876,12 +892,12 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
-                <div className="flex items-center space-x-3 mb-4">
+                <Link href="/" className="flex items-center space-x-3 mb-4">
                   <Scale className="h-10 w-10 text-[#199df4]" />
                   <span className="text-2xl font-bold text-white">
-                    Talk-To-My-Lawyer
+                    TalkToMyLawyer.com
                   </span>
-                </div>
+                </Link>
                 <p className="text-sky-200 mb-4">
                   Professional legal assistance without the legal bill.
                 </p>
@@ -922,7 +938,7 @@ export default function HomePage() {
             </div>
 
             <div className="border-t border-blue-700 mt-12 pt-8 text-center text-blue-200">
-              <p>&copy; 2025 Talk-To-My-Lawyer. All rights reserved.</p>
+              <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
             </div>
           </div>
         </footer>

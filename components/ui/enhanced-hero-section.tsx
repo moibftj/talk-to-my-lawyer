@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform, useInView } from 'motion/react'
 import { useRef, useEffect, useState, useMemo } from 'react'
-import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface Particle {
@@ -58,9 +58,9 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
   )
 
   const features = [
-    'AI-Powered Legal Letters',
-    'Attorney Reviewed',
-    'Fast Turnaround',
+    'Custom Made Letters',
+    'Attorney Approved',
+    'Up to 48 Hours Turnaround',
   ]
 
   return (
@@ -136,19 +136,6 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
 
       {/* Main Content */}
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 mb-8"
-        >
-          <Sparkles className="w-4 h-4 text-[#199df4]" />
-          <span className="text-sm font-medium text-[#0d8ae0]">
-            AI-Powered Legal Assistance
-          </span>
-        </motion.div>
-
         {/* Title */}
         <motion.h1
           style={{ y: titleY, opacity: titleOpacity }}
@@ -219,15 +206,6 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
           </Button>
         </motion.div>
 
-        {/* Trust Indicator */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-8 text-sm text-gray-500"
-        >
-          Trusted by thousands of clients • First letter free
-        </motion.p>
       </div>
     </section>
   )

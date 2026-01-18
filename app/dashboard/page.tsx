@@ -121,7 +121,7 @@ export default async function DashboardPage() {
               </div>
               <h3 className="text-lg font-semibold text-foreground">No letters created yet</h3>
               <p className="text-muted-foreground max-w-sm mt-2 mb-6">
-                Get started by creating your first AI-powered legal letter. It only takes a few minutes.
+                Get started by creating your first legal letter. It only takes a few minutes.
               </p>
               <Link href="/dashboard/letters/new">
                 <Button>Start Your First Letter</Button>
