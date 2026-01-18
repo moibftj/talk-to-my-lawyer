@@ -739,9 +739,9 @@ export default function NewLetterPage() {
                     </div>
                     <div className="border rounded-lg p-3 flex items-center justify-between bg-primary/5">
                       <div>
-                        <div className="font-semibold">Monthly</div>
+                        <div className="font-semibold">Monthly Membership</div>
                         <div className="text-sm text-muted-foreground">
-                          4 letters per month
+                          $50 per letter
                         </div>
                       </div>
                       <div className="text-right">
@@ -757,13 +757,13 @@ export default function NewLetterPage() {
                     </div>
                     <div className="border rounded-lg p-3 flex items-center justify-between">
                       <div>
-                        <div className="font-semibold">Yearly</div>
+                        <div className="font-semibold">Annual Plan</div>
                         <div className="text-sm text-muted-foreground">
-                          8 letters per year
+                          48 letters included (≈$41.67/letter)
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold">$599/yr</div>
+                        <div className="text-2xl font-bold">$2,000</div>
                         <Button
                           size="sm"
                           className="mt-2"

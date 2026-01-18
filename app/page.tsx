@@ -263,6 +263,14 @@ export default function HomePage() {
                     Membership
                   </Button>
                 </Link>
+                <Link href="/contact">
+                  <Button
+                    variant="ghost"
+                    className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                  >
+                    Contact
+                  </Button>
+                </Link>
                 <Link href="/auth/login">
                   <Button
                     variant="ghost"

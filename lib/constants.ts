@@ -16,28 +16,31 @@ export const TIME_CONSTANTS = {
  * Letter type definitions used across the application
  */
 export const LETTER_TYPES = [
-  { value: 'demand_letter', label: 'Demand Letter', price: 299 },
-  { value: 'cease_desist', label: 'Cease & Desist', price: 299 },
-  { value: 'contract_breach', label: 'Contract Breach Notice', price: 299 },
-  { value: 'eviction_notice', label: 'Eviction Notice', price: 299 },
-  { value: 'employment_dispute', label: 'Employment Dispute', price: 299 },
-  { value: 'consumer_complaint', label: 'Consumer Complaint', price: 299 },
+  { value: 'demand_letter', label: 'Demand Letter', price: 200 },
+  { value: 'cease_desist', label: 'Cease & Desist', price: 200 },
+  { value: 'contract_breach', label: 'Contract Breach Notice', price: 200 },
+  { value: 'eviction_notice', label: 'Eviction Notice', price: 200 },
+  { value: 'employment_dispute', label: 'Employment Dispute', price: 200 },
+  { value: 'consumer_complaint', label: 'Consumer Complaint', price: 200 },
 ] as const
 
 /**
  * Subscription plan configurations
+ * - Single Letter: $200 one-time
+ * - Monthly Membership: $200/month, then $50 per letter
+ * - Annual Plan: $2,000 one-time, includes 48 letters (≈$41.67/letter)
  */
 export const SUBSCRIPTION_PLANS = [
-  { letters: 1, price: 299, planType: 'one_time', popular: false, name: 'Single Letter' },
-  { letters: 4, price: 299, planType: 'standard_4_month', popular: true, name: 'Monthly Plan' },
-  { letters: 8, price: 599, planType: 'premium_8_month', popular: false, name: 'Yearly Plan' },
+  { letters: 1, price: 200, planType: 'one_time', popular: false, name: 'Single Letter' },
+  { letters: 0, price: 200, planType: 'monthly_membership', popular: true, name: 'Monthly Membership', perLetterPrice: 50 },
+  { letters: 48, price: 2000, planType: 'annual', popular: false, name: 'Annual Plan' },
 ] as const
 
 /**
  * Plan configuration lookup by plan type
  */
-export const PLAN_CONFIG: Record<string, { price: number, letters: number, planType: string, name: string }> = {
-  'one_time': { price: 299, letters: 1, planType: 'one_time', name: 'Single Letter' },
-  'standard_4_month': { price: 299, letters: 4, planType: 'standard_4_month', name: 'Monthly Plan' },
-  'premium_8_month': { price: 599, letters: 8, planType: 'premium_8_month', name: 'Yearly Plan' }
+export const PLAN_CONFIG: Record<string, { price: number, letters: number, planType: string, name: string, perLetterPrice?: number }> = {
+  'one_time': { price: 200, letters: 1, planType: 'one_time', name: 'Single Letter' },
+  'monthly_membership': { price: 200, letters: 0, planType: 'monthly_membership', name: 'Monthly Membership', perLetterPrice: 50 },
+  'annual': { price: 2000, letters: 48, planType: 'annual', name: 'Annual Plan' }
 } as const

@@ -113,7 +113,7 @@ export function GenerationTrackerModal({
         ? "Waiting for an attorney to begin review."
         : status === "under_review"
           ? "An attorney is reviewing and may edit your letter."
-          : "Attorney review is complete."
+          : "Attorney approval is complete."
 
     const finalStepTitle =
       status === "rejected" ? "Needs revision" : status === "failed" ? "Draft failed" : "Approved"
@@ -127,7 +127,7 @@ export function GenerationTrackerModal({
 
     const timelineSteps = [
       { title: "Draft prepared", description: draftStepDescription },
-      { title: "Attorney review", description: reviewStepDescription },
+      { title: "Attorney approval", description: reviewStepDescription },
       { title: finalStepTitle, description: finalStepDescription },
     ]
 
@@ -146,7 +146,7 @@ export function GenerationTrackerModal({
           : status === "pending_review"
             ? "Draft created"
             : status === "under_review"
-              ? "Attorney review in progress"
+              ? "Attorney approval in progress"
               : status === "rejected"
                 ? "Needs revision"
                 : status === "failed"

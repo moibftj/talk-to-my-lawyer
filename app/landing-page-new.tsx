@@ -187,6 +187,14 @@ export default function NewLandingPage() {
                 >
                   Pricing
                 </Button>
+                <Link href="/contact">
+                  <Button
+                    variant="ghost"
+                    className="nav-item text-gray-700 hover:text-blue-600 transition-colors duration-200"
+                  >
+                    Contact
+                  </Button>
+                </Link>
                 <Link href="/auth/login">
                   <Button
                     variant="ghost"
@@ -211,15 +219,28 @@ export default function NewLandingPage() {
           <div className="max-w-7xl mx-auto text-center">
             <div className="text-center mb-16 scroll-reveal">
               <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gradient-animated">
-                Need a Lawyer&apos;s{" "}
-                <span className="text-gray-900">Voice</span>
-                <br />
-                <span className="text-gray-900">Without the Legal Bill?</span>
+                Get professional lawyer-drafted letters for:
               </h1>
+              <div className="flex flex-wrap justify-center gap-3 mb-8">
+                {[
+                  "Breach of Contract",
+                  "Demand for Payment",
+                  "Cease and Desist",
+                  "Pre-Litigation Settlement",
+                  "Debt Collection",
+                  "And more",
+                ].map((service) => (
+                  <span
+                    key={service}
+                    className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 border border-blue-300 text-blue-700 font-medium text-sm"
+                  >
+                    {service}
+                  </span>
+                ))}
+              </div>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed animate-fade-in stagger-2">
-                Get professional, lawyer-drafted letters for tenant disputes,
-                debt collection, HR issues, and more. Resolve conflicts quickly
-                and affordably with the power of legal communication.
+                Resolve conflicts quickly and affordably — only{" "}
+                <span className="text-blue-600 font-bold">$50 per letter</span>.
               </p>
             </div>
 
@@ -244,15 +265,15 @@ export default function NewLandingPage() {
             <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-600 scroll-reveal stagger-3">
               <div className="flex items-center gap-2 animate-slide-up stagger-1">
                 <CheckCircle className="h-5 w-5 text-green-500 animate-pulse-scale" />
-                No Legal Fees
+                Only $50 Per Letter
               </div>
               <div className="flex items-center gap-2 animate-slide-up stagger-2">
                 <CheckCircle className="h-5 w-5 text-green-500 animate-pulse-scale" />
-                24-48 Hour Delivery
+                Up to 48 Hours Turnaround
               </div>
               <div className="flex items-center gap-2 animate-slide-up stagger-3">
                 <CheckCircle className="h-5 w-5 text-green-500 animate-pulse-scale" />
-                Lawyer Reviewed
+                Attorney Approved
               </div>
             </div>
           </div>
@@ -288,10 +309,10 @@ export default function NewLandingPage() {
               </div>
               <div className="scroll-reveal stagger-4 counter-animate">
                 <div className="text-4xl font-bold mb-2 text-gradient-animated animate-pulse-scale">
-                  24 Hours
+                  Up to 48 Hours
                 </div>
                 <div className="text-blue-200 transition-colors duration-200 hover:text-white">
-                  Average Delivery
+                  Turnaround Time
                 </div>
               </div>
             </div>
