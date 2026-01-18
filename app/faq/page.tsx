@@ -4,7 +4,7 @@ import { motion } from 'motion/react'
 import { ChevronDown, FileText, Scale, Clock, Mail, Shield, CreditCard, AlertCircle, Users, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+
 
 const faqs = [
   {
@@ -119,7 +119,7 @@ export default function FAQPage() {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-gray-600">
-              Find answers to common questions about our legal letter services.
+              Information about our legal letter services.
             </p>
           </motion.div>
         </div>
@@ -175,28 +175,7 @@ export default function FAQPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
-          >
-            <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
-              Get your professional legal letter starting at $50 with membership.
-            </p>
-            <Link href="/auth/signup">
-              <button className="px-8 py-4 bg-white text-[#0a2540] rounded-xl font-semibold hover:bg-sky-50 transition-all inline-flex items-center group">
-                Get Started Now
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+
 
       {/* Footer */}
       <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
