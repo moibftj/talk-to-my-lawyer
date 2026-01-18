@@ -684,7 +684,7 @@ The Talk-To-My-Lawyer Team
 
       Don't miss out on professional legal letter services:
       - Unlimited letter generation
-      - Attorney review for each letter
+      - Attorney approved for each letter
       - Download professional PDFs
       - Email delivery to recipients
 
@@ -705,7 +705,7 @@ The Talk-To-My-Lawyer Team
           <p><strong>Don't miss out on:</strong></p>
           <ul>
             <li>Unlimited letter generation</li>
-            <li>Attorney review for each letter</li>
+            <li>Attorney approved for each letter</li>
             <li>Download professional PDFs</li>
             <li>Email delivery to recipients</li>
           </ul>

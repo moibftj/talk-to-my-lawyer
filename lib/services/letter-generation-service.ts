@@ -1,7 +1,7 @@
 /**
  * Letter Generation Service
  *
- * Handles AI-powered letter generation logic
+ * Handles intelligent letter generation logic
  * Extracted from the generate-letter API route for better separation of concerns
  */
 

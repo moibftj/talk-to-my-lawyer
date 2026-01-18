@@ -58,12 +58,9 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
   )
 
   const features = [
-    'Breach of Contract',
-    'Demand for Payment', 
-    'Cease and Desist',
-    'Pre-Litigation Settlement',
-    'Debt Collection',
-    'And more',
+    'Custom Made Letters',
+    'Attorney Approved',
+    'Up to 48 Hours Turnaround',
   ]
 
   return (
@@ -147,7 +144,11 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 mb-6"
         >
-          Get professional lawyer-drafted letters for:
+          Professional Legal Letters
+          <br />
+          <span className="bg-gradient-to-r from-[#199df4] to-[#00d4ff] bg-clip-text text-transparent">
+            Made Simple
+          </span>
         </motion.h1>
 
         {/* Subtitle */}
@@ -157,7 +158,8 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-8"
         >
-          Resolve conflicts quickly and affordably — only $50 per letter.
+          Get professionally crafted legal letters reviewed by real attorneys. 
+          Fast, affordable, and tailored to your specific situation.
         </motion.p>
 
         {/* Features List */}

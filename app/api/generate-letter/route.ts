@@ -2,7 +2,7 @@
  * Letter generation endpoint
  * POST /api/generate-letter
  *
- * Handles AI-powered letter generation with:
+ * Handles intelligent letter generation with:
  * - User authentication and authorization
  * - Allowance checking (free trial, paid, super user)
  * - AI generation with retry logic
