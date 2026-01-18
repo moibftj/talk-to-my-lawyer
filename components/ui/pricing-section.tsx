@@ -154,7 +154,7 @@ export default function PricingSection() {
     setIsSubscription(Number.parseInt(value) === 1);
 
   return (
-    <div className="px-4 py-20 mx-auto relative bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30" ref={pricingRef}>
+    <div id="pricing" className="px-4 py-20 mx-auto relative bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30" ref={pricingRef}>
       <div
         className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0"
         style={{
