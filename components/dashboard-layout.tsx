@@ -52,7 +52,7 @@ export async function DashboardLayout({ children }: { children: React.ReactNode 
                 className="h-9 w-9 rounded-full logo-badge"
                 priority
               />
-              <span className="text-lg font-bold text-foreground">Talk-To-My-Lawyer</span>
+              <span className="text-lg font-bold text-foreground">TalkToMyLawyer.com</span>
             </Link>
             <div className="flex items-center gap-4">
               <div className="text-sm text-muted-foreground">

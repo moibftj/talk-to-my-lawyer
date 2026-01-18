@@ -134,7 +134,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
           <CardDescription>
-            Enter your credentials to access Talk-To-My-Lawyer
+            Enter your credentials to access TalkToMyLawyer.com
           </CardDescription>
         </CardHeader>
         <CardContent>

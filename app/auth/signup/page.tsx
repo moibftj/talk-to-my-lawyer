@@ -117,7 +117,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
           <CardDescription>
-            Join Talk-To-My-Lawyer as a subscriber or employee
+            Join TalkToMyLawyer.com as a subscriber or employee
           </CardDescription>
         </CardHeader>
         <CardContent>

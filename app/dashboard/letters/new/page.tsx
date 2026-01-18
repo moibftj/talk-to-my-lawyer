@@ -679,7 +679,7 @@ export default function NewLetterPage() {
                 Attorney-generated draft
               </h2>
               <p className="text-sm text-muted-foreground">
-                Review the draft below. You can submit for attorney review after
+                Review the draft below. You can submit for attorney approval after
                 subscribing.
               </p>
             </div>
@@ -712,11 +712,11 @@ export default function NewLetterPage() {
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="bg-white border shadow-xl rounded-lg p-6 max-w-xl w-full space-y-4">
                   <h3 className="text-xl font-semibold">
-                    Unlock attorney review
+                    Unlock attorney approved letters
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Your first draft is free to preview. Subscribe to submit
-                    this letter for attorney review and delivery.
+                    this letter for attorney approval and delivery.
                   </p>
                   <div className="grid gap-3">
                     <div className="border rounded-lg p-3 flex items-center justify-between">
@@ -727,7 +727,7 @@ export default function NewLetterPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold">$299</div>
+                        <div className="text-2xl font-bold">$200</div>
                         <Button
                           size="sm"
                           className="mt-2"
@@ -745,7 +745,7 @@ export default function NewLetterPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold">$299/mo</div>
+                        <div className="text-2xl font-bold">$200/mo</div>
                         <Button
                           size="sm"
                           className="mt-2"
@@ -782,7 +782,7 @@ export default function NewLetterPage() {
                       Preview letter draft
                     </Button>
                     <div className="text-sm text-muted-foreground">
-                      Subscription required to submit for attorney review
+                      Subscription required to submit for attorney approval
                     </div>
                   </div>
                 </div>
@@ -802,7 +802,7 @@ export default function NewLetterPage() {
                 <Button
                   onClick={() => router.push(`/dashboard/letters/${letterId}`)}
                 >
-                  Submit for Attorney Review
+                  Submit for Attorney Approval
                 </Button>
               )}
             </div>

@@ -166,7 +166,7 @@ export default function DashboardLayout({
                 className="h-9 w-9 rounded-full logo-badge"
                 priority
               />
-              <span className="text-xl font-bold">Talk-To-My-Lawyer</span>
+              <span className="text-xl font-bold">TalkToMyLawyer.com</span>
             </Link>
           </div>
 
@@ -251,7 +251,7 @@ export default function DashboardLayout({
                       className="h-9 w-9 rounded-full logo-badge"
                       priority
                     />
-                    <span className="text-xl font-bold">Talk-To-My-Lawyer</span>
+                    <span className="text-xl font-bold">TalkToMyLawyer.com</span>
                   </Link>
                 </div>
 

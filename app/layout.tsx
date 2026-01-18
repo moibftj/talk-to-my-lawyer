@@ -16,8 +16,8 @@ const APP_URL = (() => {
 const LOGO_URL = '/talk-to-my-lawyer-logo.jpg'
 
 export const metadata: Metadata = {
-  title: "Talk-To-My-Lawyer - Professional Legal Letters",
-  description: "Professional legal letter generation with attorney review. Get demand letters, cease and desist notices, and more.",
+  title: "TalkToMyLawyer.com - Professional Legal Letters",
+  description: "Professional legal letter generation with attorney approval. Get demand letters, cease and desist notices, and more.",
   generator: 'v0.app',
   metadataBase: new URL(APP_URL),
   icons: {
