@@ -52,7 +52,7 @@ export default function MembershipPage() {
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-3">
               <Scale className="h-8 w-8 text-[#199df4]" />
-              <span className="text-xl font-bold text-gradient-animated">Talk-To-My-Lawyer</span>
+              <span className="text-xl font-bold text-gradient-animated">TalkToMyLawyer.com</span>
             </Link>
             <Link href="/auth/signup">
               <button className="px-6 py-2 bg-gradient-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
@@ -166,7 +166,7 @@ export default function MembershipPage() {
       {/* Footer */}
       <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2025 Talk-To-My-Lawyer. All rights reserved.</p>
+          <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
         </div>
       </footer>
     </div>
