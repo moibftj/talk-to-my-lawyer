@@ -10,32 +10,32 @@ const PLANS = [
   {
     id: 'one_time',
     name: 'Single Letter',
-    price: 299,
+    price: 200,
     credits: 1,
     description: 'One-time purchase',
-    features: ['1 Legal Letter', 'Attorney Review', 'PDF Download', 'Email Delivery']
+    features: ['Custom made legal letter', 'PDF Download', 'Lawyer\'s Letterhead', 'Attorney Approved', 'Up to 48 hours turnaround']
   },
   {
-    id: 'standard_4_month',
-    name: 'Monthly Plan',
-    price: 299,
-    credits: 4,
-    description: '4 letters per month',
-    features: ['4 Legal Letters per month', 'Attorney Review', 'Priority Support', 'Monthly billing'],
+    id: 'monthly_membership',
+    name: 'Monthly Membership',
+    price: 200,
+    credits: 0,
+    description: '$50 per letter',
+    features: ['$50 per letter', 'PDF Download', 'Lawyer\'s Letterhead', 'Attorney Approved', 'Up to 48 hours turnaround'],
     popular: true
   },
   {
-    id: 'premium_8_month',
-    name: 'Yearly Plan',
-    price: 599,
-    credits: 8,
-    description: '8 letters per year',
-    features: ['8 Legal Letters per year', 'Attorney Review', 'Priority Support', 'Annual billing (Save $1988)', 'Best Value']
+    id: 'annual',
+    name: 'Annual Plan',
+    price: 2000,
+    credits: 48,
+    description: '48 letters included (≈$41.67/letter)',
+    features: ['48 Letters Included', 'PDF Download', 'Lawyer\'s Letterhead', 'Attorney Approved', 'Up to 48 hours turnaround']
   }
 ]
 
 export function SubscriptionCard() {
-  const [selectedPlan, setSelectedPlan] = useState('standard_4_month')
+  const [selectedPlan, setSelectedPlan] = useState('monthly_membership')
   const [couponCode, setCouponCode] = useState('')
   const [couponApplied, setCouponApplied] = useState(false)
   const [discount, setDiscount] = useState(0)
@@ -186,7 +186,7 @@ export function SubscriptionCard() {
             )}
             <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
             <div className="text-3xl font-bold mb-1">${plan.price}</div>
-            <div className="text-sm font-medium text-blue-600 mb-2">{plan.credits} {plan.credits === 1 ? 'Letter' : 'Letters'}</div>
+            <div className="text-sm font-medium text-blue-600 mb-2">{plan.credits > 0 ? `${plan.credits} ${plan.credits === 1 ? 'Letter' : 'Letters'}` : 'Membership'}</div>
             <p className="text-sm text-slate-600 mb-4">{plan.description}</p>
             <ul className="space-y-2">
               {plan.features.map((feature, idx) => (
@@ -251,7 +251,7 @@ export function SubscriptionCard() {
           </div>
           <div className="flex justify-between">
             <span>Credits Included</span>
-            <span className="font-medium text-blue-600">{selectedPlanData?.credits} {selectedPlanData?.credits === 1 ? 'Letter' : 'Letters'}</span>
+            <span className="font-medium text-blue-600">{selectedPlanData?.credits && selectedPlanData.credits > 0 ? `${selectedPlanData.credits} ${selectedPlanData.credits === 1 ? 'Letter' : 'Letters'}` : 'Membership'}</span>
           </div>
           <div className="flex justify-between">
             <span>Plan Price</span>

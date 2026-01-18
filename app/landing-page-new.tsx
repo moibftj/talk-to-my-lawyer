@@ -169,7 +169,7 @@ export default function NewLandingPage() {
                   priority
                 />
                 <span className="text-xl font-bold text-gradient-animated">
-                  Talk-To-My-Lawyer
+                  TalkToMyLawyer.com
                 </span>
               </div>
               <div className="hidden md:flex items-center space-x-4">
@@ -309,9 +309,9 @@ export default function NewLandingPage() {
                 Professional Legal Letters
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Choose from our comprehensive library of lawyer-drafted letter
-                templates. Each letter is customized for your specific situation
-                and reviewed by licensed attorneys.
+                Choose from our comprehensive library of lawyer-drafted letters.
+                Each letter is custom made for your specific situation
+                and approved by licensed attorneys.
               </p>
             </div>
 
@@ -321,42 +321,42 @@ export default function NewLandingPage() {
                   icon: Home,
                   title: "Tenant Disputes",
                   desc: "Security deposits, lease violations, habitability issues, and more",
-                  price: "$299",
+                  price: "$200",
                   color: "blue",
                 },
                 {
                   icon: Briefcase,
                   title: "HR & Employment",
                   desc: "Workplace harassment, wrongful termination, wage disputes",
-                  price: "$299",
+                  price: "$200",
                   color: "green",
                 },
                 {
                   icon: AlertCircle,
                   title: "Debt Collection",
                   desc: "Collect money owed to you from clients, customers, or businesses",
-                  price: "$299",
+                  price: "$200",
                   color: "red",
                 },
                 {
                   icon: Users,
                   title: "Personal Disputes",
                   desc: "Neighbor disputes, contract breaches, personal injury claims",
-                  price: "$299",
+                  price: "$200",
                   color: "blue",
                 },
                 {
                   icon: Building,
                   title: "Property Issues",
                   desc: "Property damage, boundary disputes, easement issues",
-                  price: "$299",
+                  price: "$200",
                   color: "blue",
                 },
                 {
                   icon: Shield,
                   title: "Cease & Desist",
                   desc: "Stop harassment, defamation, copyright infringement, and more",
-                  price: "$299",
+                  price: "$200",
                   color: "orange",
                 },
               ].map((type, index) => (
@@ -465,8 +465,8 @@ export default function NewLandingPage() {
                 },
                 {
                   icon: Users,
-                  title: "Attorney Reviewed",
-                  desc: "Every letter is reviewed by qualified legal professionals",
+                  title: "Attorney Approved",
+                  desc: "Every letter is approved by qualified legal professionals",
                 },
                 {
                   icon: Shield,
@@ -503,7 +503,7 @@ export default function NewLandingPage() {
                 <div className="flex items-center space-x-3 mb-4">
                   <Scale className="h-10 w-10 text-cyan-400" />
                   <span className="text-2xl font-bold text-white">
-                    Talk-To-My-Lawyer
+                    TalkToMyLawyer.com
                   </span>
                 </div>
                 <p className="text-cyan-200 mb-4">
@@ -546,7 +546,7 @@ export default function NewLandingPage() {
             </div>
 
             <div className="border-t border-blue-700 mt-12 pt-8 text-center text-blue-200">
-              <p>&copy; 2025 Talk-To-My-Lawyer. All rights reserved.</p>
+              <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
             </div>
           </div>
         </footer>
