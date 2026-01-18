@@ -113,7 +113,24 @@ export default function LoginPage() {
       router.refresh()
     } catch (err: any) {
       console.error('[Login] Error:', err)
-      setError(err.message || 'Failed to sign in')
+
+      // Provide clear, user-friendly error messages
+      const errorMessage = err?.message || ''
+      let friendlyError = 'Failed to sign in'
+
+      if (errorMessage.includes('Invalid login credentials')) {
+        friendlyError = 'Incorrect email or password. Please check your credentials and try again.'
+      } else if (errorMessage.includes('Email not confirmed')) {
+        friendlyError = 'Please confirm your email address before signing in. Check your inbox for the confirmation link.'
+      } else if (errorMessage.includes('Too many requests')) {
+        friendlyError = 'Too many sign-in attempts. Please wait a moment and try again.'
+      } else if (errorMessage.includes('Invalid email')) {
+        friendlyError = 'Please enter a valid email address.'
+      } else if (err instanceof Error) {
+        friendlyError = err.message
+      }
+
+      setError(friendlyError)
       setLoading(false)
     }
   }

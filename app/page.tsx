@@ -402,10 +402,10 @@ export default function HomePage() {
                   },
                 }}
               >
-                Get professional lawyer-drafted letters for
+                Get professional lawyer-drafted letters for:
               </motion.h1>
 
-              {/* Highlighted Service Types */}
+              {/* Highlighted Service Types - Clickable Buttons */}
               <motion.div
                 className="flex flex-wrap justify-center gap-3 mb-8"
                 initial="hidden"
@@ -429,24 +429,26 @@ export default function HomePage() {
                   "Debt Collection",
                   "And more",
                 ].map((service, index) => (
-                  <motion.span
-                    key={service}
-                    className="inline-flex items-center px-4 py-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm"
-                    variants={{
-                      hidden: { opacity: 0, scale: 0.8 },
-                      visible: {
-                        opacity: 1,
-                        scale: 1,
-                        transition: {
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 15,
+                  <Link href="/auth/signup" key={service}>
+                    <motion.span
+                      className="inline-flex items-center px-4 py-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm cursor-pointer hover:shadow-md hover:scale-105 transition-all"
+                      variants={{
+                        hidden: { opacity: 0, scale: 0.8 },
+                        visible: {
+                          opacity: 1,
+                          scale: 1,
+                          transition: {
+                            type: "spring",
+                            stiffness: 200,
+                            damping: 15,
+                          },
                         },
-                      },
-                    }}
-                  >
-                    {service}
-                  </motion.span>
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      {service}
+                    </motion.span>
+                  </Link>
                 ))}
               </motion.div>
 
@@ -939,7 +941,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4" />
-                    1-800-LETTERS
+                    800-110-0012
                   </div>
                 </div>
               </div>

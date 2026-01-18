@@ -40,7 +40,22 @@ export default function ForgotPasswordPage() {
 
     } catch (err: any) {
       console.error('[Forgot Password] Error:', err)
-      toast.error(err.message || 'Failed to send reset email')
+
+      // Provide clear, user-friendly error messages
+      const errorMessage = err?.message || ''
+      let friendlyError = 'Failed to send reset email'
+
+      if (errorMessage.includes('User not found')) {
+        friendlyError = 'No account found with this email address. Please check and try again.'
+      } else if (errorMessage.includes('rate limit') || errorMessage.includes('too many')) {
+        friendlyError = 'Too many attempts. Please wait a moment and try again.'
+      } else if (errorMessage.includes('Invalid email')) {
+        friendlyError = 'Please enter a valid email address.'
+      } else if (err instanceof Error) {
+        friendlyError = err.message
+      }
+
+      toast.error(friendlyError)
     } finally {
       setLoading(false)
     }

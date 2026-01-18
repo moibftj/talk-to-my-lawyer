@@ -69,7 +69,7 @@ export default function ContactPage() {
                 Speak directly with our team to discuss your situation and learn how we can help.
               </p>
               <div className="bg-sky-50 rounded-lg p-4 mb-4">
-                <p className="text-2xl font-bold text-[#199df4]">1-800-LETTERS</p>
+                <p className="text-2xl font-bold text-[#199df4]">800-110-0012</p>
                 <p className="text-sm text-gray-500 mt-1">Coming Soon</p>
               </div>
               <div className="flex items-center justify-center text-gray-500 text-sm">
