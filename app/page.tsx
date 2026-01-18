@@ -701,13 +701,6 @@ export default function HomePage() {
             >
               {[
                 {
-                  icon: Shield,
-                  title: "Cease and Desist",
-                  desc: "Stop harassment, defamation, copyright infringement, and more",
-                  color: "orange",
-                  gradient: "from-[#ffa726] to-[#ff9800]",
-                },
-                {
                   icon: AlertCircle,
                   title: "Breach of Contract",
                   desc: "Contract violations, non-payment, failure to deliver goods or services",
@@ -720,6 +713,13 @@ export default function HomePage() {
                   desc: "Collect money owed to you from clients, customers, or businesses",
                   color: "blue",
                   gradient: "from-[#199df4] to-[#0d8ae0]",
+                },
+                {
+                  icon: Shield,
+                  title: "Cease and Desist",
+                  desc: "Stop harassment, defamation, copyright infringement, and more",
+                  color: "orange",
+                  gradient: "from-[#ffa726] to-[#ff9800]",
                 },
                 {
                   icon: Scale,
