@@ -402,7 +402,7 @@ export default function HomePage() {
                   },
                 }}
               >
-                Get professional lawyer-drafted letters for:
+                Get Professional Lawyer-Drafted Letters For:
               </motion.h1>
 
               {/* Highlighted Service Types - Clickable Buttons */}
