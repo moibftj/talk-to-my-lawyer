@@ -98,7 +98,7 @@ class ProductionDatabaseClient {
   }
 
   // Convenience methods for common operations
-  async getProfile(userId) {
+  async getProfile(userId: string) {
     return this.safeQuery(async (client) => {
       const { data, error } = await client
         .from('profiles')
@@ -111,7 +111,7 @@ class ProductionDatabaseClient {
     });
   }
 
-  async checkAdminRole(userId) {
+  async checkAdminRole(userId: string) {
     return this.safeQuery(async (client) => {
       const { data: isSuperAdmin } = await client.rpc('is_super_admin');
       const { data: isAttorneyAdmin } = await client.rpc('is_attorney_admin');
@@ -124,7 +124,7 @@ class ProductionDatabaseClient {
     });
   }
 
-  async createLetter(letterData) {
+  async createLetter(letterData: any) {
     return this.safeQuery(async (client) => {
       const { data, error } = await client
         .from('letters')
@@ -137,7 +137,7 @@ class ProductionDatabaseClient {
     });
   }
 
-  async getEmployeeCoupon(employeeId) {
+  async getEmployeeCoupon(employeeId: string) {
     return this.safeQuery(async (client) => {
       const { data, error } = await client
         .from('employee_coupons')
