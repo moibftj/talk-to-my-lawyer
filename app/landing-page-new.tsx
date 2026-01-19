@@ -163,14 +163,11 @@ export default function NewLandingPage() {
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 rounded-full logo-badge"
+                  width={64}
+                  height={64}
+                  className="h-16 w-16 rounded-full logo-badge"
                   priority
                 />
-                <span className="text-xl font-bold text-gradient-animated">
-                  TalkToMyLawyer.com
-                </span>
               </div>
               <div className="hidden md:flex items-center space-x-4">
                 <Button

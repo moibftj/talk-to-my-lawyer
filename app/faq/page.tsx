@@ -1,9 +1,11 @@
 'use client'
 
+import Image from 'next/image'
 import { motion } from 'motion/react'
 import { ChevronDown, FileText, Scale, Clock, Mail, Shield, CreditCard, AlertCircle, Users, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
 
 
 const faqs = [
@@ -95,8 +97,14 @@ export default function FAQPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-3">
-              <Scale className="h-8 w-8 text-[#199df4]" />
-              <span className="text-xl font-bold text-gradient-animated">TalkToMyLawyer.com</span>
+              <Image
+                src={DEFAULT_LOGO_SRC}
+                alt={DEFAULT_LOGO_ALT}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-full logo-badge"
+                priority
+              />
             </Link>
             <Link href="/auth/signup">
               <button className="px-6 py-2 bg-gradient-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">

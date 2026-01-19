@@ -1,8 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import { motion } from 'motion/react'
 import { Scale, ClipboardList, PenTool, CheckCircle, Mail, FileDown, ArrowRight, Home } from 'lucide-react'
 import Link from 'next/link'
+import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
 
 const steps = [
   {
@@ -45,8 +47,14 @@ export default function HowItWorksPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center space-x-3">
-              <Scale className="h-8 w-8 text-[#199df4]" />
-              <span className="text-xl font-bold text-gradient-animated">TalkToMyLawyer.com</span>
+              <Image
+                src={DEFAULT_LOGO_SRC}
+                alt={DEFAULT_LOGO_ALT}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-full logo-badge"
+                priority
+              />
             </Link>
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center text-gray-600 hover:text-[#199df4] transition-colors">
