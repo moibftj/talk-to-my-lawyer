@@ -3,9 +3,14 @@
  * Handles connection issues gracefully with automatic fallbacks
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 class ProductionDatabaseClient {
+  private client: SupabaseClient | null;
+  private initialized: boolean;
+  private retryCount: number;
+  private maxRetries: number;
+
   constructor() {
     this.client = null;
     this.initialized = false;
@@ -13,8 +18,8 @@ class ProductionDatabaseClient {
     this.maxRetries = 3;
   }
 
-  async initialize() {
-    if (this.initialized) return this.client;
+  async initialize(): Promise<SupabaseClient> {
+    if (this.initialized && this.client) return this.client;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -51,13 +56,17 @@ class ProductionDatabaseClient {
   }
 
   // Wrapper for database operations with automatic retry
-  async safeQuery(operation) {
+  async safeQuery<T>(operation: (client: SupabaseClient) => Promise<T>): Promise<T> {
     await this.initialize();
+    
+    if (!this.client) {
+      throw new Error('Database client not initialized');
+    }
     
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
         return await operation(this.client);
-      } catch (error) {
+      } catch (error: any) {
         if (attempt === this.maxRetries) {
           console.error('Database operation failed after retries:', error.message);
           throw error;
@@ -80,9 +89,11 @@ class ProductionDatabaseClient {
         }
       }
     }
+    
+    throw new Error('Unexpected end of retry loop');
   }
 
-  delay(ms) {
+  private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
