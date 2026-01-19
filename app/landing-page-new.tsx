@@ -158,17 +158,8 @@ export default function NewLandingPage() {
           }`}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-32 py-4">
-              <div className="flex items-center justify-center">
-                <Image
-                  src={DEFAULT_LOGO_SRC}
-                  alt={DEFAULT_LOGO_ALT}
-                  width={160}
-                  height={160}
-                  className="h-40 w-40 rounded-full logo-badge"
-                  priority
-                />
-              </div>
+            <div className="flex items-center justify-center h-32 py-4 gap-8">
+              {/* Left Navigation */}
               <div className="hidden md:flex items-center space-x-4">
                 <Button
                   variant="ghost"
@@ -184,6 +175,22 @@ export default function NewLandingPage() {
                 >
                   Pricing
                 </Button>
+              </div>
+              
+              {/* Center Logo */}
+              <div className="flex items-center justify-center flex-shrink-0">
+                <Image
+                  src={DEFAULT_LOGO_SRC}
+                  alt={DEFAULT_LOGO_ALT}
+                  width={160}
+                  height={160}
+                  className="h-40 w-40 rounded-full logo-badge"
+                  priority
+                />
+              </div>
+              
+              {/* Right Navigation */}
+              <div className="hidden md:flex items-center space-x-4">
                 <Link href="/contact">
                   <Button
                     variant="ghost"
