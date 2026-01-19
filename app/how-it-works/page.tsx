@@ -45,8 +45,8 @@ export default function HowItWorksPage() {
       {/* Navigation Header */}
       <nav className="glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 bg-white/95 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center space-x-3">
+          <div className="flex items-center justify-between h-32 py-4">
+            <Link href="/" className="flex items-center justify-center">
               <Image
                 src={DEFAULT_LOGO_SRC}
                 alt={DEFAULT_LOGO_ALT}

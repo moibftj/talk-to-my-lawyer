@@ -158,8 +158,8 @@ export default function NewLandingPage() {
           }`}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-3 animate-fade-in">
+            <div className="flex items-center justify-between h-32 py-4">
+              <div className="flex items-center justify-center">
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
