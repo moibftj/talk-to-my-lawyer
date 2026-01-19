@@ -28,29 +28,36 @@ interface TestAccount {
   fullName: string
 }
 
+const testPassword = process.env.TEST_ACCOUNT_PASSWORD
+
+if (!testPassword) {
+  console.error('❌ Error: TEST_ACCOUNT_PASSWORD must be set')
+  process.exit(1)
+}
+
 const testAccounts: TestAccount[] = [
   {
     email: 'test-subscriber@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'subscriber',
     fullName: 'Test Subscriber'
   },
   {
     email: 'test-employee@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'employee',
     fullName: 'Test Employee'
   },
   {
     email: 'test-superadmin@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'admin',
     adminSubRole: 'super_admin',
     fullName: 'Test System Admin'
   },
   {
     email: 'test-attorney@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'admin',
     adminSubRole: 'attorney_admin',
     fullName: 'Test Attorney Admin'

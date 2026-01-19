@@ -5,9 +5,18 @@
  */
 
 const https = require('https');
+require('dotenv').config({ path: '.env.local' });
+require('dotenv').config();
 
-const SUPABASE_URL = 'https://nomiiqzxaxyxnxndvkbe.supabase.co';
-const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbWlpcXp4YXh5eG54bmR2a2JlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDA3OTYyNCwiZXhwIjoyMDc5NjU1NjI0fQ.xxzjUylj-eEO91fnugufUfk_X2tSlM_-wWapkhoYs5I';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  console.error('❌ Missing SUPABASE_URL/NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+const supabaseHost = new URL(SUPABASE_URL).hostname;
 
 // SQL to execute - Employee coupon fix migration
 const sql = `
@@ -113,7 +122,7 @@ function executeSQL(query) {
     
     // First, let's try using the PostgREST endpoint directly
     const options = {
-      hostname: 'nomiiqzxaxyxnxndvkbe.supabase.co',
+      hostname: supabaseHost,
       port: 443,
       path: '/rest/v1/',
       method: 'POST',
@@ -129,7 +138,7 @@ function executeSQL(query) {
     
     // Since we can't use RPC directly, let's just verify connection
     const testOptions = {
-      hostname: 'nomiiqzxaxyxnxndvkbe.supabase.co',
+      hostname: supabaseHost,
       port: 443,
       path: '/rest/v1/profiles?select=count&limit=1',
       method: 'GET',

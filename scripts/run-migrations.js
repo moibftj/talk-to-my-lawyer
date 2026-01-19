@@ -26,8 +26,7 @@ require('dotenv').config(); // Fallback
 // DB Connection string from env or constructed
 // Prefer pooler connection for IPv4 compatibility
 let connectionString = process.env.DATABASE_URL ||
-                       process.env.POSTGRES_URL ||
-                       'postgresql://postgres.kvfzxvizcudjwqyxvqzg:kE2RCNmEcwrWgh8R@aws-0-us-east-1.pooler.supabase.com:6543/postgres';
+                       process.env.POSTGRES_URL;
 
 if (!connectionString) {
   console.error('❌ DATABASE_URL or POSTGRES_URL is not set.');

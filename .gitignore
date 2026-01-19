@@ -120,6 +120,7 @@ vercel-env.json
 
 # User requested ignores
 *.md
+!docs/SUPABASE_EMAIL_SETUP.md
 test_reports/
 coverage/
 .nyc_output/
