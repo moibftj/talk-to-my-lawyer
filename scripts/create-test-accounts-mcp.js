@@ -8,16 +8,19 @@ const { createClient } = require('@supabase/supabase-js')
 // Load environment from the app (should be available at runtime)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const testPassword = process.env.TEST_ACCOUNT_PASSWORD
 
 console.log('🔍 Checking environment variables...')
 console.log('SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing')
 console.log('SERVICE_ROLE_KEY:', supabaseServiceKey ? '✓ Set' : '✗ Missing')
+console.log('TEST_ACCOUNT_PASSWORD:', testPassword ? '✓ Set' : '✗ Missing')
 
-if (!supabaseUrl || !supabaseServiceKey) {
+if (!supabaseUrl || !supabaseServiceKey || !testPassword) {
   console.error('\n❌ Error: Required environment variables are missing')
   console.log('\nPlease ensure these are set:')
   console.log('  - NEXT_PUBLIC_SUPABASE_URL')
   console.log('  - SUPABASE_SERVICE_ROLE_KEY')
+  console.log('  - TEST_ACCOUNT_PASSWORD')
   process.exit(1)
 }
 
@@ -31,26 +34,26 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 const testAccounts = [
   {
     email: 'test-subscriber@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'subscriber',
     fullName: 'Test Subscriber'
   },
   {
     email: 'test-employee@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'employee',
     fullName: 'Test Employee'
   },
   {
     email: 'test-superadmin@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'admin',
     adminSubRole: 'super_admin',
     fullName: 'Test System Admin'
   },
   {
     email: 'test-attorney@ttml-test.com',
-    password: 'TestPass123!',
+    password: testPassword,
     role: 'admin',
     adminSubRole: 'attorney_admin',
     fullName: 'Test Attorney Admin'
