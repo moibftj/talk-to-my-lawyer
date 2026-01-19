@@ -68,9 +68,9 @@ export default function ResetPasswordPage() {
             <Image
               src={DEFAULT_LOGO_SRC}
               alt={DEFAULT_LOGO_ALT}
-              width={56}
-              height={56}
-              className="h-14 w-14 rounded-full logo-badge"
+              width={120}
+              height={120}
+              className="h-30 w-30 rounded-full logo-badge"
               priority
             />
           </div>

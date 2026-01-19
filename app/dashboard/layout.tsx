@@ -161,9 +161,9 @@ export default function DashboardLayout({
               <Image
                 src={DEFAULT_LOGO_SRC}
                 alt={DEFAULT_LOGO_ALT}
-                width={36}
-                height={36}
-                className="h-9 w-9 rounded-full logo-badge"
+                width={48}
+                height={48}
+                className="h-12 w-12 rounded-full logo-badge"
                 priority
               />
               <span className="text-xl font-bold">TalkToMyLawyer.com</span>
@@ -223,9 +223,9 @@ export default function DashboardLayout({
             <Image
               src={DEFAULT_LOGO_SRC}
               alt={DEFAULT_LOGO_ALT}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full logo-badge"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-full logo-badge"
               priority
             />
             <span className="text-lg font-bold">TTML</span>
@@ -246,9 +246,9 @@ export default function DashboardLayout({
                     <Image
                       src={DEFAULT_LOGO_SRC}
                       alt={DEFAULT_LOGO_ALT}
-                      width={36}
-                      height={36}
-                      className="h-9 w-9 rounded-full logo-badge"
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 rounded-full logo-badge"
                       priority
                     />
                     <span className="text-xl font-bold">TalkToMyLawyer.com</span>

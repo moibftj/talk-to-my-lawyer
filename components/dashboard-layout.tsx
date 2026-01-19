@@ -47,7 +47,7 @@ export async function DashboardLayout({ children }: { children: React.ReactNode 
               <Image
                 src={DEFAULT_LOGO_SRC}
                 alt={DEFAULT_LOGO_ALT}
-                width={36}
+                width={48}
                 height={36}
                 className="h-9 w-9 rounded-full logo-badge"
                 priority

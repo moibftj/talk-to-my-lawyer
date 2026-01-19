@@ -94,9 +94,9 @@ export function AdminSidebar() {
             <Image
               src={DEFAULT_LOGO_SRC}
               alt={DEFAULT_LOGO_ALT}
-              width={32}
-              height={32}
-              className="h-8 w-8 rounded-full logo-badge"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-full logo-badge"
               priority
             />
             {!isCollapsed && (
