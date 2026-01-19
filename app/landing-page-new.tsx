@@ -163,9 +163,9 @@ export default function NewLandingPage() {
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
-                  width={64}
-                  height={64}
-                  className="h-16 w-16 rounded-full logo-badge"
+                  width={128}
+                  height={128}
+                  className="h-32 w-32 rounded-full logo-badge"
                   priority
                 />
               </div>
