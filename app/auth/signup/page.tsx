@@ -57,17 +57,17 @@ export default function SignUpPage() {
     }
 
     try {
-      let redirectUrl = '/dashboard'
-      if (process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL) {
-        redirectUrl = process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL
-      } else if (typeof window !== 'undefined') {
-        // Redirect to role-specific dashboard after email confirmation
-        const roleRedirects: Record<string, string> = {
-          'subscriber': '/dashboard/letters',
-          'employee': '/dashboard/commissions'
-        }
-        redirectUrl = window.location.origin + roleRedirects[role]
+      // Use production domain as primary, fallback to current origin
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' || (typeof window !== 'undefined' ? window.location.origin : 'https://www.talk-to-my-lawyer.com')
+      
+      const roleRedirects: Record<string, string> = {
+        'subscriber': '/dashboard/letters',
+        'employee': '/dashboard/commissions'
       }
+      
+      const redirectUrl = `${baseUrl}${roleRedirects[role]}`
+
+      console.log('Signup redirect URL:', redirectUrl)
 
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -81,7 +81,10 @@ export default function SignUpPage() {
         }
       })
 
-      if (signUpError) throw signUpError
+      if (signUpError) {
+        console.error('Signup error:', signUpError)
+        throw signUpError
+      }
 
       if (authData.user) {
         // Profile and employee coupon are created automatically by database triggers:
@@ -95,7 +98,18 @@ export default function SignUpPage() {
 
       router.push('/auth/check-email')
     } catch (err: any) {
-      setError(err.message || 'Failed to create account')
+      console.error('Signup error details:', err)
+      
+      // Provide more specific error messages
+      if (err.message?.includes('Invalid redirect URL')) {
+        setError('Configuration error. Please contact support.')
+      } else if (err.message?.includes('User already registered')) {
+        setError('An account with this email already exists. Try signing in instead.')
+      } else if (err.message?.includes('Email not confirmed')) {
+        setError('Please check your email and click the confirmation link.')
+      } else {
+        setError(err.message || 'Failed to create account. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
