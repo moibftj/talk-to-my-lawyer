@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Load environment variables
+import dotenv from 'dotenv'
+dotenv.config({ path: '.env.local' })
+
 // Test email templates and service directly
 import { Resend } from 'resend'
 
