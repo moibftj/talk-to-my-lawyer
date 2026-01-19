@@ -127,7 +127,7 @@ export function AdminSidebar() {
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
               >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <item.icon className="h-5 w-5 shrink-0" />
                 {!isCollapsed && (
                   <>
                     <span className="flex-1">{item.title}</span>

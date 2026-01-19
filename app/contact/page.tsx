@@ -8,7 +8,7 @@ import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
       {/* Navigation Header */}
       <nav className="glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 bg-white/95 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,7 +24,7 @@ export default function ContactPage() {
               />
             </Link>
             <Link href="/auth/signup">
-              <button className="px-6 py-2 bg-gradient-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
+              <button className="px-6 py-2 bg-linear-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
                 Get Started
               </button>
             </Link>
@@ -125,23 +125,23 @@ export default function ContactPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">What We Can Help You With</h2>
             <ul className="space-y-4 text-gray-600">
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 shrink-0"></span>
                 <span>Understanding which type of letter is right for your situation</span>
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 shrink-0"></span>
                 <span>Learning how the letter drafting and approval process works</span>
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 shrink-0"></span>
                 <span>Choosing between single letters and membership</span>
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 shrink-0"></span>
                 <span>Questions about pricing, delivery, and turnaround times</span>
               </li>
               <li className="flex items-start">
-                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                <span className="w-2 h-2 bg-[#199df4] rounded-full mt-2 mr-3 shrink-0"></span>
                 <span>Technical support with your account</span>
               </li>
             </ul>
@@ -156,7 +156,7 @@ export default function ContactPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
+            className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
           >
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
@@ -172,7 +172,7 @@ export default function ContactPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
+      <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
         </div>

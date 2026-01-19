@@ -56,7 +56,7 @@ export default function AttorneyLoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+    <main className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <title>Attorney Admin Login - Talk-To-My-Lawyer</title>
       <Card className="w-full max-w-md border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardHeader className="space-y-1">
@@ -128,7 +128,7 @@ export default function AttorneyLoginPage() {
 
             {error && (
               <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-900/50 rounded-md flex items-center gap-2">
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {error}

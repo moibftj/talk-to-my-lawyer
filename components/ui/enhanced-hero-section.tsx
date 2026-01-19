@@ -69,7 +69,7 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
   return (
     <section
       ref={containerRef}
-      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30"
     >
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -116,7 +116,7 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
         {mounted && particles.map((particle) => (
           <motion.div
             key={particle.id}
-            className="absolute rounded-full bg-gradient-to-r from-[#199df4] to-[#00d4ff] opacity-40"
+            className="absolute rounded-full bg-linear-to-r from-[#199df4] to-[#00d4ff] opacity-40"
             style={{
               width: particle.size,
               height: particle.size,
@@ -189,7 +189,7 @@ export default function HeroSection({ onGetStarted, onLearnMore }: HeroSectionPr
           <Button
             onClick={onGetStarted}
             size="lg"
-            className="bg-gradient-to-r from-[#199df4] to-[#0d8ae0] hover:from-[#0d8ae0] hover:to-[#0066cc] text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            className="bg-linear-to-r from-[#199df4] to-[#0d8ae0] hover:from-[#0d8ae0] hover:to-[#0066cc] text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
           >
             Get Started Free
             <ArrowRight className="ml-2 w-5 h-5" />

@@ -41,7 +41,7 @@ const steps = [
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
       {/* Navigation Header */}
       <nav className="glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 bg-white/95 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,7 +62,7 @@ export default function HowItWorksPage() {
                 Home
               </Link>
               <Link href="/auth/signup">
-                <button className="px-6 py-2 bg-gradient-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
+                <button className="px-6 py-2 bg-linear-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
                   Get Started
                 </button>
               </Link>
@@ -104,12 +104,12 @@ export default function HowItWorksPage() {
               >
                 <div className="px-6 py-6 flex items-start gap-5">
                   {/* Step Number */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-[#199df4] to-[#0d8ae0] flex items-center justify-center text-white font-bold text-xl shadow-md">
+                  <div className="shrink-0 w-12 h-12 rounded-full bg-linear-to-r from-[#199df4] to-[#0d8ae0] flex items-center justify-center text-white font-bold text-xl shadow-md">
                     {step.number}
                   </div>
                   
                   {/* Icon */}
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center">
+                  <div className="shrink-0 w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center">
                     <Icon className="w-6 h-6 text-[#199df4]" />
                   </div>
                   
@@ -123,7 +123,7 @@ export default function HowItWorksPage() {
                 {/* Connector Line */}
                 {index < steps.length - 1 && (
                   <div className="flex justify-start pl-10">
-                    <div className="w-0.5 h-6 bg-gradient-to-b from-[#199df4] to-sky-200 -mt-1"></div>
+                    <div className="w-0.5 h-6 bg-linear-to-b from-[#199df4] to-sky-200 -mt-1"></div>
                   </div>
                 )}
               </motion.div>
@@ -144,27 +144,27 @@ export default function HowItWorksPage() {
             <h2 className="text-2xl font-bold text-center mb-8">What You Get</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
                 <span className="text-gray-700">Letter drafted by licensed attorney</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
                 <span className="text-gray-700">Attorney approved content</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
                 <span className="text-gray-700">Sent from lawyer&apos;s email address</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
                 <span className="text-gray-700">Official law firm letterhead</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
                 <span className="text-gray-700">PDF download for your records</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] flex-shrink-0" />
+                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
                 <span className="text-gray-700">Up to 48 hours turnaround</span>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function HowItWorksPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
+            className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
           >
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
@@ -196,7 +196,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
+      <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
         </div>

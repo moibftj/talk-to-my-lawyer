@@ -42,15 +42,15 @@ export default function SuccessMessage() {
   if (!message) return null
 
   const bgColor = type === 'talk3'
-    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+    ? 'bg-linear-to-r from-blue-500 to-cyan-500 text-white'
     : type === 'test'
-    ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
-    : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+    ? 'bg-linear-to-r from-blue-500 to-cyan-500 text-white'
+    : 'bg-linear-to-r from-green-500 to-emerald-500 text-white'
 
   return (
     <div className={`${bgColor} rounded-lg shadow-lg p-6 mb-6 animate-in slide-in-from-top-2`}>
       <div className="flex items-center">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>

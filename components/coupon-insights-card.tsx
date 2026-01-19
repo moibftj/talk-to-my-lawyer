@@ -41,7 +41,7 @@ export function CouponInsightsCard({
   return (
     <div className="space-y-6">
       {/* Main Coupon Display */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-8 text-white shadow-lg">
+      <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-xl p-8 text-white shadow-lg">
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="text-sm font-medium text-blue-100 mb-1">Your Coupon Code</div>
@@ -151,25 +151,25 @@ export function CouponInsightsCard({
         <h3 className="text-lg font-semibold text-blue-900 mb-4">How Your Coupon Works</h3>
         <div className="space-y-3 text-sm text-blue-800">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-xs">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 font-semibold text-xs">
               1
             </div>
             <p>Share your unique coupon code or referral link with potential subscribers</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-xs">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 font-semibold text-xs">
               2
             </div>
             <p>When they subscribe using your code, they get <strong>20% off</strong> their subscription</p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-xs">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 font-semibold text-xs">
               3
             </div>
             <p>You earn <strong>5% commission</strong> on their subscription amount + <strong>1 point</strong></p>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-xs">
+            <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center shrink-0 font-semibold text-xs">
               4
             </div>
             <p>Track all your earnings and payouts in the <strong>Commissions</strong> tab</p>

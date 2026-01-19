@@ -95,7 +95,7 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
           {selected === "0" && (
             <motion.span
               layoutId={"switch"}
-              className="absolute top-0 left-0 sm:h-12 h-10 w-full rounded-full border-4 shadow-sm shadow-[#199df4] border-[#199df4] bg-gradient-to-t from-[#0d8ae0] via-[#199df4] to-[#4facfe]"
+              className="absolute top-0 left-0 sm:h-12 h-10 w-full rounded-full border-4 shadow-sm shadow-[#199df4] border-[#199df4] bg-linear-to-t from-[#0d8ae0] via-[#199df4] to-[#4facfe]"
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
           )}
@@ -113,7 +113,7 @@ const PricingSwitch = ({ onSwitch }: { onSwitch: (value: string) => void }) => {
           {selected === "1" && (
             <motion.span
               layoutId={"switch"}
-              className="absolute top-0 left-0 sm:h-12 h-10 w-full rounded-full border-4 shadow-sm shadow-[#199df4] border-[#199df4] bg-gradient-to-t from-[#0d8ae0] via-[#199df4] to-[#4facfe]"
+              className="absolute top-0 left-0 sm:h-12 h-10 w-full rounded-full border-4 shadow-sm shadow-[#199df4] border-[#199df4] bg-linear-to-t from-[#0d8ae0] via-[#199df4] to-[#4facfe]"
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
           )}
@@ -154,7 +154,7 @@ export default function PricingSection() {
     setIsSubscription(Number.parseInt(value) === 1);
 
   return (
-    <div id="pricing" className="px-4 py-20 mx-auto relative bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30" ref={pricingRef}>
+    <div id="pricing" className="px-4 py-20 mx-auto relative bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30" ref={pricingRef}>
       <div
         className="absolute top-0 left-[10%] right-[10%] w-[80%] h-full z-0"
         style={{
@@ -260,7 +260,7 @@ export default function PricingSection() {
                   <button
                     className={`w-full mb-6 p-4 text-lg rounded-xl transition-all duration-300 ${
                       plan.popular
-                        ? "bg-gradient-to-t from-[#0d8ae0] to-[#199df4] shadow-lg shadow-[#199df4]/40 border border-[#4facfe] text-white hover:shadow-xl hover:scale-105"
+                        ? "bg-linear-to-t from-[#0d8ae0] to-[#199df4] shadow-lg shadow-[#199df4]/40 border border-[#4facfe] text-white hover:shadow-xl hover:scale-105"
                         : plan.buttonVariant === "outline"
                           ? "bg-linear-to-t from-neutral-900 to-neutral-600 shadow-lg shadow-neutral-900 border border-neutral-700 text-white hover:shadow-xl hover:scale-105"
                           : ""

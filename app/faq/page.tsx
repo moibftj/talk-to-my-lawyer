@@ -91,7 +91,7 @@ export default function FAQPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
       {/* Navigation Header */}
       <nav className="glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 bg-white/95 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -107,7 +107,7 @@ export default function FAQPage() {
               />
             </Link>
             <Link href="/auth/signup">
-              <button className="px-6 py-2 bg-gradient-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
+              <button className="px-6 py-2 bg-linear-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
                 Get Started
               </button>
             </Link>
@@ -150,7 +150,7 @@ export default function FAQPage() {
                   onClick={() => toggle(faq.id)}
                   className="w-full px-6 py-5 flex items-start gap-4 text-left hover:bg-sky-50/50 transition-colors"
                 >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
+                  <div className="shrink-0 w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
                     <Icon className="w-5 h-5 text-[#199df4]" />
                   </div>
                   <div className="flex-1">
@@ -159,7 +159,7 @@ export default function FAQPage() {
                   <motion.div
                     animate={{ rotate: openId === faq.id ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
-                    className="flex-shrink-0"
+                    className="shrink-0"
                   >
                     <ChevronDown className="w-5 h-5 text-gray-400" />
                   </motion.div>
@@ -186,7 +186,7 @@ export default function FAQPage() {
 
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
+      <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
         </div>

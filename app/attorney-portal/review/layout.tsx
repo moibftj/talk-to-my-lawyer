@@ -23,7 +23,7 @@ export default async function AttorneyReviewLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900">
+    <div className="min-h-screen bg-linear-to-br from-blue-900 via-blue-800 to-blue-900">
       <div className="flex h-screen">
         {/* Sidebar */}
         <div className="w-64 bg-blue-800/50 backdrop-blur border-r border-blue-700 flex flex-col">

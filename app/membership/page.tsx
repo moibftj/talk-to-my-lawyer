@@ -47,7 +47,7 @@ const reasons = [
 
 export default function MembershipPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
       {/* Navigation Header */}
       <nav className="glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 bg-white/95 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,7 +63,7 @@ export default function MembershipPage() {
               />
             </Link>
             <Link href="/auth/signup">
-              <button className="px-6 py-2 bg-gradient-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
+              <button className="px-6 py-2 bg-linear-to-r from-[#199df4] to-[#0d8ae0] text-white rounded-lg font-medium hover:shadow-lg transition-all">
                 Get Started
               </button>
             </Link>
@@ -111,7 +111,7 @@ export default function MembershipPage() {
                 className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center">
+                  <div className="shrink-0 w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center">
                     <Icon className="w-6 h-6 text-[#199df4]" />
                   </div>
                   <div className="flex-1">
@@ -155,7 +155,7 @@ export default function MembershipPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
+            className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
           >
             <h2 className="text-3xl font-bold mb-4">Ready to Become a Member?</h2>
             <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
@@ -172,7 +172,7 @@ export default function MembershipPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
+      <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
         </div>
