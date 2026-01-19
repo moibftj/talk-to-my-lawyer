@@ -3,12 +3,23 @@
 import dotenv from 'dotenv'
 dotenv.config({ path: '.env.local' })
 
-import { getServiceRoleClient } from './lib/supabase/admin.js'
+import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
 console.log('🚀 Testing Email Queue Processing...\n')
 
-const supabase = getServiceRoleClient()
+// Create Supabase client directly
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  }
+)
+
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 async function processPendingEmails() {
