@@ -100,9 +100,9 @@ export default function FAQPage() {
               <Image
                 src={DEFAULT_LOGO_SRC}
                 alt={DEFAULT_LOGO_ALT}
-                width={128}
-                height={128}
-                className="h-32 w-32 rounded-full logo-badge"
+                width={160}
+                height={160}
+                className="h-40 w-40 rounded-full logo-badge"
                 priority
               />
             </Link>

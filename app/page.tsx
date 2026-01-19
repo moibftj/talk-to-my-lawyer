@@ -197,7 +197,7 @@ export default function HomePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-40 w-40 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-lg text-muted-foreground">
             Redirecting to your dashboard...
           </p>
@@ -223,9 +223,9 @@ export default function HomePage() {
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
-                  width={128}
-                  height={128}
-                  className="h-32 w-32 rounded-full logo-badge"
+                  width={160}
+                  height={160}
+                  className="h-40 w-40 rounded-full logo-badge"
                   priority
                 />
               </Link>

@@ -143,9 +143,9 @@ export default function LoginPage() {
             <Image
               src={DEFAULT_LOGO_SRC}
               alt={DEFAULT_LOGO_ALT}
-              width={120}
-              height={120}
-              className="h-30 w-30 rounded-full logo-badge"
+              width={150}
+              height={150}
+              className="h-38 w-38 rounded-full logo-badge"
               priority
             />
           </div>
