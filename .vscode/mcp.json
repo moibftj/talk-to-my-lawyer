@@ -1,12 +1,4 @@
 {
-	"inputs": [
-		{
-			"id": "token",
-			"type": "promptString",
-			"description": "GitHub Personal Access Token",
-			"password": true
-		}
-	],
 	"servers": {
 		"io.github.vercel/next-devtools-mcp": {
 			"type": "stdio",
@@ -36,6 +28,18 @@
 			],
 			"gallery": "https://api.mcp.github.com",
 			"version": "0.28.1"
+		},
+		"supabase": {
+			"type": "http",
+			"url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=docs,account,database,debugging,development,functions,branching,storage"
 		}
-	}
+	},
+	"inputs": [
+		{
+			"id": "token",
+			"type": "promptString",
+			"description": "GitHub Personal Access Token",
+			"password": true
+		}
+	]
 }
