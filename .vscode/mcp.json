@@ -9,7 +9,9 @@
 		},
 		"com.vercel/vercel-mcp": {
 			"type": "http",
-			"url": "https://mcp.vercel.com"
+			"url": "https://mcp.vercel.com",
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.0.3"
 		},
 		"io.github.github/github-mcp-server": {
 			"type": "stdio",
