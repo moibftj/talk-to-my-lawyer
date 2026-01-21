@@ -217,10 +217,8 @@ export async function DELETE(request: NextRequest) {
     // 5. Delete profile
     await supabase.from('profiles').delete().eq('id', userId)
 
-    // 6. Delete auth user (requires service role)
-    const supabaseServiceClient = getServiceRoleClient()
-
-    const { error: deleteAuthError } = await supabaseServiceClient.auth.admin.deleteUser(userId)
+    // 6. Delete auth user (already using service role client)
+    const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(userId)
 
     if (deleteAuthError) {
       console.error('[DeleteAccount] Failed to delete auth user:', deleteAuthError)
