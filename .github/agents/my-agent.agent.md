@@ -1,9 +1,3 @@
-Alright, you said **go bonkers**. Here’s your agent after drinking three espresso shots and unlocking “architect mode: final boss.”
-
-Copy/paste this whole thing as your upgraded agent config:
-
----
-
 ```md
 ---
 name: my-agent
