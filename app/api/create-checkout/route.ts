@@ -49,7 +49,14 @@ export async function POST(request: NextRequest) {
 
     if (couponCode) {
       // Special handling for TALK3 coupon (100% discount, no database lookup, no commission)
+      // CRITICAL: TALK3 is TEST MODE ONLY - reject in production
       if (couponCode.toUpperCase() === 'TALK3') {
+        if (!TEST_MODE) {
+          console.warn('[Checkout] TALK3 coupon attempted in production - rejected')
+          return NextResponse.json({ 
+            error: 'This coupon code is not valid' 
+          }, { status: 400 })
+        }
         discount = 100
         employeeId = null // No commission for TALK3
         couponId = null
@@ -94,6 +101,29 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (coupon) {
+          // Validate coupon hasn't exceeded max uses
+          if (coupon.max_uses !== null && coupon.usage_count >= coupon.max_uses) {
+            console.warn('[Checkout] Coupon max uses exceeded:', {
+              couponCode,
+              usage_count: coupon.usage_count,
+              max_uses: coupon.max_uses
+            })
+            return NextResponse.json({ 
+              error: 'This coupon has reached its usage limit' 
+            }, { status: 400 })
+          }
+
+          // Validate coupon hasn't expired
+          if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+            console.warn('[Checkout] Coupon expired:', {
+              couponCode,
+              expires_at: coupon.expires_at
+            })
+            return NextResponse.json({ 
+              error: 'This coupon has expired' 
+            }, { status: 400 })
+          }
+
           discount = coupon.discount_percent
           employeeId = coupon.employee_id
           couponId = coupon.id
