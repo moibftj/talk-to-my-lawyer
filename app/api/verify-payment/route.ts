@@ -74,82 +74,93 @@ export async function POST(request: NextRequest) {
     const couponCode = metadata.coupon_code || null
     const employeeId = metadata.employee_id || null
 
-    // Create subscription in database
-    const { data: subscription, error: subError } = await supabase
+    // Look for pending subscription to complete
+    const { data: pendingSubscription } = await supabase
       .from('subscriptions')
-      .insert({
-        user_id: userId,
-        plan: planType,
-        plan_type: planType,
-        status: 'active',
-        price: finalPrice,
-        discount: discount,
-        coupon_code: couponCode,
-        remaining_letters: letters,
-        credits_remaining: letters,
-        last_reset_at: new Date().toISOString(),
-        current_period_start: new Date().toISOString(),
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        stripe_session_id: sessionId,
-      })
-      .select()
-      .single()
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-    if (subError) {
-      console.error('Error creating subscription:', subError)
-      throw subError
-    }
-
-    // Record coupon usage
-    if (couponCode) {
-      await supabase
-        .from('coupon_usage')
-        .insert({
-          user_id: userId,
-          coupon_code: couponCode,
-          employee_id: employeeId,
-          discount_percent: basePrice ? (discount / basePrice) * 100 : 0,
-          amount_before: basePrice,
-          amount_after: finalPrice,
-        })
-    }
-
-    // Create commission for employee
-    if (employeeId && subscription) {
-      const commissionAmount = finalPrice * 0.05
-
-      await supabase
-        .from('commissions')
-        .insert({
-          employee_id: employeeId,
-          subscription_id: subscription.id,
-          subscription_amount: finalPrice,
-          commission_rate: 0.05,
-          commission_amount: commissionAmount,
-          status: 'pending',
-        })
-
-      // Update coupon usage count
-      const { data: currentCoupon } = await supabase
-        .from('employee_coupons')
-        .select('usage_count')
-        .eq('code', couponCode)
+    if (!pendingSubscription) {
+      // No pending subscription - check if already completed (race with webhook)
+      const { data: activeSubscription } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('stripe_session_id', sessionId)
+        .eq('status', 'active')
         .single()
 
-      await supabase
-        .from('employee_coupons')
-        .update({
-          usage_count: (currentCoupon?.usage_count || 0) + 1,
-          updated_at: new Date().toISOString(),
+      if (activeSubscription) {
+        return NextResponse.json({
+          success: true,
+          subscriptionId: activeSubscription.id,
+          letters: letters,
+          message: 'Subscription already activated by webhook',
         })
-        .eq('code', couponCode)
+      }
+
+      console.error('[Verify Payment] No pending subscription found for user:', userId)
+      return NextResponse.json({ error: 'No pending subscription found' }, { status: 400 })
     }
+
+    // Use atomic transaction to complete subscription with commission
+    // This prevents race conditions with the webhook
+    const { data: atomicResult, error: atomicError } = await supabase.rpc('complete_subscription_with_commission', {
+      p_user_id: userId,
+      p_subscription_id: pendingSubscription.id,
+      p_stripe_session_id: sessionId,
+      p_stripe_customer_id: session.customer as string || null,
+      p_plan_type: planType,
+      p_monthly_allowance: letters,
+      p_total_letters: letters,
+      p_final_price: finalPrice,
+      p_base_price: basePrice,
+      p_discount_amount: discount,
+      p_coupon_code: couponCode,
+      p_employee_id: employeeId,
+      p_commission_rate: 0.05,
+    })
+
+    if (atomicError) {
+      // Check if it's a "subscription already active" error (webhook completed first)
+      if (atomicError.message?.includes('already active') || atomicError.code === '23505') {
+        const { data: completedSub } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_session_id', sessionId)
+          .eq('status', 'active')
+          .single()
+
+        if (completedSub) {
+          return NextResponse.json({
+            success: true,
+            subscriptionId: completedSub.id,
+            letters: letters,
+            message: 'Subscription already activated by webhook',
+          })
+        }
+      }
+
+      console.error('[Verify Payment] Atomic subscription completion failed:', atomicError)
+      throw new Error(`Failed to complete subscription: ${atomicError.message}`)
+    }
+
+    if (!atomicResult || !atomicResult[0]?.success) {
+      const errorMsg = atomicResult?.[0]?.error_message || 'Unknown error'
+      console.error('[Verify Payment] Atomic subscription completion returned error:', errorMsg)
+      throw new Error(`Failed to complete subscription: ${errorMsg}`)
+    }
+
+    const result = atomicResult[0]
 
     return NextResponse.json({
       success: true,
-      subscriptionId: subscription.id,
+      subscriptionId: result.subscription_id,
       letters: letters,
-      message: 'Subscription created successfully',
+      message: 'Subscription activated successfully',
     })
   } catch (error) {
     console.error('[Verify Payment] Error:', error)

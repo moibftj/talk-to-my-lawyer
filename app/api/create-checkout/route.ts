@@ -48,116 +48,118 @@ export async function POST(request: NextRequest) {
     let couponId = null
 
     if (couponCode) {
-      // Special handling for TALK3 coupon (100% discount, no database lookup, no commission)
-      // CRITICAL: TALK3 is TEST MODE ONLY - reject in production
-      if (couponCode.toUpperCase() === 'TALK3') {
-        if (!TEST_MODE) {
-          console.warn('[Checkout] TALK3 coupon attempted in production - rejected')
+      // Enhanced coupon validation with fraud detection
+      console.log('[Checkout] Validating coupon with fraud detection:', couponCode)
+      const couponValidation = await validateCouponWithFraudDetection(couponCode, request, user.id)
+
+      if (!couponValidation.isValid) {
+        console.error('[Checkout] Coupon validation failed:', {
+          couponCode,
+          error: couponValidation.error,
+          fraudRisk: couponValidation.fraudResult?.riskScore
+        })
+
+        return NextResponse.json({
+          error: couponValidation.error || 'Invalid coupon code',
+          fraudDetection: couponValidation.fraudResult ? {
+            riskScore: couponValidation.fraudResult.riskScore,
+            action: couponValidation.fraudResult.action,
+            reasons: couponValidation.fraudResult.reasons
+          } : undefined
+        }, { status: 400 })
+      }
+
+      // Log fraud detection results for monitoring
+      if (couponValidation.fraudResult) {
+        console.warn('[Checkout] Fraud detection result:', {
+          couponCode,
+          riskScore: couponValidation.fraudResult.riskScore,
+          action: couponValidation.fraudResult.action,
+          reasons: couponValidation.fraudResult.reasons
+        })
+      }
+
+      // Check employee coupons in database
+      const { data: coupon } = await supabase
+        .from('employee_coupons')
+        .select('*')
+        .eq('code', couponCode)
+        .eq('is_active', true)
+        .single()
+
+      if (coupon) {
+        // Validate coupon hasn't exceeded max uses
+        if (coupon.max_uses !== null && coupon.usage_count >= coupon.max_uses) {
+          console.warn('[Checkout] Coupon max uses exceeded:', {
+            couponCode,
+            usage_count: coupon.usage_count,
+            max_uses: coupon.max_uses
+          })
+          return NextResponse.json({ 
+            error: 'This coupon has reached its usage limit' 
+          }, { status: 400 })
+        }
+
+        // Validate coupon hasn't expired
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+          console.warn('[Checkout] Coupon expired:', {
+            couponCode,
+            expires_at: coupon.expires_at
+          })
+          return NextResponse.json({ 
+            error: 'This coupon has expired' 
+          }, { status: 400 })
+        }
+
+        // Reject 100% discount coupons - no free subscriptions allowed
+        if (coupon.discount_percent >= 100) {
+          console.warn('[Checkout] 100% discount coupon rejected:', couponCode)
           return NextResponse.json({ 
             error: 'This coupon code is not valid' 
           }, { status: 400 })
         }
-        discount = 100
-        employeeId = null // No commission for TALK3
-        couponId = null
-      } else {
-        // Enhanced coupon validation with fraud detection
-        console.log('[Checkout] Validating coupon with fraud detection:', couponCode)
-        const couponValidation = await validateCouponWithFraudDetection(couponCode, request, user.id)
 
-        if (!couponValidation.isValid) {
-          console.error('[Checkout] Coupon validation failed:', {
-            couponCode,
-            error: couponValidation.error,
-            fraudRisk: couponValidation.fraudResult?.riskScore
+        discount = coupon.discount_percent
+        employeeId = coupon.employee_id
+        couponId = coupon.id
+
+        // Log coupon usage with fraud detection context
+        await supabase
+          .from('coupon_usage')
+          .insert({
+            user_id: user.id,
+            coupon_code: couponCode,
+            employee_id: employeeId,
+            // subscription_id will be added after successful checkout
+            discount_percent: discount,
+            amount_before: basePrice,
+            amount_after: (basePrice * (100 - discount)) / 100,
+            ip_address: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
+            user_agent: request.headers.get('user-agent') || 'unknown',
+            fraud_risk_score: couponValidation.fraudResult?.riskScore || 0,
+            fraud_detection_data: couponValidation.fraudResult || null,
+            created_at: new Date().toISOString()
           })
-
-          return NextResponse.json({
-            error: couponValidation.error || 'Invalid coupon code',
-            fraudDetection: couponValidation.fraudResult ? {
-              riskScore: couponValidation.fraudResult.riskScore,
-              action: couponValidation.fraudResult.action,
-              reasons: couponValidation.fraudResult.reasons
-            } : undefined
-          }, { status: 400 })
-        }
-
-        // Log fraud detection results for monitoring
-        if (couponValidation.fraudResult) {
-          console.warn('[Checkout] Fraud detection result:', {
-            couponCode,
-            riskScore: couponValidation.fraudResult.riskScore,
-            action: couponValidation.fraudResult.action,
-            reasons: couponValidation.fraudResult.reasons
-          })
-        }
-
-        // Check employee coupons in database (including special promo codes)
-        const { data: coupon } = await supabase
-          .from('employee_coupons')
-          .select('*')
-          .eq('code', couponCode)
-          .eq('is_active', true)
-          .single()
-
-        if (coupon) {
-          // Validate coupon hasn't exceeded max uses
-          if (coupon.max_uses !== null && coupon.usage_count >= coupon.max_uses) {
-            console.warn('[Checkout] Coupon max uses exceeded:', {
-              couponCode,
-              usage_count: coupon.usage_count,
-              max_uses: coupon.max_uses
-            })
-            return NextResponse.json({ 
-              error: 'This coupon has reached its usage limit' 
-            }, { status: 400 })
-          }
-
-          // Validate coupon hasn't expired
-          if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-            console.warn('[Checkout] Coupon expired:', {
-              couponCode,
-              expires_at: coupon.expires_at
-            })
-            return NextResponse.json({ 
-              error: 'This coupon has expired' 
-            }, { status: 400 })
-          }
-
-          discount = coupon.discount_percent
-          employeeId = coupon.employee_id
-          couponId = coupon.id
-
-          // Log coupon usage with fraud detection context
-          await supabase
-            .from('coupon_usage')
-            .insert({
-              user_id: user.id,
-              coupon_code: couponCode,
-              employee_id: employeeId,
-              // subscription_id will be added after successful checkout
-              discount_percent: discount,
-              amount_before: basePrice,
-              amount_after: (basePrice * (100 - discount)) / 100,
-              ip_address: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown',
-              user_agent: request.headers.get('user-agent') || 'unknown',
-              fraud_risk_score: couponValidation.fraudResult?.riskScore || 0,
-              fraud_detection_data: couponValidation.fraudResult || null,
-              created_at: new Date().toISOString()
-            })
-            console.log('[Checkout] Coupon usage logged')
-        }
+          console.log('[Checkout] Coupon usage logged')
       }
     }
 
     const discountAmount = (basePrice * discount) / 100
     const finalPrice = basePrice - discountAmount
 
-    // Special handling for TALK3 coupon with test mode
-    if (couponCode && couponCode.toUpperCase() === 'TALK3' && TEST_MODE) {
-      console.log('[Checkout] TALK3 coupon in TEST MODE: Creating dummy subscription')
+    // Safety check: Reject any 0-price transactions (no free subscriptions)
+    if (finalPrice <= 0) {
+      console.error('[Checkout] Attempted free subscription rejected')
+      return NextResponse.json({ 
+        error: 'Invalid checkout configuration' 
+      }, { status: 400 })
+    }
 
-      // Create subscription directly as if payment succeeded
+    // ===== TEST MODE: Simulate successful payment without Stripe =====
+    if (TEST_MODE) {
+      console.log('[Checkout] TEST MODE: Simulating payment for user:', user.id)
+
+      // Create test subscription with proper payment record
       const { data: subscription, error: subError } = await supabase
         .from('subscriptions')
         .insert({
@@ -165,9 +167,10 @@ export async function POST(request: NextRequest) {
           plan: planType,
           plan_type: planType,
           status: 'active',
-          price: 0, // Free for TALK3
-          discount: basePrice,
-          coupon_code: 'TALK3',
+          price: finalPrice,
+          discount: discountAmount,
+          coupon_code: couponCode || null,
+          employee_coupon_id: couponId || null,
           credits_remaining: selectedPlan.letters,
           remaining_letters: selectedPlan.letters,
           current_period_start: new Date().toISOString(),
@@ -177,97 +180,29 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (subError) {
-        console.error('[Checkout] TALK3 TEST MODE: Subscription creation error:', subError)
+        console.error('[Checkout] TEST MODE: Subscription creation error:', subError)
         throw new Error(`Failed to create subscription: ${subError.message}`)
       }
 
-      // Track coupon usage for TALK3 (but no commission)
-      await supabase
-        .from('coupon_usage')
-        .insert({
-          user_id: user.id,
-          coupon_code: 'TALK3',
-          employee_id: null,
-          discount_percent: 100,
-          amount_before: basePrice,
-          amount_after: 0
+      // Create commission if employee coupon was used
+      if (employeeId && couponId) {
+        const commissionAmount = finalPrice * 0.05
+        await supabase.from('commissions').insert({
+          employee_id: employeeId,
+          subscription_id: subscription.id,
+          commission_amount: commissionAmount,
+          status: 'pending'
         })
-
-      console.log('[Checkout] TALK3 TEST MODE: Dummy subscription created successfully')
-
-      return NextResponse.json({
-        success: true,
-        testMode: true,
-        talk3Coupon: true,
-        subscriptionId: subscription.id,
-        letters: selectedPlan.letters,
-        message: 'TALK3 TEST MODE: Free subscription created successfully',
-        redirectUrl: `/dashboard/subscription?success=true&test=true&talk3=true`
-      })
-    }
-
-    // If 100% discount (non-TALK3), create subscription atomically
-    if (finalPrice === 0) {
-      // Use atomic transaction function to create subscription with commission
-      const { data: atomicResult, error: atomicError } = await supabase.rpc('create_free_subscription', {
-        p_user_id: user.id,
-        p_plan_type: planType,
-        p_monthly_allowance: selectedPlan.letters,
-        p_total_letters: selectedPlan.letters,
-        p_final_price: finalPrice,
-        p_base_price: basePrice,
-        p_discount_amount: discountAmount,
-        p_coupon_code: couponCode || null,
-        p_employee_id: employeeId || null,
-        p_commission_rate: 0.05,
-      })
-
-      if (atomicError || !atomicResult || !atomicResult[0]?.success) {
-        console.error('[Checkout] Atomic subscription creation failed:', atomicError)
-        throw new Error(`Failed to create subscription: ${atomicError?.message || atomicResult?.[0]?.error_message || 'Unknown error'}`)
+        // Increment coupon usage
+        await supabase.rpc('increment_coupon_usage_by_id', { coupon_id: couponId })
       }
-
-      const result = atomicResult[0]
-
-      return NextResponse.json({
-        success: true,
-        subscriptionId: result.subscription_id,
-        letters: selectedPlan.letters,
-        message: 'Subscription created successfully'
-      })
-    }
-
-    // ===== TEST MODE: Simulate successful payment without Stripe =====
-    if (TEST_MODE) {
-      console.log('[Checkout] TEST MODE: Simulating payment for user:', user.id)
-
-      // Use atomic transaction function for test mode as well
-      const { data: atomicResult, error: atomicError } = await supabase.rpc('create_free_subscription', {
-        p_user_id: user.id,
-        p_plan_type: planType,
-        p_monthly_allowance: selectedPlan.letters,
-        p_total_letters: selectedPlan.letters,
-        p_final_price: finalPrice,
-        p_base_price: basePrice,
-        p_discount_amount: discountAmount,
-        p_coupon_code: couponCode || null,
-        p_employee_id: employeeId || null,
-        p_commission_rate: 0.05,
-      })
-
-      if (atomicError || !atomicResult || !atomicResult[0]?.success) {
-        console.error('[Checkout] TEST MODE: Atomic subscription creation failed:', atomicError)
-        throw new Error(`Failed to create subscription: ${atomicError?.message || atomicResult?.[0]?.error_message || 'Unknown error'}`)
-      }
-
-      const result = atomicResult[0]
 
       console.log('[Checkout] TEST MODE: Payment simulated successfully')
 
       return NextResponse.json({
         success: true,
         testMode: true,
-        subscriptionId: result.subscription_id,
+        subscriptionId: subscription.id,
         letters: selectedPlan.letters,
         message: 'TEST MODE: Subscription created successfully (simulated payment)',
         redirectUrl: `/dashboard/subscription?success=true&test=true`
