@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
+import { requireSuperAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
 
 /**
  * POST /api/gdpr/delete-account
