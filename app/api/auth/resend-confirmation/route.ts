@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendTemplateEmail } from '@/lib/email'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
+import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 /**
  * API endpoint to resend confirmation emails via Resend
@@ -14,6 +15,12 @@ import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - 3 requests per 15 minutes per IP
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 3, "15 m")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const body = await request.json()
     const { email } = body
 

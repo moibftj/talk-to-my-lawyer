@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PLAN_CONFIG } from "@/lib/constants";
+import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - 10 requests per hour per IP
+    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, 10, "1 h")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const supabase = await createClient();
     
     // Get authenticated user

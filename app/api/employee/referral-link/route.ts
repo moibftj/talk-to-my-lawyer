@@ -1,12 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
+import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export const runtime = 'nodejs'
 
 // GET - Get referral link for current employee
 export async function GET(request: NextRequest) {
   try {
+    // Apply rate limiting - 30 requests per minute per IP
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 30, "1 m")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const supabase = await createClient()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()

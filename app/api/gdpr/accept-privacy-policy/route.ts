@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 /**
  * POST /api/gdpr/accept-privacy-policy
@@ -13,6 +14,12 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - 10 requests per minute per IP
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 10, "1 m")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const supabase = await createClient()
 
     // Check authentication

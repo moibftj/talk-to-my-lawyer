@@ -1,12 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { queueTemplateEmail } from '@/lib/email/service'
+import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export const runtime = 'nodejs'
 
 // GET - Get employee's commission summary and payout requests
 export async function GET(request: NextRequest) {
   try {
+    // Apply rate limiting - 30 requests per minute per IP
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 30, "1 m")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const supabase = await createClient()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -68,6 +75,12 @@ export async function GET(request: NextRequest) {
 // POST - Request a payout
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting - 5 payout requests per hour per IP
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 5, "1 h")
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
     const supabase = await createClient()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
