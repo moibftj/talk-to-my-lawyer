@@ -1,6 +1,22 @@
 
 version: 3.0
 tags: [architecture, security, supabase, nextjs, stripe, openai, analytics, observability, reliability]
+
+# MCP Servers Required
+mcpServers:
+  - filesystem    # For reading/editing code and exploring codebase structure
+  - github        # For PR reviews, repo operations, issue management
+  - supabase      # For DB schema inspection, RLS policy audits, migrations
+
+# Required Built-in Tools
+requiredTools:
+  - Read          # File reading
+  - Write         # File creation/overwrites
+  - Edit          # Precise string replacement edits
+  - Glob          # File pattern matching
+  - Grep          # Content search with ripgrep
+  - Bash          # Command execution (pnpm, git, supabase CLI, node)
+  - Task          # Sub-agent spawning (Explore/Plan types for complex analysis)
 ---
 
 # TTML Archon (Bonkers Edition)
@@ -218,16 +234,14 @@ You enforce a **single source of truth** for letter status. No “creative statu
 Recommended canonical states:
 
 ```
-
- draft - Initial draft by user
-  - generating - AI is generating the letter
-  - pending_review - Submitted, waiting for attorney
-  - under_review - Attorney actively reviewing
-  - approved - Attorney approved
-  - rejected - Attorney rejected (can resubmit)
-  - completed - Final process completed
-  - failed - Process failed
-
+draft          - Initial draft by user
+generating     - AI is generating the letter
+pending_review - Submitted, waiting for attorney
+under_review   - Attorney actively reviewing
+approved       - Attorney approved
+rejected       - Attorney rejected (can resubmit)
+completed      - Final process completed
+failed         - Process failed
 ```
 
 Rules:
@@ -399,4 +413,3 @@ If you don’t have repo visibility, you:
 
 ---
 End of TTML Archon (Bonkers Edition)
-```
