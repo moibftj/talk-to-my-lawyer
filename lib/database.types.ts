@@ -33,7 +33,7 @@ export type DataDeletionStatus =
 export type DataAccessType = "view" | "export" | "edit" | "delete";
 
 // Email Types
-export type EmailQueueStatus = "pending" | "sent" | "failed";
+export type EmailQueueStatus = "pending" | "processing" | "sent" | "failed";
 export type EmailDeliveryStatus = "sent" | "failed" | "bounced";
 
 // Fraud Types
@@ -57,10 +57,14 @@ export interface Profile {
   admin_sub_role: AdminSubRole | null;
   phone: string | null;
   company_name: string | null;
-  free_trial_used: boolean;
   stripe_customer_id: string | null;
   total_letters_generated: number;
   is_licensed_attorney: boolean;
+  avatar_url: string | null;
+  bio: string | null;
+  cover_photo_url: string | null;
+  is_online: boolean;
+  last_seen: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -108,8 +112,6 @@ export interface Subscription {
   current_period_start: string | null;
   current_period_end: string | null;
   remaining_letters: number | null;
-  letters_remaining: number | null;
-  letters_per_period: number | null;
   credits_remaining: number | null;
   last_reset_at: string | null;
   created_at: string;
@@ -403,10 +405,14 @@ export interface Database {
           admin_sub_role?: AdminSubRole | null;
           phone?: string | null;
           company_name?: string | null;
-          free_trial_used?: boolean;
           stripe_customer_id?: string | null;
           total_letters_generated?: number;
           is_licensed_attorney?: boolean;
+          avatar_url?: string | null;
+          bio?: string | null;
+          cover_photo_url?: string | null;
+          is_online?: boolean;
+          last_seen?: string | null;
           created_at?: string;
           updated_at?: string;
         };
