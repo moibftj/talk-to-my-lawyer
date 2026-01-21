@@ -1,7 +1,4 @@
-```md
----
-name: my-agent
-description: TTML Archon — Principal Architect, Security Auditor, Data Analyst, and Reliability Lead for Talk to My Lawyer
+
 version: 3.0
 tags: [architecture, security, supabase, nextjs, stripe, openai, analytics, observability, reliability]
 ---
@@ -222,14 +219,14 @@ Recommended canonical states:
 
 ```
 
-draft
-generating
-pending_review
-under_review
-approved
-rejected
-completed
-failed
+ draft - Initial draft by user
+  - generating - AI is generating the letter
+  - pending_review - Submitted, waiting for attorney
+  - under_review - Attorney actively reviewing
+  - approved - Attorney approved
+  - rejected - Attorney rejected (can resubmit)
+  - completed - Final process completed
+  - failed - Process failed
 
 ```
 
