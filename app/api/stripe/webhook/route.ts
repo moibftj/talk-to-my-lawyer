@@ -68,22 +68,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'No metadata' }, { status: 400 })
         }
 
-        // First, get the pending subscription ID
-        const { data: pendingSubscription } = await supabase
-          .from('subscriptions')
-          .select('id')
-          .eq('user_id', metadata.user_id)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (!pendingSubscription) {
-          console.error('[StripeWebhook] No pending subscription found for user:', metadata.user_id)
-          return NextResponse.json({ error: 'No pending subscription' }, { status: 400 })
-        }
-
-        // Use atomic transaction to complete subscription with commission
+        // Use improved atomic RPC that handles all race conditions internally
         const letters = parseInt(metadata.letters || '0')
         const finalPrice = parseFloat(metadata.final_price || '0')
         const basePrice = parseFloat(metadata.base_price || '0')
@@ -91,9 +76,8 @@ export async function POST(request: NextRequest) {
         const couponCode = metadata.coupon_code || null
         const employeeId = metadata.employee_id || null
 
-        const { data: atomicResult, error: atomicError } = await supabase.rpc('complete_subscription_with_commission', {
+        const { data: atomicResult, error: atomicError } = await supabase.rpc('verify_and_complete_subscription', {
           p_user_id: metadata.user_id,
-          p_subscription_id: pendingSubscription.id,
           p_stripe_session_id: session.id,
           p_stripe_customer_id: session.customer as string,
           p_plan_type: metadata.plan_type || 'unknown',
@@ -113,10 +97,12 @@ export async function POST(request: NextRequest) {
           // The subscription can be recovered manually
         } else {
           const result = atomicResult[0]
-          console.log('[StripeWebhook] Subscription completed atomically:', result.subscription_id)
+          const alreadyCompleted = result.already_completed || false
+          console.log('[StripeWebhook] Subscription completed atomically:', result.subscription_id, 
+                      alreadyCompleted ? '(already completed by verify-payment)' : '')
 
           // Send commission earned email if commission was created
-          if (result.commission_id && employeeId) {
+          if (result.commission_id && employeeId && !alreadyCompleted) {
             const { data: employeeProfile } = await supabase
               .from('profiles')
               .select('email, full_name')

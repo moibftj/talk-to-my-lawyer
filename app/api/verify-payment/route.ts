@@ -40,21 +40,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Session does not belong to this user' }, { status: 403 })
     }
 
-    // Check if subscription already exists for this session
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('id')
-      .eq('stripe_session_id', sessionId)
-      .single()
-
-    if (existingSub) {
-      return NextResponse.json({
-        success: true,
-        subscriptionId: existingSub.id,
-        message: 'Subscription already created',
-      })
-    }
-
     const metadata = session.metadata || {}
     const userId = user.id
     const planType = metadata.plan_type
@@ -74,43 +59,9 @@ export async function POST(request: NextRequest) {
     const couponCode = metadata.coupon_code || null
     const employeeId = metadata.employee_id || null
 
-    // Look for pending subscription to complete
-    const { data: pendingSubscription } = await supabase
-      .from('subscriptions')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (!pendingSubscription) {
-      // No pending subscription - check if already completed (race with webhook)
-      const { data: activeSubscription } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('stripe_session_id', sessionId)
-        .eq('status', 'active')
-        .single()
-
-      if (activeSubscription) {
-        return NextResponse.json({
-          success: true,
-          subscriptionId: activeSubscription.id,
-          letters: letters,
-          message: 'Subscription already activated by webhook',
-        })
-      }
-
-      console.error('[Verify Payment] No pending subscription found for user:', userId)
-      return NextResponse.json({ error: 'No pending subscription found' }, { status: 400 })
-    }
-
-    // Use atomic transaction to complete subscription with commission
-    // This prevents race conditions with the webhook
-    const { data: atomicResult, error: atomicError } = await supabase.rpc('complete_subscription_with_commission', {
+    // Use improved atomic RPC that handles all race conditions internally
+    const { data: atomicResult, error: atomicError } = await supabase.rpc('verify_and_complete_subscription', {
       p_user_id: userId,
-      p_subscription_id: pendingSubscription.id,
       p_stripe_session_id: sessionId,
       p_stripe_customer_id: session.customer as string || null,
       p_plan_type: planType,
@@ -125,42 +76,24 @@ export async function POST(request: NextRequest) {
     })
 
     if (atomicError) {
-      // Check if it's a "subscription already active" error (webhook completed first)
-      if (atomicError.message?.includes('already active') || atomicError.code === '23505') {
-        const { data: completedSub } = await supabase
-          .from('subscriptions')
-          .select('id')
-          .eq('stripe_session_id', sessionId)
-          .eq('status', 'active')
-          .single()
-
-        if (completedSub) {
-          return NextResponse.json({
-            success: true,
-            subscriptionId: completedSub.id,
-            letters: letters,
-            message: 'Subscription already activated by webhook',
-          })
-        }
-      }
-
-      console.error('[Verify Payment] Atomic subscription completion failed:', atomicError)
-      throw new Error(`Failed to complete subscription: ${atomicError.message}`)
+      console.error('[Verify Payment] Atomic subscription verification failed:', atomicError)
+      throw new Error(`Failed to verify subscription: ${atomicError.message}`)
     }
 
     if (!atomicResult || !atomicResult[0]?.success) {
       const errorMsg = atomicResult?.[0]?.error_message || 'Unknown error'
-      console.error('[Verify Payment] Atomic subscription completion returned error:', errorMsg)
-      throw new Error(`Failed to complete subscription: ${errorMsg}`)
+      console.error('[Verify Payment] Atomic subscription verification returned error:', errorMsg)
+      throw new Error(`Failed to verify subscription: ${errorMsg}`)
     }
 
     const result = atomicResult[0]
+    const alreadyCompleted = result.already_completed || false
 
     return NextResponse.json({
       success: true,
       subscriptionId: result.subscription_id,
       letters: letters,
-      message: 'Subscription activated successfully',
+      message: alreadyCompleted ? 'Subscription already activated by webhook' : 'Subscription activated successfully',
     })
   } catch (error) {
     console.error('[Verify Payment] Error:', error)
