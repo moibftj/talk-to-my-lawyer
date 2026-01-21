@@ -160,27 +160,20 @@ export async function GET(request: NextRequest) {
  * DELETE /api/gdpr/delete-account
  *
  * Admin endpoint to approve and execute account deletion
- * Requires admin authentication
+ * Requires super admin authentication via admin session
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Check admin authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Use proper admin session validation (includes CSRF, timeout, role verification)
+    const authError = await requireSuperAdminAuth()
+    if (authError) {
+      return authError
     }
 
-    // Verify admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    // Get admin session for audit logging
+    const adminSession = await getAdminSession()
+    if (!adminSession) {
+      return NextResponse.json({ error: 'Admin session not found' }, { status: 401 })
     }
 
     const body = await request.json()
@@ -192,13 +185,16 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Use service role for deletions
+    const supabase = getServiceRoleClient()
+
     // Update deletion request to approved and completed
     await supabase
       .from('data_deletion_requests')
       .update({
         status: 'completed',
         approved_at: new Date().toISOString(),
-        approved_by: user.id,
+        approved_by: adminSession.userId,
         completed_at: new Date().toISOString(),
       })
       .eq('id', requestId)
