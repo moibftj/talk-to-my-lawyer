@@ -1,6 +1,9 @@
 /**
  * API endpoint to create test accounts
  * Call with POST to create all test accounts at once
+ * 
+ * SECURITY: This endpoint is DISABLED in production.
+ * Test accounts should be created manually or via migrations in non-production environments.
  */
 
 import { createClient } from '@/lib/supabase/server'
@@ -8,13 +11,24 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    // Security check - only allow in development or with secret key
-    const { searchParams } = new URL(request.url)
-    const secret = searchParams.get('secret')
-    
-    // Simple security - in production, you'd want a better approach
-    if (process.env.NODE_ENV === 'production' && secret !== process.env.CRON_SECRET) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // SECURITY: Completely disabled in production
+    // Never allow test account creation in production, regardless of any secret
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+      console.warn('[CreateTestAccounts] Blocked test account creation attempt in production')
+      return NextResponse.json(
+        { error: 'This endpoint is disabled in production' },
+        { status: 403 }
+      )
+    }
+
+    // Additional safety: Only allow if TEST_MODE is explicitly enabled
+    const testModeEnabled = process.env.ENABLE_TEST_MODE === 'true' || 
+                            process.env.NEXT_PUBLIC_TEST_MODE === 'true'
+    if (!testModeEnabled) {
+      return NextResponse.json(
+        { error: 'Test mode is not enabled. Set ENABLE_TEST_MODE=true to use this endpoint.' },
+        { status: 403 }
+      )
     }
 
     const supabase = await createClient()
