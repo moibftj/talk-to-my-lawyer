@@ -420,9 +420,9 @@ CREATE POLICY "letter_audit_trail_service_insert"
   WITH CHECK (true);  -- Controlled by triggers and SECURITY DEFINER functions
 
 -- ============================================================================
--- 9. MESSAGES TABLE
+-- 9. MESSAGES TABLE (uses sender_id/recipient_id)
 -- ============================================================================
--- Users: View and send own messages
+-- Users: View sent and received messages
 
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages FORCE ROW LEVEL SECURITY;
@@ -430,13 +430,17 @@ ALTER TABLE public.messages FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view own messages" ON public.messages;
 DROP POLICY IF EXISTS "Users can send messages" ON public.messages;
 
-CREATE POLICY "messages_user_select"
+CREATE POLICY "messages_sender_select"
   ON public.messages FOR SELECT
-  USING (user_id = (SELECT auth.uid()));
+  USING (sender_id = (SELECT auth.uid()));
+
+CREATE POLICY "messages_recipient_select"
+  ON public.messages FOR SELECT
+  USING (recipient_id = (SELECT auth.uid()));
 
 CREATE POLICY "messages_user_insert"
   ON public.messages FOR INSERT
-  WITH CHECK (user_id = (SELECT auth.uid()));
+  WITH CHECK (sender_id = (SELECT auth.uid()));
 
 CREATE POLICY "messages_admin_select"
   ON public.messages FOR SELECT
