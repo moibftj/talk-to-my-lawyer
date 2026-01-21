@@ -1,1 +1,0 @@
--- @pgsql Chat Query Editor (aws-1-us-east-2.pooler.supabase.com)
