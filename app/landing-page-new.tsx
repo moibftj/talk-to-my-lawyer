@@ -178,7 +178,7 @@ export default function NewLandingPage() {
               </div>
               
               {/* Center Logo */}
-              <div className="flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center justify-center shrink-0">
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
