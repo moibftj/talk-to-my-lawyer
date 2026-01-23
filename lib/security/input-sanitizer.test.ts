@@ -191,15 +191,18 @@ describe('sanitizeJson', () => {
       },
     }
     const result = sanitizeJson(input)
-    expect(result.user.name).not.toContain('<')
+    // sanitizeString removes angle brackets, email is lowercased by sanitizeEmail
+    expect(result.user.name).toBe('bName/b') // < and > are removed
     expect(result.user.email).toBe('test@example.com')
   })
 })
 
 describe('sanitizeNumber', () => {
   it('returns null for non-numeric input', () => {
-    expect(sanitizeNumber('abc')).toBeNull()
+    expect(sanitizeNumber('abc')).toBeNull() // Number('abc') = NaN
+    // Note: In test environment, Number(NaN) returns NaN, and isNaN(NaN) is true
     expect(sanitizeNumber(NaN)).toBeNull()
+    // Infinity check - isFinite(Infinity) is false
     expect(sanitizeNumber(Infinity)).toBeNull()
     expect(sanitizeNumber(null)).toBeNull()
   })
