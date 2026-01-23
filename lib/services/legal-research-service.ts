@@ -509,11 +509,11 @@ export function formatResearchForPrompt(research: LegalResearchResult): string {
   // Relevant case law
   if (research.relevantCaseLaw.length > 0) {
     sections.push('## Relevant Case Law')
-    for (const case of research.relevantCaseLaw) {
-      sections.push(`- ${case.title}${case.year ? ` (${case.year})` : ''}`)
-      sections.push(`  Citation: ${case.citation}`)
-      if (case.summary) {
-        sections.push(`  Summary: ${case.summary}`)
+    for (const caseLaw of research.relevantCaseLaw) {
+      sections.push(`- ${caseLaw.title}${caseLaw.year ? ` (${caseLaw.year})` : ''}`)
+      sections.push(`  Citation: ${caseLaw.citation}`)
+      if (caseLaw.summary) {
+        sections.push(`  Summary: ${caseLaw.summary}`)
       }
     }
     sections.push('')
