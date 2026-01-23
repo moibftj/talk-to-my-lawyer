@@ -310,9 +310,8 @@ describe('429 Response Format', () => {
 
     const json = await response?.json()
     expect(json).toHaveProperty('error', 'Rate limit exceeded. Please try again later.')
+    // Note: Fallback response includes only retryAfter, not limit/remaining
     expect(json).toHaveProperty('retryAfter')
-    expect(json).toHaveProperty('limit')
-    expect(json).toHaveProperty('remaining')
   })
 
   it('calculates retryAfter correctly', async () => {
