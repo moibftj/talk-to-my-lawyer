@@ -92,13 +92,12 @@ export default function DashboardLayout({
     { name: 'My Letters', href: '/dashboard/letters', icon: FileText, roles: ['subscriber'] },
     { name: 'Commissions', href: '/dashboard/commissions', icon: TrendingUp, roles: ['employee'] },
     { name: 'Coupons', href: '/dashboard/coupons', icon: Gift, roles: ['employee'] },
+    { name: 'Referrals', href: '/dashboard/referrals', icon: Users, roles: ['employee'] },
+    { name: 'Payouts', href: '/dashboard/payouts', icon: CreditCard, roles: ['employee'] },
     { name: 'Subscription', href: '/dashboard/subscription', icon: CreditCard, roles: ['subscriber'] },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings, roles: ['subscriber'] },
     { name: 'Employee Settings', href: '/dashboard/employee-settings', icon: Settings, roles: ['employee'] },
-    { name: 'Admin Panel', href: '/dashboard/admin', icon: Shield, roles: ['admin'] },
-    { name: 'Users', href: '/dashboard/admin/users', icon: Users, roles: ['admin'] },
-    { name: 'Analytics', href: '/dashboard/admin/analytics', icon: TrendingUp, roles: ['admin'] },
-    { name: 'Admin Settings', href: '/dashboard/admin-settings', icon: Settings, roles: ['admin'] },
+
       ]
 
   const filteredNavigation = navigation.filter(item =>

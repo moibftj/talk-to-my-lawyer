@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 export default async function DashboardPage() {
   const { profile } = await getUser()
 
-  if (profile.role === 'admin') redirect('/dashboard/admin')
+  if (profile.role === 'admin') redirect('/secure-admin-gateway/dashboard')
   if (profile.role === 'employee') redirect('/dashboard/commissions')
 
   const supabase = await createClient()
