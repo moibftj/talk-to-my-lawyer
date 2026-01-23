@@ -5,16 +5,93 @@
 
 import { validateInput, ValidationResult } from '@/lib/security/input-sanitizer'
 
+/**
+ * US States with 2-letter codes and full names
+ * Used for geographic-aware letter generation
+ */
+export const US_STATES: ReadonlyArray<{ code: string; name: string }> = [
+  { code: 'AL', name: 'Alabama' },
+  { code: 'AK', name: 'Alaska' },
+  { code: 'AZ', name: 'Arizona' },
+  { code: 'AR', name: 'Arkansas' },
+  { code: 'CA', name: 'California' },
+  { code: 'CO', name: 'Colorado' },
+  { code: 'CT', name: 'Connecticut' },
+  { code: 'DE', name: 'Delaware' },
+  { code: 'FL', name: 'Florida' },
+  { code: 'GA', name: 'Georgia' },
+  { code: 'HI', name: 'Hawaii' },
+  { code: 'ID', name: 'Idaho' },
+  { code: 'IL', name: 'Illinois' },
+  { code: 'IN', name: 'Indiana' },
+  { code: 'IA', name: 'Iowa' },
+  { code: 'KS', name: 'Kansas' },
+  { code: 'KY', name: 'Kentucky' },
+  { code: 'LA', name: 'Louisiana' },
+  { code: 'ME', name: 'Maine' },
+  { code: 'MD', name: 'Maryland' },
+  { code: 'MA', name: 'Massachusetts' },
+  { code: 'MI', name: 'Michigan' },
+  { code: 'MN', name: 'Minnesota' },
+  { code: 'MS', name: 'Mississippi' },
+  { code: 'MO', name: 'Missouri' },
+  { code: 'MT', name: 'Montana' },
+  { code: 'NE', name: 'Nebraska' },
+  { code: 'NV', name: 'Nevada' },
+  { code: 'NH', name: 'New Hampshire' },
+  { code: 'NJ', name: 'New Jersey' },
+  { code: 'NM', name: 'New Mexico' },
+  { code: 'NY', name: 'New York' },
+  { code: 'NC', name: 'North Carolina' },
+  { code: 'ND', name: 'North Dakota' },
+  { code: 'OH', name: 'Ohio' },
+  { code: 'OK', name: 'Oklahoma' },
+  { code: 'OR', name: 'Oregon' },
+  { code: 'PA', name: 'Pennsylvania' },
+  { code: 'RI', name: 'Rhode Island' },
+  { code: 'SC', name: 'South Carolina' },
+  { code: 'SD', name: 'South Dakota' },
+  { code: 'TN', name: 'Tennessee' },
+  { code: 'TX', name: 'Texas' },
+  { code: 'UT', name: 'Utah' },
+  { code: 'VT', name: 'Vermont' },
+  { code: 'VA', name: 'Virginia' },
+  { code: 'WA', name: 'Washington' },
+  { code: 'WV', name: 'West Virginia' },
+  { code: 'WI', name: 'Wisconsin' },
+  { code: 'WY', name: 'Wyoming' },
+  { code: 'DC', name: 'District of Columbia' },
+] as const
+
+/** Set of valid 2-letter US state codes for validation */
+export const VALID_STATE_CODES = new Set(US_STATES.map(s => s.code))
+
+/** Get full state name from 2-letter code */
+export function getStateName(code: string): string | undefined {
+  const state = US_STATES.find(s => s.code === code)
+  return state?.name
+}
+
+/** Validate if a string is a valid 2-letter US state code */
+export function isValidStateCode(code: string): boolean {
+  return VALID_STATE_CODES.has(code.toUpperCase())
+}
+
 // Define the letter intake data schema
 export interface LetterIntakeSchema {
   senderName: { type: 'string'; required: true; maxLength: 100 }
   senderAddress: { type: 'string'; required: true; maxLength: 500 }
+  senderState: { type: 'string'; required: true; maxLength: 2 }
+  senderCountry?: { type: 'string'; required: false; maxLength: 2 }
   senderEmail?: { type: 'email'; required: false }
   senderPhone?: { type: 'string'; required: false; maxLength: 20 }
   recipientName: { type: 'string'; required: true; maxLength: 100 }
   recipientAddress: { type: 'string'; required: true; maxLength: 500 }
+  recipientState: { type: 'string'; required: true; maxLength: 2 }
+  recipientCountry?: { type: 'string'; required: false; maxLength: 2 }
   recipientEmail?: { type: 'email'; required: false }
   recipientPhone?: { type: 'string'; required: false; maxLength: 20 }
+  courtType?: { type: 'string'; required: false; maxLength: 50 }
   issueDescription: { type: 'string'; required: true; maxLength: 2000 }
   desiredOutcome: { type: 'string'; required: true; maxLength: 1000 }
   amountDemanded?: { type: 'number'; required: false; min: 0; max: 10000000 }
