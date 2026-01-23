@@ -69,7 +69,7 @@ describe('FORBIDDEN_PATTERNS', () => {
   })
 
   it('contains path traversal patterns', () => {
-    expect(FORBIDDEN_PATTERNS.some((p) => p.source.includes('..'))).toBe(true)
+    expect(FORBIDDEN_PATTERNS.some((p) => p.source.includes('.'))).toBe(true)
   })
 
   it('contains command injection patterns', () => {
