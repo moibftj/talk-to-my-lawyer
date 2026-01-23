@@ -108,12 +108,17 @@ export interface LetterIntakeSchema {
 const baseLetterSchema = {
   senderName: { type: 'string', required: true, maxLength: 100 },
   senderAddress: { type: 'string', required: true, maxLength: 500 },
+  senderState: { type: 'string', required: true, maxLength: 2 },
+  senderCountry: { type: 'string', required: false, maxLength: 2 },
   senderEmail: { type: 'email', required: false },
   senderPhone: { type: 'string', required: false, maxLength: 20 },
   recipientName: { type: 'string', required: true, maxLength: 100 },
   recipientAddress: { type: 'string', required: true, maxLength: 500 },
+  recipientState: { type: 'string', required: true, maxLength: 2 },
+  recipientCountry: { type: 'string', required: false, maxLength: 2 },
   recipientEmail: { type: 'email', required: false },
   recipientPhone: { type: 'string', required: false, maxLength: 20 },
+  courtType: { type: 'string', required: false, maxLength: 50 },
   issueDescription: { type: 'string', required: true, maxLength: 2000 },
   desiredOutcome: { type: 'string', required: true, maxLength: 1000 },
   additionalDetails: { type: 'string', required: false, maxLength: 3000 },
@@ -268,6 +273,56 @@ export function validateIntakeData(letterType: string, intakeData: unknown): Val
   const phoneRegex = /^[\d\s\-\+\(\)]{10,20}$/
   validateFieldWithRegex('senderPhone', phoneRegex, 'Invalid sender phone number format')
   validateFieldWithRegex('recipientPhone', phoneRegex, 'Invalid recipient phone number format')
+
+  // Validate state codes (2-letter US state codes)
+  const stateCodeRegex = /^[A-Z]{2}$/
+  if (data.senderState) {
+    const stateCode = String(data.senderState).toUpperCase()
+    if (!stateCodeRegex.test(stateCode) || !isValidStateCode(stateCode)) {
+      errors.push('Invalid sender state code. Use a valid 2-letter US state code (e.g., CA, TX, NY).')
+      delete data.senderState
+    } else {
+      data.senderState = stateCode // Normalize to uppercase
+    }
+  }
+  if (data.recipientState) {
+    const stateCode = String(data.recipientState).toUpperCase()
+    if (!stateCodeRegex.test(stateCode) || !isValidStateCode(stateCode)) {
+      errors.push('Invalid recipient state code. Use a valid 2-letter US state code (e.g., CA, TX, NY).')
+      delete data.recipientState
+    } else {
+      data.recipientState = stateCode // Normalize to uppercase
+    }
+  }
+
+  // Validate country codes (2-letter ISO codes)
+  const countryCodeRegex = /^[A-Z]{2}$/
+  if (data.senderCountry) {
+    data.senderCountry = String(data.senderCountry).toUpperCase()
+    if (!countryCodeRegex.test(data.senderCountry)) {
+      errors.push('Invalid sender country code. Use a 2-letter ISO country code (e.g., US, CA, GB).')
+      delete data.senderCountry
+    }
+  }
+  if (data.recipientCountry) {
+    data.recipientCountry = String(data.recipientCountry).toUpperCase()
+    if (!countryCodeRegex.test(data.recipientCountry)) {
+      errors.push('Invalid recipient country code. Use a 2-letter ISO country code (e.g., US, CA, GB).')
+      delete data.recipientCountry
+    }
+  }
+
+  // Validate court type if provided
+  const validCourtTypes = ['state_court', 'federal_court', 'small_claims', 'superior_court', 'municipal_court']
+  if (data.courtType && typeof data.courtType === 'string') {
+    const courtType = data.courtType.toLowerCase().replace(/\s+/g, '_')
+    if (!validCourtTypes.includes(courtType) && courtType !== '') {
+      errors.push(`Invalid court type. Valid options: ${validCourtTypes.join(', ')}`)
+      delete data.courtType
+    } else {
+      data.courtType = courtType
+    }
+  }
 
   // Validate date format
   const dateRegex = /^\d{4}-\d{2}-\d{2}$|^\d{1,2}\/\d{1,2}\/\d{4}$/
