@@ -1,13 +1,8 @@
 /**
- * Shared OpenAI client configuration with Vercel AI Gateway support
+ * Shared OpenAI client configuration
  *
- * This module provides a centralized OpenAI client that can route through
- * Vercel AI Gateway when AI_GATEWAY_API_KEY is configured, providing:
- * - Request/response logging
- * - Rate limiting
- * - Cost tracking
- * - Caching
- * - Fallback models
+ * This module provides a centralized OpenAI client using direct connection.
+ * Uses OPENAI_API_KEY environment variable.
  */
 
 import { createOpenAI, OpenAIProvider } from "@ai-sdk/openai"
@@ -15,8 +10,7 @@ import { createOpenAI, OpenAIProvider } from "@ai-sdk/openai"
 let openAIProviderInstance: OpenAIProvider | null = null
 
 /**
- * Get an OpenAI provider configured for Vercel AI Gateway (if available)
- * or direct OpenAI connection (fallback)
+ * Get an OpenAI provider configured for direct connection
  *
  * @returns OpenAI provider function (call with model name to get a model)
  */
@@ -25,19 +19,9 @@ export function getOpenAIProvider() {
     return openAIProviderInstance
   }
 
-  const gatewayApiKey = process.env.AI_GATEWAY_API_KEY
-
-  if (gatewayApiKey) {
-    // Route through Vercel AI Gateway for enhanced observability and control
-    openAIProviderInstance = createOpenAI({
-      baseURL: 'https://gateway.vercel.ai/api/providers/openai',
-      apiKey: gatewayApiKey,
-    })
-  } else {
-    // Direct OpenAI connection (fallback)
-    // Uses OPENAI_API_KEY environment variable by default
-    openAIProviderInstance = createOpenAI()
-  }
+  // Direct OpenAI connection
+  // Uses OPENAI_API_KEY environment variable by default
+  openAIProviderInstance = createOpenAI()
 
   return openAIProviderInstance
 }

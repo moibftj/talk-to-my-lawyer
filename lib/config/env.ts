@@ -14,8 +14,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
 
-  // OpenAI (optional - letter generation won't work without it)
-  OPENAI_API_KEY: z.string().min(1).optional(),
+  // OpenAI (required for letter generation)
+  OPENAI_API_KEY: z.string().min(1),
 
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1),
@@ -153,13 +153,7 @@ export const supabaseConfig = {
 
 export const openaiConfig = {
   get apiKey() {
-    const key = getEnv().OPENAI_API_KEY;
-    if (!key) {
-      console.warn(
-        "[OpenAI] OPENAI_API_KEY is not configured - letter generation will not work",
-      );
-    }
-    return key;
+    return getEnv().OPENAI_API_KEY;
   },
   get isConfigured() {
     return !!getEnv().OPENAI_API_KEY;
