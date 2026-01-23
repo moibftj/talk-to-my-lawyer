@@ -9,6 +9,18 @@ require('dotenv').config({ path: '.env.local' });
 require('dotenv').config();
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+
+// Extract project ref from URL for dashboard links
+const getProjectRef = () => {
+  try {
+    const hostname = new URL(SUPABASE_URL).hostname;
+    // Extract from format: nomiiqzxaxyxnxndvkbe.supabase.co
+    const match = hostname.match(/^([^.]+)\.supabase\.co$/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+};
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
@@ -156,7 +168,12 @@ function executeSQL(query) {
         if (res.statusCode === 200) {
           console.log('✅ Successfully connected to Supabase!');
           console.log('\n📋 To apply the migration, please:');
-          console.log('1. Go to: https://supabase.com/dashboard/project/nomiiqzxaxyxnxndvkbe/sql');
+          const projectRef = getProjectRef();
+          if (projectRef) {
+            console.log(`1. Go to: https://supabase.com/dashboard/project/${projectRef}/sql`);
+          } else {
+            console.log('1. Go to your Supabase dashboard > SQL Editor');
+          }
           console.log('2. Copy the SQL from scripts/023_fix_employee_coupons.sql');
           console.log('3. Paste and run in the SQL Editor\n');
           resolve(data);

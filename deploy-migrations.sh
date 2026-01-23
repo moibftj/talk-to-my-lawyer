@@ -5,8 +5,8 @@ source .env.local
 
 # Use pooler connection for better reliability
 : "${SUPABASE_DB_PASSWORD:?SUPABASE_DB_PASSWORD is required}"
-SUPABASE_DB_HOST="${SUPABASE_DB_HOST:-aws-1-us-east-2.pooler.supabase.com}"
-SUPABASE_DB_USER="${SUPABASE_DB_USER:-postgres.nomiiqzxaxyxnxndvkbe}"
+: "${SUPABASE_DB_HOST:?SUPABASE_DB_HOST is required}"
+: "${SUPABASE_DB_USER:?SUPABASE_DB_USER is required}"
 SUPABASE_DB_NAME="${SUPABASE_DB_NAME:-postgres}"
 SUPABASE_DB_PORT="${SUPABASE_DB_PORT:-6543}"
 

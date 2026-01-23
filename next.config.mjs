@@ -26,7 +26,14 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: process.env.SUPABASE_HOSTNAME || 'db.nomiiqzxaxyxnxndvkbe.supabase.co',
+        hostname: process.env.SUPABASE_HOSTNAME || (() => {
+          const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+          try {
+            return new URL(url).hostname;
+          } catch {
+            return null;
+          }
+        })(),
         pathname: '/storage/**',
       },
       // Add Stripe image domains for payment verification UI
