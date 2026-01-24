@@ -20,7 +20,6 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.{js,ts}',
         '**/types/**',
-        'test/',
       ],
       reporter: ['text', 'json', 'html'],
       thresholds: {
