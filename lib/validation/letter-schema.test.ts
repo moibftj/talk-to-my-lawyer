@@ -183,10 +183,12 @@ describe('validateIntakeData', () => {
   const validIntakeData = {
     senderName: 'John Doe',
     senderAddress: '123 Main St, City, State 12345',
+    senderState: 'CA',
     senderEmail: 'john@example.com',
     senderPhone: '555-123-4567',
     recipientName: 'Jane Smith',
     recipientAddress: '456 Oak Ave, City, State 67890',
+    recipientState: 'NY',
     recipientEmail: 'jane@example.com',
     recipientPhone: '555-987-6543',
     issueDescription: 'This is a detailed description of the issue at hand.',
@@ -205,8 +207,10 @@ describe('validateIntakeData', () => {
     const minimalData = {
       senderName: 'John Doe',
       senderAddress: '123 Main St',
+      senderState: 'CA',
       recipientName: 'Jane Smith',
       recipientAddress: '456 Oak Ave',
+      recipientState: 'TX',
       issueDescription: 'This is a detailed description of the problem.',
       desiredOutcome: 'Full refund',
     }
@@ -396,8 +400,10 @@ describe('validateLetterGenerationRequest', () => {
   const validIntakeData = {
     senderName: 'John Doe',
     senderAddress: '123 Main St',
+    senderState: 'CA',
     recipientName: 'Jane Smith',
     recipientAddress: '456 Oak Ave',
+    recipientState: 'NY',
     issueDescription: 'This is a detailed description of the problem.',
     desiredOutcome: 'Full refund',
   }
