@@ -16,6 +16,7 @@ import {
 } from "@/components/generation-tracker-modal";
 import { FileUpload, type UploadedFile } from "@/components/ui/file-upload";
 import { createClient } from "@/lib/supabase/client";
+import { US_STATES } from "@/lib/validation/letter-schema";
 
 const LETTER_TYPES = [
   {
@@ -122,8 +123,10 @@ export default function NewLetterPage() {
   const [formData, setFormData] = useState({
     senderName: "",
     senderAddress: "",
+    senderState: "",
     recipientName: "",
     recipientAddress: "",
+    recipientState: "",
     issueDescription: "",
     desiredOutcome: "",
     amountDemanded: "",
@@ -220,8 +223,10 @@ export default function NewLetterPage() {
       const intakeData = {
         senderName: formData.senderName,
         senderAddress: formData.senderAddress,
+        senderState: formData.senderState,
         recipientName: formData.recipientName,
         recipientAddress: formData.recipientAddress,
+        recipientState: formData.recipientState,
         issueDescription: formData.issueDescription,
         desiredOutcome: formData.desiredOutcome,
         amountDemanded: formData.amountDemanded
@@ -410,6 +415,26 @@ export default function NewLetterPage() {
               </div>
 
               <div>
+                <Label htmlFor="senderState">Your State</Label>
+                <select
+                  id="senderState"
+                  value={formData.senderState}
+                  onChange={(e) =>
+                    setFormData({ ...formData, senderState: e.target.value })
+                  }
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Select your state</option>
+                  {US_STATES.map((state) => (
+                    <option key={state.code} value={state.code}>
+                      {state.name} ({state.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <Label htmlFor="recipientAddress">Recipient Address</Label>
                 <Textarea
                   id="recipientAddress"
@@ -423,6 +448,29 @@ export default function NewLetterPage() {
                   }
                   required
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="recipientState">Recipient State</Label>
+                <select
+                  id="recipientState"
+                  value={formData.recipientState}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      recipientState: e.target.value,
+                    })
+                  }
+                  required
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">Select recipient state</option>
+                  {US_STATES.map((state) => (
+                    <option key={state.code} value={state.code}>
+                      {state.name} ({state.code})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
