@@ -159,43 +159,28 @@ export async function POST(request: NextRequest) {
     if (TEST_MODE) {
       console.log('[Checkout] TEST MODE: Simulating payment for user:', user.id)
 
-      // Create test subscription with proper payment record
-      const { data: subscription, error: subError } = await supabase
-        .from('subscriptions')
-        .insert({
-          user_id: user.id,
-          plan: planType,
-          plan_type: planType,
-          status: 'active',
-          price: finalPrice,
-          discount: discountAmount,
-          coupon_code: couponCode || null,
-          employee_coupon_id: couponId || null,
-          credits_remaining: selectedPlan.letters,
-          remaining_letters: selectedPlan.letters,
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-        })
-        .select()
-        .single()
+      // Use atomic subscription creation function to prevent race conditions
+      const { data: atomicResult, error: atomicError } = await supabase.rpc('create_free_subscription', {
+        p_user_id: user.id,
+        p_plan_type: planType,
+        p_monthly_allowance: selectedPlan.letters,
+        p_total_letters: selectedPlan.letters,
+        p_final_price: finalPrice,
+        p_base_price: basePrice,
+        p_discount_amount: discountAmount,
+        p_coupon_code: couponCode || null,
+        p_employee_id: employeeId || null,
+        p_commission_rate: 0.05
+      })
 
-      if (subError) {
-        console.error('[Checkout] TEST MODE: Subscription creation error:', subError)
-        throw new Error(`Failed to create subscription: ${subError.message}`)
+      if (atomicError || !atomicResult || !atomicResult[0]?.success) {
+        console.error('[Checkout] TEST MODE: Atomic subscription creation failed:', atomicError)
+        const errorMsg = atomicResult?.[0]?.error_message || atomicError?.message || 'Failed to create subscription'
+        throw new Error(`Failed to create subscription: ${errorMsg}`)
       }
 
-      // Create commission if employee coupon was used
-      if (employeeId && couponId) {
-        const commissionAmount = finalPrice * 0.05
-        await supabase.from('commissions').insert({
-          employee_id: employeeId,
-          subscription_id: subscription.id,
-          commission_amount: commissionAmount,
-          status: 'pending'
-        })
-        // Increment coupon usage
-        await supabase.rpc('increment_coupon_usage_by_id', { coupon_id: couponId })
-      }
+      const result = atomicResult[0]
+      const subscription = { id: result.subscription_id }
 
       console.log('[Checkout] TEST MODE: Payment simulated successfully')
 
