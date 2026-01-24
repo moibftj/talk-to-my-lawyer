@@ -88,14 +88,14 @@ export async function GET(request: NextRequest) {
       Date.now() - 30 * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const { count: oldWebhookEvents } = await supabase
+    const { data: deletedWebhookEvents } = await supabase
       .from("webhook_events")
       .delete()
       .not("processed_at", "is", null)
       .lt("created_at", thirtyDaysAgo)
-      .select();
+      .select("id");
 
-    results.oldWebhookEvents = oldWebhookEvents || 0;
+    results.oldWebhookEvents = deletedWebhookEvents?.length || 0;
 
     // Calculate total cleaned
     const totalCleaned = Object.values(results).reduce((a, b) => a + b, 0);
