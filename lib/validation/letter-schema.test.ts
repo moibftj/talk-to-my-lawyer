@@ -52,8 +52,10 @@ describe("LETTER_TYPE_SCHEMAS", () => {
     const baseFields = [
       "senderName",
       "senderAddress",
+      "senderState",
       "recipientName",
       "recipientAddress",
+      "recipientState",
       "issueDescription",
       "desiredOutcome",
     ];
