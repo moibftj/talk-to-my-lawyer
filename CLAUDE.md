@@ -2,7 +2,7 @@
 
 Talk-To-My-Lawyer: AI legal letter drafts with **mandatory attorney review**.
 
-Last updated: 2026-01-04
+Last updated: 2025-01-24
 
 ## Non‑negotiables (security + roles)
 
@@ -231,3 +231,11 @@ pnpm validate-env
 - DB & RLS: `docs/DATABASE.md`
 - API integrations: `docs/API_AND_INTEGRATIONS.md`
 - Operations/deploy: `docs/OPERATIONS.md`, `docs/DEPLOYMENT_GUIDE.md`
+
+## Architecture Planning Agent
+
+For architectural decisions, scalability planning, and system coherence:
+
+- **Agent spec**: `docs/agents/architecture-planner.md`
+- **Usage**: Call with `subagent_type="Plan"` when making significant changes
+- **Purpose**: Ensures architectural consistency across the platform
