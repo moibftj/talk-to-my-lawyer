@@ -39,13 +39,13 @@ describe("LETTER_TYPE_SCHEMAS", () => {
   it("demand_letter has amountDemanded field", () => {
     const schema = LETTER_TYPE_SCHEMAS["demand_letter"];
     expect(schema.amountDemanded).toBeDefined();
-    expect(schema.amountDemanded.type).toBe("number");
+    expect(schema.amountDemanded?.type).toBe("number");
   });
 
   it("demand_letter has deadlineDate field", () => {
     const schema = LETTER_TYPE_SCHEMAS["demand_letter"];
     expect(schema.deadlineDate).toBeDefined();
-    expect(schema.deadlineDate.type).toBe("string");
+    expect(schema.deadlineDate?.type).toBe("string");
   });
 
   it("all schemas have base fields", () => {
