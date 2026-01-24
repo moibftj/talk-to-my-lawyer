@@ -1,4 +1,19 @@
 {
+	"servers": {
+		"supabase": {
+			"type": "http",
+			"url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=docs,account,database,debugging,development,functions,branching,storage"
+		},
+		"io.github.ChromeDevTools/chrome-devtools-mcp": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"chrome-devtools-mcp"
+			],
+			"env": {},
+			"type": "stdio"
+		}
+	},
 	"inputs": [
 		{
 			"id": "project-ref",
@@ -30,11 +45,5 @@
 			"description": "Personal access token for Supabase API",
 			"password": true
 		}
-	],
-	"servers": {
-		"supabase": {
-			"type": "http",
-			"url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=docs,account,database,debugging,development,functions,branching,storage"
-		}
-	}
+	]
 }
