@@ -137,6 +137,9 @@ importers:
       '@vercel/analytics':
         specifier: ^1.6.1
         version: 1.6.1(next@16.1.4(@babel/core@7.28.6)(@opentelemetry/api@1.9.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
+      '@vercel/sdk':
+        specifier: ^1.18.7
+        version: 1.18.7(hono@4.11.4)
       ai:
         specifier: ^6.0.48
         version: 6.0.48(zod@4.3.6)
@@ -2725,6 +2728,10 @@ packages:
 
   '@vercel/rust@1.0.4':
     resolution: {integrity: sha512-G0uO7+j0c/r1vlumlC6KgBfAq9/eip43C96fxnhoN6aeesChrFh8dTeU6Qh9E26AGzHYBENjkpw0Qk4/FbI1ww==}
+
+  '@vercel/sdk@1.18.7':
+    resolution: {integrity: sha512-2PwPnlkOEj0H7ieSZW1CPYdqgWBhahlaDpwPLk5RtnAwjB3TqqzQIASBrl9Hj+uZrUeXJR2Lt8A+ONaaYMNAfA==}
+    hasBin: true
 
   '@vercel/static-build@2.8.27':
     resolution: {integrity: sha512-3TJvZGhrQDYp9aWahIMHGLKSl+2IhqDri8WEIBQok4u5xaLjkD2xPmGr1mwWLKn9BQMYjOUhwQv1JXFFuok5XA==}
@@ -8282,6 +8289,15 @@ snapshots:
     dependencies:
       '@iarna/toml': 2.2.5
       execa: 5.1.1
+
+  '@vercel/sdk@1.18.7(hono@4.11.4)':
+    dependencies:
+      '@modelcontextprotocol/sdk': 1.25.3(hono@4.11.4)(zod@4.3.6)
+      zod: 4.3.6
+    transitivePeerDependencies:
+      - '@cfworker/json-schema'
+      - hono
+      - supports-color
 
   '@vercel/static-build@2.8.27':
     dependencies:
