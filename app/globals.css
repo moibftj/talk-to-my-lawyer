@@ -1295,3 +1295,67 @@ body {
  * - Browser compatibility with vendor prefixes
  * - Accessibility with reduced motion support
  */
+
+/* Additional animations for homepage - CPU efficient CSS animations */
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(30px, -50px);
+  }
+  50% {
+    transform: translate(-20px, 20px);
+  }
+  75% {
+    transform: translate(20px, 30px);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bg-gradient-animated {
+  animation: bgShift 40s ease-in-out infinite;
+}
+
+@keyframes bgShift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+.w-200 {
+  width: 800px;
+}
+
+.h-200 {
+  height: 800px;
+}
+
+.w-150 {
+  width: 600px;
+}
+
+.h-150 {
+  height: 600px;
+}
