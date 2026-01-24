@@ -6,7 +6,7 @@
  */
 
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import { resourceFromAttributes } from "@opentelemetry/resources";
+import { Resource } from "@opentelemetry/resources";
 import {
   SEMRESATTRS_SERVICE_NAME,
   SEMRESATTRS_SERVICE_VERSION,
@@ -47,7 +47,7 @@ export async function setupTracing(): Promise<void> {
     });
 
     // Create tracer provider with resource attributes
-    const resource = resourceFromAttributes({
+    const resource = new Resource({
       [SEMRESATTRS_SERVICE_NAME]: "talk-to-my-lawyer",
       [SEMRESATTRS_SERVICE_VERSION]: process.env.npm_package_version || "1.0.0",
       "deployment.environment": process.env.NODE_ENV || "development",
