@@ -31,7 +31,8 @@ const nextConfig = {
           try {
             return new URL(url).hostname;
           } catch {
-            return null;
+            // Fallback to a valid hostname placeholder when URL is not configured
+            return 'supabase.co';
           }
         })(),
         pathname: '/storage/**',
