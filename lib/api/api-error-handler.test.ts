@@ -192,9 +192,10 @@ describe("handleApiError", () => {
       {
         code: "invalid_type",
         expected: "string",
+        received: "number",
         path: ["email"],
         message: "Expected string, received number",
-      } as Parameters<typeof ZodError>[0][number],
+      } as unknown as import("zod").$ZodIssue,
     ]);
 
     const response = handleApiError(zodError, "TestContext");
