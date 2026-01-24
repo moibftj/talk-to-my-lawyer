@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'motion/react'
 import { ChevronDown, FileText, Scale, Clock, Mail, Shield, CreditCard, AlertCircle, Users, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
@@ -117,19 +116,13 @@ export default function FAQPage() {
 
       {/* Header */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Frequently Asked Questions
-            </h1>
-            <p className="text-xl text-gray-600">
-              Information about our legal letter services.
-            </p>
-          </motion.div>
+        <div className="max-w-4xl mx-auto text-center animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            Frequently Asked Questions
+          </h1>
+          <p className="text-xl text-gray-600">
+            Information about our legal letter services.
+          </p>
         </div>
       </section>
 
@@ -138,13 +131,12 @@ export default function FAQPage() {
         <div className="max-w-4xl mx-auto space-y-4">
           {faqs.map((faq, index) => {
             const Icon = iconMap[faq.icon.name] || FileText
+            const isOpen = openId === faq.id
             return (
-              <motion.div
+              <div
                 key={faq.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-slide-up"
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <button
                   onClick={() => toggle(faq.id)}
@@ -156,28 +148,20 @@ export default function FAQPage() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 pr-8">{faq.question}</h3>
                   </div>
-                  <motion.div
-                    animate={{ rotate: openId === faq.id ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="shrink-0"
+                  <div
+                    className={`shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                   >
                     <ChevronDown className="w-5 h-5 text-gray-400" />
-                  </motion.div>
+                  </div>
                 </button>
-                <motion.div
-                  initial={false}
-                  animate={{
-                    height: openId === faq.id ? 'auto' : 0,
-                    opacity: openId === faq.id ? 1 : 0,
-                  }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
                 >
                   <div className="px-6 pb-5 pl-20">
                     <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                   </div>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
             )
           })}
         </div>

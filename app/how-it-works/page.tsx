@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'motion/react'
 import { Scale, ClipboardList, PenTool, CheckCircle, Mail, FileDown, ArrowRight, Home } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
@@ -44,7 +43,7 @@ export default function HowItWorksPage() {
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30">
       {/* Navigation Header */}
       <nav className="glass-card backdrop-blur-lg border-b border-sky-200/60 sticky top-0 z-50 bg-white/95 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg-px-8">
           <div className="flex items-center justify-between h-32 py-4">
             <Link href="/" className="flex items-center justify-center">
               <Image
@@ -73,19 +72,13 @@ export default function HowItWorksPage() {
 
       {/* Header */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              How It Works
-            </h1>
-            <p className="text-xl text-gray-600">
-              Get a professional legal letter in 5 simple steps. Up to 48 hours turnaround.
-            </p>
-          </motion.div>
+        <div className="max-w-4xl mx-auto text-center animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            How It Works
+          </h1>
+          <p className="text-xl text-gray-600">
+            Get a professional legal letter in 5 simple steps. Up to 48 hours turnaround.
+          </p>
         </div>
       </section>
 
@@ -95,38 +88,36 @@ export default function HowItWorksPage() {
           {steps.map((step, index) => {
             const Icon = step.icon
             return (
-              <motion.div
+              <div
                 key={step.number}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="px-6 py-6 flex items-start gap-5">
                   {/* Step Number */}
                   <div className="shrink-0 w-12 h-12 rounded-full bg-linear-to-r from-[#199df4] to-[#0d8ae0] flex items-center justify-center text-white font-bold text-xl shadow-md">
                     {step.number}
                   </div>
-                  
+
                   {/* Icon */}
                   <div className="shrink-0 w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center">
                     <Icon className="w-6 h-6 text-[#199df4]" />
                   </div>
-                  
+
                   {/* Content */}
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg text-gray-900 mb-2">{step.title}</h3>
                     <p className="text-gray-600 leading-relaxed">{step.description}</p>
                   </div>
                 </div>
-                
+
                 {/* Connector Line */}
                 {index < steps.length - 1 && (
                   <div className="flex justify-start pl-10">
                     <div className="w-0.5 h-6 bg-linear-to-b from-[#199df4] to-sky-200 -mt-1"></div>
                   </div>
                 )}
-              </motion.div>
+              </div>
             )
           })}
         </div>
@@ -135,12 +126,7 @@ export default function HowItWorksPage() {
       {/* Benefits Summary */}
       <section className="pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-8"
-          >
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
             <h2 className="text-2xl font-bold text-center mb-8">What You Get</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-center gap-3">
@@ -168,19 +154,14 @@ export default function HowItWorksPage() {
                 <span className="text-gray-700">Up to 48 hours turnaround</span>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
-          >
+          <div className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white">
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
               Get your professional legal letter starting at $50 with membership.
@@ -191,7 +172,7 @@ export default function HowItWorksPage() {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 

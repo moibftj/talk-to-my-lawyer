@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'motion/react'
 import { Scale, Mail, FileText, MessageSquare, Shield, ArrowRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
@@ -81,19 +80,13 @@ export default function MembershipPage() {
 
       {/* Header */}
       <section className="pt-12 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Why Join the Membership Program
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Understanding when membership makes sense for your legal communication needs.
-            </p>
-          </motion.div>
+        <div className="max-w-4xl mx-auto text-center animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+            Why Join the Membership Program
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Understanding when membership makes sense for your legal communication needs.
+          </p>
         </div>
       </section>
 
@@ -103,12 +96,10 @@ export default function MembershipPage() {
           {reasons.map((reason, index) => {
             const Icon = reason.icon
             return (
-              <motion.div
+              <div
                 key={reason.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <div className="flex items-start gap-4">
                   <div className="shrink-0 w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center">
@@ -119,7 +110,7 @@ export default function MembershipPage() {
                     <p className="text-gray-600 leading-relaxed">{reason.description}</p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )
           })}
         </div>
@@ -128,35 +119,25 @@ export default function MembershipPage() {
       {/* Summary Card */}
       <section className="pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-8"
-          >
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">The Legal Reality</h2>
             <p className="text-gray-600 leading-relaxed mb-4">
-              Dispute resolution is a process, not a single event. The other party will respond, negotiate, and sometimes resist. 
-              Having the ability to send attorney-approved letters throughout this process—without worrying about per-letter costs—allows 
+              Dispute resolution is a process, not a single event. The other party will respond, negotiate, and sometimes resist.
+              Having the ability to send attorney-approved letters throughout this process—without worrying about per-letter costs—allows
               you to maintain consistent legal pressure until the matter is resolved.
             </p>
             <p className="text-gray-600 leading-relaxed">
-              Membership is designed for individuals and businesses who understand that legal disputes take time and multiple 
+              Membership is designed for individuals and businesses who understand that legal disputes take time and multiple
               communications to resolve properly.
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* CTA Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white"
-          >
+          <div className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] rounded-2xl p-12 text-center text-white">
             <h2 className="text-3xl font-bold mb-4">Ready to Become a Member?</h2>
             <p className="text-blue-200 mb-8 max-w-2xl mx-auto">
               Join the membership program and get attorney-approved letters at $50 each.
@@ -167,7 +148,7 @@ export default function MembershipPage() {
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 
