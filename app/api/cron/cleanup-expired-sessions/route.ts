@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
       .from("email_queue")
       .delete()
       .eq("status", "failed")
-      .lt("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+      .lt(
+        "created_at",
+        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      )
       .select("id");
 
     results.expiredEmails = deletedEmails?.length || 0;
@@ -40,7 +43,10 @@ export async function GET(request: NextRequest) {
     const { data: deletedLogs } = await supabase
       .from("email_queue_logs")
       .delete()
-      .lt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .lt(
+        "created_at",
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      )
       .select("id");
 
     results.oldEmailLogs = deletedLogs?.length || 0;
@@ -72,7 +78,7 @@ export async function GET(request: NextRequest) {
         duration: Date.now() - startTime,
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
