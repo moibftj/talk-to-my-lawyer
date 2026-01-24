@@ -388,11 +388,11 @@ IMPORTANT: Follow the outline structure above while writing the full letter.
 function extractCitations(
   content: string,
   research?: Awaited<ReturnType<typeof conductLegalResearch>>
-): Array<{ type: string; text: string; url?: string }> {
-  const citations: Array<{ type: string; text: string; url?: string }> = []
+): Array<{ type: 'statute' | 'case' | 'regulation' | 'other'; text: string; url?: string }> {
+  const citations: Array<{ type: 'statute' | 'case' | 'regulation' | 'other'; text: string; url?: string }> = []
 
   // Extract citations mentioned in the content
-  const citationPatterns = [
+  const citationPatterns: Array<{ pattern: RegExp; type: 'statute' | 'case' | 'regulation' | 'other' }> = [
     { pattern: /(\d+\s+U\.S\.C\.\s+§\s*\d+)/g, type: 'statute' },
     { pattern: /([A-Z]{2,}\s+Code\s+§\s*\d+)/g, type: 'statute' },
     { pattern: /(\d+\s+F\.3d\s+\d+)/g, type: 'case' },
