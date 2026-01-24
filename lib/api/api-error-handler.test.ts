@@ -195,7 +195,6 @@ describe("handleApiError", () => {
         received: "number",
         path: ["email"],
         message: "Expected string, received number",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     ]);
 
