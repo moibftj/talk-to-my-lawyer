@@ -60,7 +60,9 @@ describe("LETTER_TYPE_SCHEMAS", () => {
 
     Object.values(LETTER_TYPE_SCHEMAS).forEach((schema) => {
       baseFields.forEach((field) => {
-        expect((schema as unknown as Record<string, unknown>)[field]).toBeDefined();
+        expect(
+          (schema as unknown as Record<string, unknown>)[field],
+        ).toBeDefined();
       });
     });
   });
