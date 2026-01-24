@@ -188,7 +188,6 @@ describe("handleApiError", () => {
   });
 
   it("handles ZodError correctly", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const zodError = new ZodError([
       {
         code: "invalid_type",
@@ -196,6 +195,7 @@ describe("handleApiError", () => {
         received: "number",
         path: ["email"],
         message: "Expected string, received number",
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
     ]);
 

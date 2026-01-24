@@ -32,10 +32,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import PricingSection from "@/components/ui/pricing-section";
-import {
-  DEFAULT_LOGO_ALT,
-  DEFAULT_LOGO_SRC,
-} from "@/lib/constants";
+import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
 import type { Profile } from "@/lib/database.types";
 
 // Use subset of Profile fields for UI
@@ -182,7 +179,10 @@ export default function HomePage() {
               </div>
 
               {/* Center Logo */}
-              <Link href="/" className="flex items-center justify-center flex-shrink-0">
+              <Link
+                href="/"
+                className="flex items-center justify-center shrink-0"
+              >
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
@@ -238,17 +238,21 @@ export default function HomePage() {
         <section className="pt-20 pb-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
           {/* Simple static background with subtle CSS animation */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute w-200 h-200 rounded-full opacity-20 blur-3xl bg-gradient-animated"
+            <div
+              className="absolute w-200 h-200 rounded-full opacity-20 blur-3xl bg-gradient-animated"
               style={{
-                background: "radial-gradient(circle, #199df4 0%, #0d8ae0 40%, #0066cc 100%)",
+                background:
+                  "radial-gradient(circle, #199df4 0%, #0d8ae0 40%, #0066cc 100%)",
                 top: "-20%",
                 left: "-10%",
                 animation: "float 40s ease-in-out infinite",
               }}
             />
-            <div className="absolute w-150 h-150 rounded-full opacity-15 blur-3xl bg-gradient-animated"
+            <div
+              className="absolute w-150 h-150 rounded-full opacity-15 blur-3xl bg-gradient-animated"
               style={{
-                background: "radial-gradient(circle, #199df4 0%, #4facfe 50%, #00f2fe 100%)",
+                background:
+                  "radial-gradient(circle, #199df4 0%, #4facfe 50%, #00f2fe 100%)",
                 top: "40%",
                 right: "-10%",
                 animation: "float 35s ease-in-out infinite reverse",
@@ -273,7 +277,10 @@ export default function HomePage() {
               </h1>
 
               {/* Service Types */}
-              <div className="flex flex-wrap justify-center gap-3 mb-8 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+              <div
+                className="flex flex-wrap justify-center gap-3 mb-8 animate-slide-up"
+                style={{ animationDelay: "0.2s" }}
+              >
                 {[
                   "Breach of Contract",
                   "Demand for Payment",
@@ -290,7 +297,10 @@ export default function HomePage() {
                 ))}
               </div>
 
-              <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium animate-slide-up" style={{ animationDelay: "0.4s" }}>
+              <p
+                className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium animate-slide-up"
+                style={{ animationDelay: "0.4s" }}
+              >
                 Resolve conflicts quickly and affordably — only{" "}
                 <span className="text-[#199df4] font-bold">$50 per letter</span>
                 .
@@ -298,7 +308,10 @@ export default function HomePage() {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 animate-slide-up" style={{ animationDelay: "0.6s" }}>
+            <div
+              className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 animate-slide-up"
+              style={{ animationDelay: "0.6s" }}
+            >
               <Link href="/auth/signup">
                 <Button
                   variant="running_border"
@@ -342,36 +355,20 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               <div className="scroll-reveal">
-                <div className="text-4xl font-bold mb-2">
-                  10,000+
-                </div>
-                <div className="text-blue-200">
-                  Letters Delivered
-                </div>
+                <div className="text-4xl font-bold mb-2">10,000+</div>
+                <div className="text-blue-200">Letters Delivered</div>
               </div>
               <div className="scroll-reveal">
-                <div className="text-4xl font-bold mb-2">
-                  95%
-                </div>
-                <div className="text-blue-200">
-                  Success Rate
-                </div>
+                <div className="text-4xl font-bold mb-2">95%</div>
+                <div className="text-blue-200">Success Rate</div>
               </div>
               <div className="scroll-reveal">
-                <div className="text-4xl font-bold mb-2">
-                  50+
-                </div>
-                <div className="text-blue-200">
-                  Licensed Attorneys
-                </div>
+                <div className="text-4xl font-bold mb-2">50+</div>
+                <div className="text-blue-200">Licensed Attorneys</div>
               </div>
               <div className="scroll-reveal">
-                <div className="text-4xl font-bold mb-2">
-                  Up to 48 Hours
-                </div>
-                <div className="text-blue-200">
-                  Turnaround Time
-                </div>
+                <div className="text-4xl font-bold mb-2">Up to 48 Hours</div>
+                <div className="text-blue-200">Turnaround Time</div>
               </div>
             </div>
           </div>
