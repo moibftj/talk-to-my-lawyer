@@ -27,65 +27,73 @@ export async function GET(request: NextRequest) {
     const results: Record<string, number> = {};
 
     // Clean up old audit logs (older than 90 days)
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const ninetyDaysAgo = new Date(
+      Date.now() - 90 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
-    const { count: oldAuditLogs } = await supabase
+    const { data: deletedAuditLogs } = await supabase
       .from("letter_audit_trail")
       .delete()
       .lt("created_at", ninetyDaysAgo)
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.oldAuditLogs = oldAuditLogs || 0;
+    results.oldAuditLogs = deletedAuditLogs?.length || 0;
 
     // Clean up old security audit logs (older than 90 days)
-    const { count: oldSecurityLogs } = await supabase
+    const { data: deletedSecurityLogs } = await supabase
       .from("security_audit_log")
       .delete()
       .lt("created_at", ninetyDaysAgo)
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.oldSecurityLogs = oldSecurityLogs || 0;
+    results.oldSecurityLogs = deletedSecurityLogs?.length || 0;
 
     // Clean up old data access logs (older than 90 days)
-    const { count: oldAccessLogs } = await supabase
+    const { data: deletedAccessLogs } = await supabase
       .from("data_access_logs")
       .delete()
       .lt("accessed_at", ninetyDaysAgo)
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.oldAccessLogs = oldAccessLogs || 0;
+    results.oldAccessLogs = deletedAccessLogs?.length || 0;
 
     // Clean up old fraud detection logs (older than 180 days)
-    const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+    const sixMonthsAgo = new Date(
+      Date.now() - 180 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
-    const { count: oldFraudLogs } = await supabase
+    const { data: deletedFraudLogs } = await supabase
       .from("fraud_detection_log")
       .delete()
       .lt("created_at", sixMonthsAgo)
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.oldFraudLogs = oldFraudLogs || 0;
+    results.oldFraudLogs = deletedFraudLogs?.length || 0;
 
     // Clean up old email delivery logs (older than 60 days)
-    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const sixtyDaysAgo = new Date(
+      Date.now() - 60 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
-    const { count: oldDeliveryLogs } = await supabase
+    const { data: deletedDeliveryLogs } = await supabase
       .from("email_delivery_log")
       .delete()
       .lt("created_at", sixtyDaysAgo)
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.oldDeliveryLogs = oldDeliveryLogs || 0;
+    results.oldDeliveryLogs = deletedDeliveryLogs?.length || 0;
 
     // Clean up completed webhook events (older than 30 days)
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysAgo = new Date(
+      Date.now() - 30 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const { count: oldWebhookEvents } = await supabase
       .from("webhook_events")
       .delete()
       .not("processed_at", "is", null)
       .lt("created_at", thirtyDaysAgo)
-      .select("*", { count: "exact", head: true });
+      .select();
 
     results.oldWebhookEvents = oldWebhookEvents || 0;
 
@@ -115,7 +123,7 @@ export async function GET(request: NextRequest) {
         duration: Date.now() - startTime,
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
