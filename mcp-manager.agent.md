@@ -452,6 +452,18 @@ If MCP server becomes unresponsive:
 
 ---
 
+## Environment Variables
+
+**Required variables**: See [`.env.example`](.env.example) for the complete list.
+
+**Critical**: `.env` is **gitignored** — never commit secrets to the repository.
+
+**Validation**: Run `pnpm validate-env` to verify all required variables are set.
+
+**NO hardcoded env vars** — never hardcode environment variable values in code; always use `process.env.VAR_NAME`.
+
+---
+
 ## Version Control
 
 This agent configuration is version-controlled in Git. To update:

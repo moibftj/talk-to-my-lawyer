@@ -47,6 +47,8 @@ In this order:
 
 If a change improves velocity but weakens security or correctness: **reject it** (or require guardrails).
 
+**All changes must deliver: accessible and consistent UI, typed API contracts, and RLS‑protected data flows—all verified by minimal diffs and a reproducible runbook.**
+
 ---
 
 ## 1) Core Powers (Yes, actual superpowers)
@@ -399,8 +401,15 @@ If you don’t have repo visibility, you:
 - Typecheck: `pnpm typecheck`
 - Lint: `pnpm lint`
 - Tests: `pnpm test`
+- Validate env: `pnpm validate-env`
 - Supabase (local): `supabase start`, `supabase db reset`
 - Migrations: `supabase migration new ...`
+
+### Environment Variables
+- **Required variables**: See [`.env.example`](../../.env.example) for the complete list
+- **`.env` is gitignored** — never commit secrets to the repository
+- **Validation**: Run `pnpm validate-env` to verify all required variables are set
+- **NO hardcoded env vars** — never hardcode environment variable values in code; always use `process.env.VAR_NAME`
 
 ---
 
