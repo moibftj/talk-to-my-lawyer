@@ -298,17 +298,21 @@ export function validateIntakeData(letterType: string, intakeData: unknown): Val
   // Validate country codes (2-letter ISO codes)
   const countryCodeRegex = /^[A-Z]{2}$/
   if (data.senderCountry) {
-    data.senderCountry = String(data.senderCountry).toUpperCase()
-    if (!countryCodeRegex.test(data.senderCountry)) {
+    const senderCountry = String(data.senderCountry).toUpperCase()
+    if (!countryCodeRegex.test(senderCountry)) {
       errors.push('Invalid sender country code. Use a 2-letter ISO country code (e.g., US, CA, GB).')
       delete data.senderCountry
+    } else {
+      data.senderCountry = senderCountry
     }
   }
   if (data.recipientCountry) {
-    data.recipientCountry = String(data.recipientCountry).toUpperCase()
-    if (!countryCodeRegex.test(data.recipientCountry)) {
+    const recipientCountry = String(data.recipientCountry).toUpperCase()
+    if (!countryCodeRegex.test(recipientCountry)) {
       errors.push('Invalid recipient country code. Use a 2-letter ISO country code (e.g., US, CA, GB).')
       delete data.recipientCountry
+    } else {
+      data.recipientCountry = recipientCountry
     }
   }
 
