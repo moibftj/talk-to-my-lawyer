@@ -362,21 +362,22 @@ export async function createLetterOutline(context: LetterPromptContext): Promise
       `The sender is located in ${getStateName(context.senderState) || context.senderState}`,
       `The recipient is located in ${recipientStateName}`,
       `Issue: ${context.issueDescription.substring(0, 200)}...`,
-      context.incidentDate ? `Incident occurred on ${context.incidentDate}` : null,
-      context.additionalDetails ? `Additional context available` : null,
-    ].filter(Boolean),
+      context.incidentDate ? `Incident occurred on ${context.incidentDate}` : undefined,
+      context.additionalDetails ? `Additional context available` : undefined,
+    ].filter((s): s is string => Boolean(s)),
 
     legalBasis: [
       `Applicable ${recipientStateName} state law`,
       ...(context.research?.relevantStatutes.map(s => s.citation) || []),
       ...(context.research?.federalLawReferences || []),
-    ].filter(Boolean),
+    ],
 
     demands: [
       context.desiredOutcome,
-      context.amountDemanded ? `Payment of $${context.amountDemanded.toLocaleString()}` : null,
-      context.deadlineDate ? `Response by ${context.deadlineDate}` : 'Response within 14 business days',
-    ].filter(Boolean),
+      context.amountDemanded ? `Payment of $${context.amountDemanded.toLocaleString()}` : undefined,
+      context.deadlineDate ? `Response by ${context.deadlineDate}` : undefined,
+      'Response within 14 business days',
+    ].filter((s): s is string => Boolean(s)),
 
     consequences: [
       'Further legal action may be taken if demands are not met',
