@@ -7,6 +7,9 @@ mcpServers:
   - filesystem    # For reading/editing code and exploring codebase structure
   - github        # For PR reviews, repo operations, issue management
   - supabase      # For DB schema inspection, RLS policy audits, migrations
+    - vercel      # For DB schema inspection, RLS policy audits, migrations
+    - vercel      # For deployment management, environment variables, build logs
+
 
 # Required Built-in Tools
 requiredTools:
