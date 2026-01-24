@@ -27,33 +27,33 @@ export async function GET(request: NextRequest) {
     const results: Record<string, number> = {};
 
     // Clean up expired email queue items (older than 7 days and failed)
-    const { count: expiredEmails } = await supabase
+    const { data: deletedEmails } = await supabase
       .from("email_queue")
       .delete()
       .eq("status", "failed")
       .lt("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.expiredEmails = expiredEmails || 0;
+    results.expiredEmails = deletedEmails?.length || 0;
 
     // Clean up old email queue logs (older than 30 days)
-    const { count: oldLogs } = await supabase
+    const { data: deletedLogs } = await supabase
       .from("email_queue_logs")
       .delete()
       .lt("created_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.oldEmailLogs = oldLogs || 0;
+    results.oldEmailLogs = deletedLogs?.length || 0;
 
     // Clean up expired data export requests (older than 30 days)
-    const { count: expiredExports } = await supabase
+    const { data: deletedExports } = await supabase
       .from("data_export_requests")
       .delete()
       .eq("status", "completed")
       .lt("expires_at", new Date().toISOString())
-      .select("*", { count: "exact", head: true });
+      .select("id");
 
-    results.expiredExports = expiredExports || 0;
+    results.expiredExports = deletedExports?.length || 0;
 
     return NextResponse.json({
       success: true,
