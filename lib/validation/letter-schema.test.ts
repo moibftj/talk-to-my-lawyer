@@ -184,13 +184,13 @@ describe("validateLetterType", () => {
   });
 
   it("returns invalid for non-string input", () => {
-    const result = validateLetterType(123);
+    const result = validateLetterType(123 as unknown as string);
     expect(result.valid).toBe(false);
     expect(result.error).toBe("Letter type is required");
   });
 
   it("returns invalid for undefined input", () => {
-    const result = validateLetterType(undefined);
+    const result = validateLetterType(undefined as unknown as string);
     expect(result.valid).toBe(false);
     expect(result.error).toBe("Letter type is required");
   });
