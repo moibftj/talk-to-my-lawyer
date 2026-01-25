@@ -10,7 +10,7 @@ export const runtime = 'nodejs'
 // GET - Fetch email queue status and items
 export async function GET(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 30, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_READ'))
     if (rateLimitResponse) return rateLimitResponse
 
     const authError = await requireSuperAdminAuth()
