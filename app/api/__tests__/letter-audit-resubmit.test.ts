@@ -89,28 +89,31 @@ describe('Letter Audit & Resubmit API', () => {
         },
       ]
 
+      // Create fresh query builders for each from() call
+      const createProfilesQuery = () => ({
+        select: () => createProfilesQuery(),
+        eq: () => createProfilesQuery(),
+        single: () => Promise.resolve({ data: { role: 'admin' }, error: null }),
+      })
+
+      const createAuditTrailQuery = () => {
+        const result = { data: mockAuditTrail, error: null }
+        const queryBuilder = {
+          select: () => queryBuilder,
+          eq: () => queryBuilder,
+          order: () => queryBuilder,
+          then: (resolve: any) => resolve(result),
+          catch: () => queryBuilder,
+        }
+        return queryBuilder
+      }
+
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn()
-          .mockResolvedValueOnce({
-            data: { role: 'admin' },
-            error: null,
-          })
-          .mockResolvedValueOnce({
-            data: { user_id: 'user-123' },
-            error: null,
-          })
-          .mockResolvedValueOnce({
-            data: null,
-            error: null,
-          }),
-        order: vi.fn().mockResolvedValue({
-          data: mockAuditTrail,
-          error: null,
+        from: vi.fn((table: string) => {
+          if (table === 'profiles') return createProfilesQuery()
+          if (table === 'letter_audit_trail') return createAuditTrailQuery()
+          return createProfilesQuery()
         }),
-        limit: vi.fn().mockReturnThis(),
       }
 
       mockRequireAuth.mockResolvedValue({ user: mockUser, supabase: mockSupabase })
@@ -121,10 +124,9 @@ describe('Letter Audit & Resubmit API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.success).toBe(true)
-      expect(data.data.auditTrail).toHaveLength(2)
-      expect(data.data.auditTrail[0].action).toBe('created')
-      expect(data.data.auditTrail[1].action).toBe('approved')
+      expect(data.auditTrail).toHaveLength(2)
+      expect(data.auditTrail[0].action).toBe('created')
+      expect(data.auditTrail[1].action).toBe('approved')
     })
 
     it('should return audit trail for employee with relationship', async () => {
@@ -138,28 +140,28 @@ describe('Letter Audit & Resubmit API', () => {
         },
       ]
 
+      let queryCount = 0
+      const createQuery = () => {
+        const auditResult = { data: mockAuditTrail, error: null }
+        const queryBuilder = {
+          select: () => queryBuilder,
+          eq: () => queryBuilder,
+          limit: () => queryBuilder,
+          single: () => {
+            queryCount++
+            if (queryCount === 1) return Promise.resolve({ data: { role: 'employee' }, error: null })
+            if (queryCount === 2) return Promise.resolve({ data: { user_id: 'user-123' }, error: null })
+            return Promise.resolve({ data: { id: 'sub-123' }, error: null })
+          },
+          order: () => queryBuilder,
+          then: (resolve: any) => resolve(auditResult),
+          catch: () => queryBuilder,
+        }
+        return queryBuilder
+      }
+
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn()
-          .mockResolvedValueOnce({
-            data: { role: 'employee' },
-            error: null,
-          })
-          .mockResolvedValueOnce({
-            data: { user_id: 'user-123' },
-            error: null,
-          })
-          .mockResolvedValueOnce({
-            data: { id: 'sub-123' }, // Employee has relationship
-            error: null,
-          }),
-        order: vi.fn().mockResolvedValue({
-          data: mockAuditTrail,
-          error: null,
-        }),
-        limit: vi.fn().mockReturnThis(),
+        from: vi.fn(() => createQuery()),
       }
 
       mockRequireAuth.mockResolvedValue({ user: mockUser, supabase: mockSupabase })
@@ -170,29 +172,31 @@ describe('Letter Audit & Resubmit API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.data.auditTrail).toHaveLength(1)
+      expect(data.auditTrail).toHaveLength(1)
     })
 
     it('should deny employee access without relationship', async () => {
       const mockUser = { id: 'emp-123', email: 'emp@example.com' }
 
+      let queryCount = 0
+      const createQuery = () => {
+        const queryBuilder = {
+          select: () => queryBuilder,
+          eq: () => queryBuilder,
+          limit: () => queryBuilder,
+          single: () => {
+            queryCount++
+            if (queryCount === 1) return Promise.resolve({ data: { role: 'employee' }, error: null })
+            if (queryCount === 2) return Promise.resolve({ data: { user_id: 'user-123' }, error: null })
+            return Promise.resolve({ data: null, error: null }) // No relationship
+          },
+          order: () => queryBuilder,
+        }
+        return Object.assign(queryBuilder, Promise.resolve({ data: [], error: null }))
+      }
+
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn()
-          .mockResolvedValueOnce({
-            data: { role: 'employee' },
-            error: null,
-          })
-          .mockResolvedValueOnce({
-            data: { user_id: 'user-123' },
-            error: null,
-          })
-          .mockResolvedValueOnce({
-            data: null, // No relationship
-            error: null,
-          }),
+        from: vi.fn(() => createQuery()),
       }
 
       mockRequireAuth.mockResolvedValue({ user: mockUser, supabase: mockSupabase })
@@ -217,17 +221,28 @@ describe('Letter Audit & Resubmit API', () => {
     it('should return empty audit trail for new letter', async () => {
       const mockUser = { id: 'admin-123', email: 'admin@example.com' }
 
+      const createProfilesQuery = () => ({
+        select: () => createProfilesQuery(),
+        eq: () => createProfilesQuery(),
+        single: () => Promise.resolve({ data: { role: 'admin' }, error: null }),
+      })
+
+      const createAuditTrailQuery = () => {
+        const result = { data: [], error: null }
+        const queryBuilder = {
+          select: () => queryBuilder,
+          eq: () => queryBuilder,
+          order: () => queryBuilder,
+          then: (resolve: any) => resolve(result),
+          catch: () => queryBuilder,
+        }
+        return queryBuilder
+      }
+
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({
-          data: { role: 'admin' },
-          error: null,
-        }),
-        order: vi.fn().mockResolvedValue({
-          data: [],
-          error: null,
+        from: vi.fn((table: string) => {
+          if (table === 'profiles') return createProfilesQuery()
+          return createAuditTrailQuery()
         }),
       }
 
@@ -239,7 +254,7 @@ describe('Letter Audit & Resubmit API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.data.auditTrail).toHaveLength(0)
+      expect(data.auditTrail).toHaveLength(0)
     })
   })
 

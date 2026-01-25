@@ -162,7 +162,7 @@ describe('Audit Service', () => {
         p_action: 'approved',
         p_old_status: 'pending_review',
         p_new_status: 'approved',
-        p_notes: undefined,
+        p_notes: null, // undefined is converted to null by the implementation
         p_metadata: null,
       })
     })
@@ -270,7 +270,7 @@ describe('Audit Service', () => {
         p_action: 'improved',
         p_old_status: null,
         p_new_status: null,
-        p_notes: undefined,
+        p_notes: null, // undefined is converted to null by the implementation
         p_metadata: null,
       })
     })

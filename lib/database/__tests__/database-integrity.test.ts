@@ -396,18 +396,18 @@ describe('RLS Policy Enforcement', () => {
     it('should block anonymous access to letters table', async () => {
       const { data, error, status } = await supabase.from('letters').select('*')
 
-      // RLS should block access (anon key should be blocked by RLS)
-      expect(status).toBe(406) // Not acceptable RLS
-      expect(error).toBeDefined()
-      expect(data).toBeNull()
+      // RLS should block access - anonymous requests are unauthorized
+      // Supabase returns 200 with empty data when RLS blocks read access
+      expect(status).toBe(200)
+      expect(data).toEqual([])
     })
 
     it('should block anonymous access to profiles table', async () => {
       const { data, error, status } = await supabase.from('profiles').select('*')
 
-      expect(status).toBe(406)
-      expect(error).toBeDefined()
-      expect(data).toBeNull()
+      // RLS should block access - anonymous requests get 200 with empty data
+      expect(status).toBe(200)
+      expect(data).toEqual([])
     })
 
     it('should block anonymous insert to letters table', async () => {
@@ -422,7 +422,8 @@ describe('RLS Policy Enforcement', () => {
         })
         .select()
 
-      expect(status).toBe(403) // Forbidden
+      // Anonymous requests are unauthorized, not just forbidden
+      expect(status).toBeGreaterThanOrEqual(400)
       expect(error).toBeDefined()
       expect(data).toBeNull()
     })

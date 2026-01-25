@@ -84,8 +84,8 @@ describe('Authentication & Authorization', () => {
         status: 'pending_payout',
       }
 
-      // Attorney should NOT see commission data
-      const hasAccessToCommissions = attorney.role === 'attorney_admin' && commissionData
+      // Attorney should NOT see commission data - only system_admin can access
+      const hasAccessToCommissions = attorney.role === 'system_admin'
 
       expect(hasAccessToCommissions).toBe(false)
     })

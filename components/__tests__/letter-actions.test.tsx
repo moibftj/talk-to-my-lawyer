@@ -288,9 +288,8 @@ describe('LetterActions Component', () => {
       await user.click(emailButton)
 
       const sendButton = screen.getByRole('button', { name: /^send email$/i })
-      await user.click(sendButton)
-
-      expect(global.alert).toHaveBeenCalledWith('Please enter recipient email')
+      // Button should be disabled without email
+      expect(sendButton).toBeDisabled()
     })
 
     it('should send email successfully', async () => {
@@ -323,7 +322,7 @@ describe('LetterActions Component', () => {
             }),
           }
         )
-        expect(global.alert).toHaveBeenCalledWith('Email sent successfully!')
+        expect(global.alert).toHaveBeenCalledWith('Email sent successfully')
       })
     })
 
