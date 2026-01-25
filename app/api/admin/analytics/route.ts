@@ -6,7 +6,7 @@ import { getRateLimitTuple } from '@/lib/config'
 
 export async function GET(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 30, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_READ'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }
