@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateSystemAdminAction } from '@/lib/admin/letter-actions'
+import { getRateLimitTuple } from '@/lib/config'
 
 export const runtime = 'nodejs'
 
@@ -25,7 +26,7 @@ function generateCouponCode(): string {
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
 // Toggle coupon active status
 export async function PATCH(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 20, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const validationError = await validateSystemAdminAction(request)
