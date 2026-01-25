@@ -31,6 +31,7 @@ vi.mock('@/lib/auth/authenticate-user', () => ({
 
 import { createClient } from '@/lib/supabase/server'
 import { requireAuth } from '@/lib/auth/authenticate-user'
+import { AuthenticationError } from '@/lib/api/api-error-handler'
 
 const mockCreateClient = createClient as any
 const mockRequireAuth = requireAuth as any
@@ -72,7 +73,7 @@ describe('Subscription & Allowance API', () => {
   describe('GET /api/subscriptions/check-allowance', () => {
     it('should return allowance status for authenticated user', async () => {
       const mockUser = { id: 'user-123', email: 'user@example.com' }
-      const mockAllowance = { has_access: true, letters_remaining: 5 }
+      const mockAllowance = { has_allowance: true, remaining: 5 }
 
       mockRequireAuth.mockResolvedValue({ user: mockUser })
 
@@ -85,14 +86,13 @@ describe('Subscription & Allowance API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.success).toBe(true)
-      expect(data.data.hasAllowance).toBe(true)
-      expect(data.data.remaining).toBe(5)
+      expect(data.hasAllowance).toBe(true)
+      expect(data.remaining).toBe(5)
     })
 
     it('should return no allowance when user has no credits', async () => {
       const mockUser = { id: 'user-123', email: 'user@example.com' }
-      const mockAllowance = { has_access: false, letters_remaining: 0 }
+      const mockAllowance = { has_allowance: false, remaining: 0 }
 
       mockRequireAuth.mockResolvedValue({ user: mockUser })
 
@@ -104,8 +104,8 @@ describe('Subscription & Allowance API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data.data.hasAllowance).toBe(false)
-      expect(data.data.remaining).toBe(0)
+      expect(data.hasAllowance).toBe(false)
+      expect(data.remaining).toBe(0)
     })
 
     it('should handle RPC errors gracefully', async () => {
@@ -125,7 +125,7 @@ describe('Subscription & Allowance API', () => {
     })
 
     it('should require authentication', async () => {
-      mockRequireAuth.mockRejectedValue(new Error('Unauthorized'))
+      mockRequireAuth.mockRejectedValue(new AuthenticationError())
 
       const request = new Request('http://localhost:3000/api/subscriptions/check-allowance')
       const response = await GET(request as any)
@@ -186,12 +186,12 @@ describe('Subscription & Allowance API', () => {
         method: 'POST',
         body: JSON.stringify({
           subscriptionId: 'sub-123',
-          planType: 'professional',
+          planType: 'annual',
         }),
       })
       const nextRequest = {
         ...request,
-        json: () => Promise.resolve({ subscriptionId: 'sub-123', planType: 'professional' }),
+        json: () => Promise.resolve({ subscriptionId: 'sub-123', planType: 'annual' }),
       } as any
 
       const response = await ActivatePOST(nextRequest)
@@ -291,7 +291,7 @@ describe('Subscription & Allowance API', () => {
         method: 'POST',
         body: JSON.stringify({
           subscriptionId: 'sub-123',
-          planType: 'professional',
+          planType: 'annual',
         }),
       })
       const nextRequest = {

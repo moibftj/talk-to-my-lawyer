@@ -123,71 +123,89 @@ describe('LetterReviewInterface Component', () => {
   })
 
   describe('Edit Capability', () => {
-    it('should show edit content button', () => {
+    it('should show edit content button', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
+
+      // Switch to edit tab first to see the edit buttons
+      const editTab = screen.getByRole('tab', { name: 'Edit & Improve' })
+      await user.click(editTab)
 
       expect(screen.getByRole('button', { name: /Edit Content/i })).toBeInTheDocument()
     })
 
-    it('should show improve with AI button', () => {
+    it('should show improve with AI button', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
+
+      // Switch to edit tab first to see the edit buttons
+      const editTab = screen.getByRole('tab', { name: 'Edit & Improve' })
+      await user.click(editTab)
 
       expect(screen.getByRole('button', { name: /✨ Improve with AI/i })).toBeInTheDocument()
     })
 
-    it('should have a textarea for letter content', () => {
+    it('should have a textarea for letter content', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
       // Switch to edit tab first to see the textarea
       const editTab = screen.getByRole('tab', { name: 'Edit & Improve' })
-      userEvent.click(editTab)
+      await user.click(editTab)
 
-      expect(screen.getByLabelText(/Letter Content/i)).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByRole('textbox')).toBeInTheDocument()
+      })
     })
   })
 
   describe('Actions Tab', () => {
-    it('should have download PDF button', () => {
+    it('should have download PDF button', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
       const actionsTab = screen.getByRole('tab', { name: 'Actions' })
-      userEvent.click(actionsTab)
+      await user.click(actionsTab)
 
       expect(screen.getByRole('button', { name: /Download PDF/i })).toBeInTheDocument()
     })
 
-    it('should have send to user button', () => {
+    it('should have send to user button', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
       const actionsTab = screen.getByRole('tab', { name: 'Actions' })
-      userEvent.click(actionsTab)
+      await user.click(actionsTab)
 
       expect(screen.getByRole('button', { name: /Send to User/i })).toBeInTheDocument()
     })
   })
 
   describe('Status Management', () => {
-    it('should have status change dropdown', () => {
+    it('should have status change dropdown', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
       const actionsTab = screen.getByRole('tab', { name: 'Actions' })
-      userEvent.click(actionsTab)
+      await user.click(actionsTab)
 
       expect(screen.getByText(/Change Status/i)).toBeInTheDocument()
     })
   })
 
   describe('History Tab', () => {
-    it('should show empty state when no audit trail', () => {
+    it('should show empty state when no audit trail', async () => {
+      const user = userEvent.setup()
       render(<LetterReviewInterface letter={mockLetter} auditTrail={[]} />)
 
       const historyTab = screen.getByRole('tab', { name: 'History' })
-      userEvent.click(historyTab)
+      await user.click(historyTab)
 
       expect(screen.getByText(/No history available/i)).toBeInTheDocument()
     })
 
-    it('should show audit trail entries when available', () => {
+    it('should show audit trail entries when available', async () => {
+      const user = userEvent.setup()
       const auditTrail = [
         {
           id: 'audit-1',
@@ -202,7 +220,7 @@ describe('LetterReviewInterface Component', () => {
       render(<LetterReviewInterface letter={mockLetter} auditTrail={auditTrail} />)
 
       const historyTab = screen.getByRole('tab', { name: 'History' })
-      userEvent.click(historyTab)
+      await user.click(historyTab)
 
       expect(screen.getByText('Letter created')).toBeInTheDocument()
     })

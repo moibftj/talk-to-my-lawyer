@@ -8,6 +8,13 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { GET } from '../admin/analytics/route'
 import { POST, PATCH } from '../admin/coupons/create/route'
 
+// Helper to create a Next.js-compatible request
+function createNextRequest(url: string, options?: RequestInit): any {
+  const request = new Request(url, options)
+  request.nextUrl = new URL(url)
+  return request
+}
+
 // Mock dependencies
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
@@ -26,11 +33,17 @@ vi.mock('@/lib/admin/letter-actions', () => ({
   validateSystemAdminAction: vi.fn(() => Promise.resolve(null)),
 }))
 
+vi.mock('@/lib/auth/admin-session', () => ({
+  requireSuperAdminAuth: vi.fn(() => Promise.resolve(undefined)),
+}))
+
 import { createClient } from '@/lib/supabase/server'
 import { validateSystemAdminAction } from '@/lib/admin/letter-actions'
+import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
 
 const mockCreateClient = createClient as any
 const mockValidateSystemAdminAction = validateSystemAdminAction as any
+const mockRequireSuperAdminAuth = requireSuperAdminAuth as any
 
 describe('Admin Analytics & Coupon API', () => {
   beforeEach(() => {
@@ -91,8 +104,8 @@ describe('Admin Analytics & Coupon API', () => {
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
-      const request = new Request('http://localhost:3000/api/admin/analytics')
-      const response = await GET(request as any)
+      const request = createNextRequest('http://localhost:3000/api/admin/analytics')
+      const response = await GET(request)
       const data = await response.json()
 
       expect(response.status).toBe(200)
@@ -113,8 +126,8 @@ describe('Admin Analytics & Coupon API', () => {
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
-      const request = new Request('http://localhost:3000/api/admin/analytics?days=7&months=3')
-      await GET(request as any)
+      const request = createNextRequest('http://localhost:3000/api/admin/analytics?days=7&months=3')
+      await GET(request)
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_letter_statistics', { days_back: 7 })
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_revenue_summary', { months_back: 3 })
@@ -130,8 +143,8 @@ describe('Admin Analytics & Coupon API', () => {
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
-      const request = new Request('http://localhost:3000/api/admin/analytics')
-      await GET(request as any)
+      const request = createNextRequest('http://localhost:3000/api/admin/analytics')
+      await GET(request)
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_letter_statistics', { days_back: 30 })
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_revenue_summary', { months_back: 12 })
@@ -147,8 +160,8 @@ describe('Admin Analytics & Coupon API', () => {
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
-      const request = new Request('http://localhost:3000/api/admin/analytics')
-      const response = await GET(request as any)
+      const request = createNextRequest('http://localhost:3000/api/admin/analytics')
+      const response = await GET(request)
       const data = await response.json()
 
       // Should return default empty values when RPC fails
@@ -168,26 +181,33 @@ describe('Admin Analytics & Coupon API', () => {
         created_at: '2025-01-01',
       }
 
+      // Proper query builder chain mock
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-        single: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: mockCoupon,
-              error: null,
-            }),
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: null,
+              }),
+            })),
+          })),
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: mockCoupon,
+                error: null,
+              }),
+            })),
+          })),
+        })),
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'admin-123' } },
+            error: null,
           }),
-        }),
-      }
+        },
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -216,10 +236,23 @@ describe('Admin Analytics & Coupon API', () => {
 
     it('should validate discount percent range', async () => {
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: null,
+              }),
+            })),
+          })),
+        })),
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'admin-123' } },
+            error: null,
+          }),
+        },
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -241,10 +274,23 @@ describe('Admin Analytics & Coupon API', () => {
 
     it('should reject zero discount percent', async () => {
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ data: null, error: null }),
-      }
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: null,
+              }),
+            })),
+          })),
+        })),
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'admin-123' } },
+            error: null,
+          }),
+        },
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -271,17 +317,23 @@ describe('Admin Analytics & Coupon API', () => {
       }
 
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: existingCoupon,
-          error: null,
-        }),
-        single: vi.fn().mockResolvedValue({
-          data: existingCoupon,
-          error: null,
-        }),
-      }
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: existingCoupon,
+                error: null,
+              }),
+            })),
+          })),
+        })),
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'admin-123' } },
+            error: null,
+          }),
+        },
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -307,29 +359,35 @@ describe('Admin Analytics & Coupon API', () => {
 
     it('should generate code if not provided', async () => {
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-        single: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-        insert: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            single: vi.fn().mockResolvedValue({
-              data: {
-                id: 'coupon-123',
-                code: 'PROMOXYZ789',
-                discount_percent: 25,
-              },
-              error: null,
-            }),
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: null,
+              }),
+            })),
+          })),
+          insert: vi.fn(() => ({
+            select: vi.fn(() => ({
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: 'coupon-123',
+                  code: 'PROMOXYZ789',
+                  discount_percent: 25,
+                },
+                error: null,
+              }),
+            })),
+          })),
+        })),
+        auth: {
+          getUser: vi.fn().mockResolvedValue({
+            data: { user: { id: 'admin-123' } },
+            error: null,
           }),
-        }),
-      }
+        },
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -356,26 +414,23 @@ describe('Admin Analytics & Coupon API', () => {
   describe('PATCH /api/admin/coupons/create (toggle active)', () => {
     it('should activate a coupon', async () => {
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({
-          data: {
-            id: 'coupon-123',
-            code: 'PROMO',
-            is_active: true,
-          },
-          error: null,
-        }),
-        single: vi.fn().mockResolvedValue({
-          data: {
-            id: 'coupon-123',
-            code: 'PROMO',
-            is_active: true,
-          },
-          error: null,
-        }),
-      }
+        from: vi.fn(() => ({
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: 'coupon-123',
+                    code: 'PROMO',
+                    is_active: true,
+                  },
+                  error: null,
+                }),
+              })),
+            })),
+          })),
+        })),
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -404,26 +459,23 @@ describe('Admin Analytics & Coupon API', () => {
 
     it('should deactivate a coupon', async () => {
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        select: vi.fn().mockResolvedValue({
-          data: {
-            id: 'coupon-123',
-            code: 'PROMO',
-            is_active: false,
-          },
-          error: null,
-        }),
-        single: vi.fn().mockResolvedValue({
-          data: {
-            id: 'coupon-123',
-            code: 'PROMO',
-            is_active: false,
-          },
-          error: null,
-        }),
-      }
+        from: vi.fn(() => ({
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: 'coupon-123',
+                    code: 'PROMO',
+                    is_active: false,
+                  },
+                  error: null,
+                }),
+              })),
+            })),
+          })),
+        })),
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
@@ -451,13 +503,19 @@ describe('Admin Analytics & Coupon API', () => {
 
     it('should require couponId', async () => {
       const mockSupabase = {
-        from: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-      }
+        from: vi.fn(() => ({
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn().mockResolvedValue({
+                  data: null,
+                  error: null,
+                }),
+              })),
+            })),
+          })),
+        })),
+      } as any
 
       mockCreateClient.mockResolvedValue(mockSupabase)
 
