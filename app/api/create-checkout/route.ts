@@ -5,6 +5,7 @@ import { validateCouponWithFraudDetection } from '@/lib/fraud-detection/coupon-f
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { PLAN_CONFIG } from '@/lib/constants'
 import { getStripeClient } from '@/lib/stripe/client'
+import { getRateLimitTuple } from '@/lib/config'
 
 const TEST_MODE = process.env.ENABLE_TEST_MODE === 'true'
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   try {
     // Apply rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, 3, "1 h")
+    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, ...getRateLimitTuple('CHECKOUT_CREATE'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }
