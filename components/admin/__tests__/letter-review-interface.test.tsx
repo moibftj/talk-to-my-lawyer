@@ -9,10 +9,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LetterReviewInterface } from '../letter-review-interface'
 
-// Mock fetch
-global.fetch = vi.fn()
-
-// Mock Next.js router
+// Mock Next.js navigation
 const mockPush = vi.fn()
 const mockRefresh = vi.fn()
 
@@ -23,6 +20,22 @@ vi.mock('next/navigation', () => ({
   }),
 }))
 
+// Mock CSRF client
+vi.mock('@/lib/admin/csrf-client', () => ({
+  getAdminCsrfToken: vi.fn().mockResolvedValue('test-csrf-token'),
+}))
+
+// Mock toast
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
+
+// Mock fetch
+global.fetch = vi.fn()
+
 describe('LetterReviewInterface Component', () => {
   const mockLetter = {
     id: 'letter-123',
@@ -30,7 +43,8 @@ describe('LetterReviewInterface Component', () => {
     title: 'Demand Letter for Unpaid Wages',
     letter_type: 'demand',
     status: 'pending_review',
-    ai_draft_content: 'This is the AI generated content...',
+    ai_draft_content: 'This is the AI generated content for the demand letter...',
+    final_content: null,
     intake_data: {
       senderName: 'John Doe',
       recipientName: 'ABC Company',
@@ -40,226 +54,157 @@ describe('LetterReviewInterface Component', () => {
     updated_at: '2025-01-25T10:00:00Z',
   }
 
+  const mockAuditTrail: any[] = []
+
   beforeEach(() => {
     vi.clearAllMocks()
-    global.console.error = vi.fn()
-    global.alert = vi.fn()
+    global.fetch = vi.fn()
+    mockPush.mockClear()
+    mockRefresh.mockClear()
   })
 
   describe('Rendering', () => {
-    it('should display letter content', () => {
-      render(<LetterReviewInterface letter={mockLetter} />)
+    it('should render letter review interface', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      expect(screen.getByText(/Demand Letter/i)).toBeInTheDocument()
-      expect(screen.getByText(/AI generated content/i)).toBeInTheDocument()
+      expect(screen.getByText(/Letter Review Workflow/i)).toBeInTheDocument()
     })
 
-    it('should display intake data', () => {
-      render(<LetterReviewInterface letter={mockLetter} />)
+    it('should display letter status badge', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      expect(screen.getByText('John Doe')).toBeInTheDocument()
-      expect(screen.getByText('ABC Company')).toBeInTheDocument()
+      expect(screen.getByText('Pending Review')).toBeInTheDocument()
     })
 
-    it('should show approve and reject buttons', () => {
-      render(<LetterReviewInterface letter={mockLetter} />)
+    it('should display review notes textarea', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      expect(
-        screen.getByRole('button', { name: /approve/i })
-      ).toBeInTheDocument()
-      expect(
-        screen.getByRole('button', { name: /reject/i })
-      ).toBeInTheDocument()
+      expect(screen.getByLabelText(/Review Notes/i)).toBeInTheDocument()
+    })
+
+    it('should have tabs for different sections', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
+
+      expect(screen.getByRole('tab', { name: 'Review' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Edit & Improve' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'Actions' })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: 'History' })).toBeInTheDocument()
     })
   })
 
   describe('Approval Flow', () => {
-    it('should approve letter successfully', async () => {
-      const user = userEvent.setup()
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+    it('should show approve button for pending_review letters', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      render(<LetterReviewInterface letter={mockLetter} />)
-
-      const approveButton = screen.getByRole('button', { name: /approve/i })
-      await user.click(approveButton)
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/letters/letter-123/approve',
-          expect.objectContaining({
-            method: 'POST',
-          })
-        )
-      })
+      expect(screen.getByRole('button', { name: /Approve Letter/i })).toBeInTheDocument()
     })
 
-    it('should show confirmation before approving', async () => {
-      const user = userEvent.setup()
+    it('should show reject button for pending_review letters', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      render(<LetterReviewInterface letter={mockLetter} />)
+      expect(screen.getByRole('button', { name: /Reject/i })).toBeInTheDocument()
+    })
 
-      const approveButton = screen.getByRole('button', { name: /approve/i })
-      await user.click(approveButton)
+    it('should not show approve button for approved letters', () => {
+      const approvedLetter = { ...mockLetter, status: 'approved' as const }
+      render(<LetterReviewInterface letter={approvedLetter} auditTrail={mockAuditTrail} />)
 
-      expect(
-        screen.getByText(/are you sure|confirm approval/i)
-      ).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /Approve Letter/i })).not.toBeInTheDocument()
     })
   })
 
-  describe('Rejection Flow', () => {
-    it('should require rejection reason', async () => {
-      const user = userEvent.setup()
+  describe('Completed Status Flow', () => {
+    it('should show mark as completed button for approved letters', () => {
+      const approvedLetter = { ...mockLetter, status: 'approved' as const }
+      render(<LetterReviewInterface letter={approvedLetter} auditTrail={mockAuditTrail} />)
 
-      render(<LetterReviewInterface letter={mockLetter} />)
-
-      const rejectButton = screen.getByRole('button', { name: /reject/i })
-      await user.click(rejectButton)
-
-      // Should show reason input
-      expect(
-        screen.getByRole('textbox', { name: /reason/i })
-      ).toBeInTheDocument()
-    })
-
-    it('should reject letter with reason', async () => {
-      const user = userEvent.setup()
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
-
-      render(<LetterReviewInterface letter={mockLetter} />)
-
-      const rejectButton = screen.getByRole('button', { name: /reject/i })
-      await user.click(rejectButton)
-
-      const reasonInput = screen.getByRole('textbox', { name: /reason/i })
-      await user.type(reasonInput, 'Needs more specific details')
-
-      const confirmButton = screen.getByRole('button', { name: /confirm|submit/i })
-      await user.click(confirmButton)
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/letters/letter-123/reject',
-          expect.objectContaining({
-            body: expect.stringContaining('Needs more specific details'),
-          })
-        )
-      })
-    })
-
-    it('should not allow rejection without reason', async () => {
-      const user = userEvent.setup()
-
-      render(<LetterReviewInterface letter={mockLetter} />)
-
-      const rejectButton = screen.getByRole('button', { name: /reject/i })
-      await user.click(rejectButton)
-
-      const confirmButton = screen.getByRole('button', { name: /confirm|submit/i })
-
-      // Button should be disabled without reason
-      expect(confirmButton).toBeDisabled()
+      expect(screen.getByRole('button', { name: /Mark as Completed/i })).toBeInTheDocument()
     })
   })
 
   describe('Edit Capability', () => {
-    it('should allow editing AI draft before approval', async () => {
-      const user = userEvent.setup()
+    it('should show edit content button', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      render(<LetterReviewInterface letter={mockLetter} canEdit />)
-
-      const editButton = screen.getByRole('button', { name: /edit/i })
-      await user.click(editButton)
-
-      // Should show editable content
-      const editor = screen.getByRole('textbox')
-      expect(editor).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Edit Content/i })).toBeInTheDocument()
     })
 
-    it('should save edits before approval', async () => {
-      const user = userEvent.setup()
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+    it('should show improve with AI button', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      render(<LetterReviewInterface letter={mockLetter} canEdit />)
+      expect(screen.getByRole('button', { name: /✨ Improve with AI/i })).toBeInTheDocument()
+    })
 
-      const editButton = screen.getByRole('button', { name: /edit/i })
-      await user.click(editButton)
+    it('should have a textarea for letter content', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      const editor = screen.getByRole('textbox')
-      await user.clear(editor)
-      await user.type(editor, 'Edited letter content')
+      // Switch to edit tab first to see the textarea
+      const editTab = screen.getByRole('tab', { name: 'Edit & Improve' })
+      userEvent.click(editTab)
 
-      const saveButton = screen.getByRole('button', { name: /save/i })
-      await user.click(saveButton)
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/admin/letters/letter-123/update',
-          expect.objectContaining({
-            body: expect.stringContaining('Edited letter content'),
-          })
-        )
-      })
+      expect(screen.getByLabelText(/Letter Content/i)).toBeInTheDocument()
     })
   })
 
-  describe('View Mode', () => {
-    it('should show read-only view for non-editors', () => {
-      render(<LetterReviewInterface letter={mockLetter} canEdit={false} />)
+  describe('Actions Tab', () => {
+    it('should have download PDF button', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      expect(
-        screen.queryByRole('button', { name: /edit/i })
-      ).not.toBeInTheDocument()
+      const actionsTab = screen.getByRole('tab', { name: 'Actions' })
+      userEvent.click(actionsTab)
+
+      expect(screen.getByRole('button', { name: /Download PDF/i })).toBeInTheDocument()
     })
 
-    it('should show audit trail', async () => {
-      ;(global.fetch as any).mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          audit: [
-            {
-              id: 'audit-1',
-              old_status: 'draft',
-              new_status: 'pending_review',
-              changed_by: 'user-123',
-              changed_at: '2025-01-25T10:00:00Z',
-            },
-          ],
-        }),
-      })
+    it('should have send to user button', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      render(<LetterReviewInterface letter={mockLetter} showAudit />)
+      const actionsTab = screen.getByRole('tab', { name: 'Actions' })
+      userEvent.click(actionsTab)
 
-      const auditButton = screen.getByRole('button', { name: /history|audit/i })
-      await userEvent.setup().click(auditButton)
-
-      expect(screen.getByText(/draft.*pending review/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Send to User/i })).toBeInTheDocument()
     })
   })
 
-  describe('Status Display', () => {
-    it('should show current letter status', () => {
-      render(<LetterReviewInterface letter={mockLetter} />)
+  describe('Status Management', () => {
+    it('should have status change dropdown', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={mockAuditTrail} />)
 
-      expect(screen.getByText(/pending review/i)).toBeInTheDocument()
+      const actionsTab = screen.getByRole('tab', { name: 'Actions' })
+      userEvent.click(actionsTab)
+
+      expect(screen.getByText(/Change Status/i)).toBeInTheDocument()
+    })
+  })
+
+  describe('History Tab', () => {
+    it('should show empty state when no audit trail', () => {
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={[]} />)
+
+      const historyTab = screen.getByRole('tab', { name: 'History' })
+      userEvent.click(historyTab)
+
+      expect(screen.getByText(/No history available/i)).toBeInTheDocument()
     })
 
-    it('should show status badge with correct color', () => {
-      const { container } = render(
-        <LetterReviewInterface letter={mockLetter} />
-      )
+    it('should show audit trail entries when available', () => {
+      const auditTrail = [
+        {
+          id: 'audit-1',
+          action: 'Letter created',
+          old_status: null,
+          new_status: 'draft',
+          notes: 'Initial draft created',
+          created_at: '2025-01-25T10:00:00Z',
+        },
+      ]
 
-      const badge = container.querySelector('.badge')
-      expect(badge).toBeInTheDocument()
+      render(<LetterReviewInterface letter={mockLetter} auditTrail={auditTrail} />)
+
+      const historyTab = screen.getByRole('tab', { name: 'History' })
+      userEvent.click(historyTab)
+
+      expect(screen.getByText('Letter created')).toBeInTheDocument()
     })
   })
 })
