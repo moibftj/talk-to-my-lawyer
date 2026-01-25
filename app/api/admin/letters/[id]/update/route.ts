@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateAdminAction, updateLetterStatus, notifyLetterOwner } from '@/lib/admin/letter-actions'
 import { sanitizeReviewData } from '@/lib/admin/letter-actions'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 /**
  * Admin letter update endpoint
@@ -17,7 +18,7 @@ export async function POST(
 ) {
   try {
     // Apply rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '15 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
     if (rateLimitResponse) return rateLimitResponse
 
     // Validate admin authentication and CSRF

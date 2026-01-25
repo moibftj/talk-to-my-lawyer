@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendTemplateEmail } from '@/lib/email'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 /**
  * API endpoint to resend confirmation emails via Resend
@@ -15,8 +16,8 @@ import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting - 3 requests per 15 minutes per IP
-    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 3, "15 m")
+    // Apply rate limiting
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, ...getRateLimitTuple('AUTH_PASSWORD_RESET'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }

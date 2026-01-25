@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { queueTemplateEmail } from '@/lib/email/service'
 import { validateAdminAction } from '@/lib/admin/letter-actions'
+import { getRateLimitTuple } from '@/lib/config'
 
 export const runtime = 'nodejs'
 
@@ -15,7 +16,7 @@ interface BatchOperation {
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_BULK'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }
