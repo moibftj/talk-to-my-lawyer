@@ -2,7 +2,7 @@
 	"servers": {
 		"supabase": {
 			"type": "http",
-			"url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=docs,account,database,debugging,development,functions,branching,storage"
+			"url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=functions,account,docs,database,debugging,development,branching,storage"
 		},
 		"io.github.ChromeDevTools/chrome-devtools-mcp": {
 			"command": "npx",
