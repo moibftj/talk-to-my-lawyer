@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/admin";
+import { verifyCronAuth } from "@/lib/middleware/cron-auth";
 
 export const runtime = "edge";
 
@@ -10,17 +11,9 @@ export const runtime = "edge";
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
 
-  // Verify cron secret (optional for health checks)
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    const url = new URL(request.url);
-    const secretParam = url.searchParams.get("secret");
-    if (secretParam !== cronSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  // Verify cron secret
+  const authError = verifyCronAuth(request);
+  if (authError) return authError;
 
   const checks: Record<string, { status: string; latency?: number; error?: string }> = {};
 

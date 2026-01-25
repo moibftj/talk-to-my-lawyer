@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
 // POST - Trigger email queue processing or retry failed emails
 export async function POST(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 5, '1 m')
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
     if (rateLimitResponse) return rateLimitResponse
 
     const validationError = await validateSystemAdminAction(request)

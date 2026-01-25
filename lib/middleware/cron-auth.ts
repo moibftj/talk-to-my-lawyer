@@ -1,0 +1,57 @@
+import { NextRequest, NextResponse } from 'next/server'
+
+/**
+ * Verify CRON job authentication
+ *
+ * Supports two authentication methods:
+ * 1. Authorization header with Bearer token
+ * 2. Query parameter 'secret'
+ *
+ * @param request - The incoming request
+ * @returns NextResponse with 401 error if unauthorized, or null if authorized
+ */
+export function verifyCronAuth(request: NextRequest): NextResponse | null {
+  const cronSecret = process.env.CRON_SECRET
+
+  // If no CRON_SECRET is configured, allow access (for development)
+  if (!cronSecret) {
+    return null
+  }
+
+  // Check Authorization header
+  const authHeader = request.headers.get('authorization')
+  if (authHeader === `Bearer ${cronSecret}`) {
+    return null
+  }
+
+  // Check query parameter as fallback
+  const url = new URL(request.url)
+  const secretParam = url.searchParams.get('secret')
+  if (secretParam === cronSecret) {
+    return null
+  }
+
+  // Unauthorized
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+}
+
+/**
+ * Higher-order function to wrap a CRON handler with authentication
+ *
+ * @example
+ * export const GET = withCronAuth(async (request) => {
+ *   // Your cron logic here
+ *   return NextResponse.json({ success: true })
+ * })
+ */
+export function withCronAuth(
+  handler: (request: NextRequest) => Promise<NextResponse>
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest) => {
+    const authError = verifyCronAuth(request)
+    if (authError) {
+      return authError
+    }
+    return handler(request)
+  }
+}
