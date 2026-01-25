@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 /**
  * POST /api/gdpr/export-data
@@ -20,8 +21,8 @@ import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
  */
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting (10 requests per 15 minutes)
-    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 10, "15 m")
+    // Apply rate limiting
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, ...getRateLimitTuple('GDPR_EXPORT'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }

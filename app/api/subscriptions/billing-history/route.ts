@@ -1,14 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 export const runtime = 'nodejs'
 
 // GET - Fetch billing/payment history for current user
 export async function GET(request: NextRequest) {
   try {
-    // Apply rate limiting - 30 requests per minute per IP
-    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 30, "1 m")
+    // Apply rate limiting
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, ...getRateLimitTuple('BILLING_HISTORY'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }

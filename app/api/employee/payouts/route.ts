@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
 // POST - Request a payout
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting - 5 payout requests per hour per IP
-    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, 5, "1 h")
+    // Apply rate limiting
+    const rateLimitResponse = await safeApplyRateLimit(request, authRateLimit, ...getRateLimitTuple('EMPLOYEE_WRITE'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }

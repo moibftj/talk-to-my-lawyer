@@ -5,10 +5,11 @@ import { getStripeClient } from '@/lib/stripe/client'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function POST(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, 3, '1 h')
+    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, ...getRateLimitTuple('PAYMENT_VERIFY'))
     if (rateLimitResponse) return rateLimitResponse
 
     const authResult = await authenticateUser()

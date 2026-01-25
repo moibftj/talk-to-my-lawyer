@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
 import { requireSuperAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
+import { getRateLimitTuple } from '@/lib/config'
 
 /**
  * POST /api/gdpr/delete-account
@@ -19,8 +20,8 @@ import { requireSuperAdminAuth, getAdminSession } from '@/lib/auth/admin-session
  */
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting (10 requests per 15 minutes)
-    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, 10, "15 m")
+    // Apply rate limiting
+    const rateLimitResponse = await safeApplyRateLimit(request, apiRateLimit, ...getRateLimitTuple('GDPR_DELETE'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }

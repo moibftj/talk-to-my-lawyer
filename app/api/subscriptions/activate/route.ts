@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { PLAN_CONFIG } from "@/lib/constants";
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting - 10 requests per hour per IP
-    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, 10, "1 h")
+    // Apply rate limiting
+    const rateLimitResponse = await safeApplyRateLimit(request, subscriptionRateLimit, ...getRateLimitTuple('CHECKOUT_CREATE'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }
