@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateCouponWithFraudDetection } from '@/lib/fraud-detection/coupon-fraud'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { PLAN_CONFIG } from '@/lib/constants'
 import { getStripeClient } from '@/lib/stripe/client'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
 
 const TEST_MODE = process.env.ENABLE_TEST_MODE === 'true'
 
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const selectedPlan = PLAN_CONFIG[planType]
     if (!selectedPlan) {
-      return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 })
+      return errorResponses.badRequest('Invalid plan type')
     }
 
     const basePrice = selectedPlan.price
@@ -60,14 +61,13 @@ export async function POST(request: NextRequest) {
           fraudRisk: couponValidation.fraudResult?.riskScore
         })
 
-        return NextResponse.json({
-          error: couponValidation.error || 'Invalid coupon code',
+        return errorResponses.badRequest(couponValidation.error || 'Invalid coupon code', {
           fraudDetection: couponValidation.fraudResult ? {
             riskScore: couponValidation.fraudResult.riskScore,
             action: couponValidation.fraudResult.action,
             reasons: couponValidation.fraudResult.reasons
           } : undefined
-        }, { status: 400 })
+        })
       }
 
       // Log fraud detection results for monitoring

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import type Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
 import { getStripeClient } from '@/lib/stripe/client'
 import { authenticateUser } from '@/lib/auth/authenticate-user'
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,12 +21,12 @@ export async function POST(request: NextRequest) {
     const { sessionId } = await request.json()
 
     if (!sessionId) {
-      return NextResponse.json({ error: 'Session ID required' }, { status: 400 })
+      return errorResponses.badRequest('Session ID required')
     }
 
     const stripe = getStripeClient()
     if (!stripe) {
-      return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 })
+      return errorResponses.internal('Stripe not configured')
     }
     const supabase = getServiceRoleClient()
 
@@ -34,11 +34,11 @@ export async function POST(request: NextRequest) {
     const session = await stripe.checkout.sessions.retrieve(sessionId)
 
     if (session.payment_status !== 'paid') {
-      return NextResponse.json({ error: 'Payment not completed' }, { status: 400 })
+      return errorResponses.badRequest('Payment not completed')
     }
 
     if (session.client_reference_id && session.client_reference_id !== user.id) {
-      return NextResponse.json({ error: 'Session does not belong to this user' }, { status: 403 })
+      return errorResponses.forbidden('Session does not belong to this user')
     }
 
     const metadata = session.metadata || {}
@@ -46,11 +46,11 @@ export async function POST(request: NextRequest) {
     const planType = metadata.plan_type
 
     if (!metadata.user_id || metadata.user_id !== user.id) {
-      return NextResponse.json({ error: 'Session metadata invalid for this user' }, { status: 403 })
+      return errorResponses.forbidden('Session metadata invalid for this user')
     }
 
     if (!planType) {
-      return NextResponse.json({ error: 'Missing session metadata' }, { status: 400 })
+      return errorResponses.badRequest('Missing session metadata')
     }
 
     const letters = parseInt(metadata.letters ?? '0')
@@ -90,17 +90,12 @@ export async function POST(request: NextRequest) {
     const result = atomicResult[0]
     const alreadyCompleted = result.already_completed || false
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       subscriptionId: result.subscription_id,
       letters: letters,
       message: alreadyCompleted ? 'Subscription already activated by webhook' : 'Subscription activated successfully',
     })
   } catch (error) {
-    console.error('[Verify Payment] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to verify payment' },
-      { status: 500 },
-    )
+    return handleApiError(error, 'Verify Payment')
   }
 }
