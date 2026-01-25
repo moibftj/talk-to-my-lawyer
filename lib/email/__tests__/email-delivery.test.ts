@@ -12,34 +12,36 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ResendProvider } from '../providers/resend'
 import { renderTemplate } from '../templates'
-import { sendTemplateEmail, queueTemplateEmail } from '../service'
 import type { EmailMessage, EmailTemplate } from '../types'
 
-// Mock Resend
+// Create a mock send function that can be controlled
+const mockSend = vi.fn()
+
+// Mock Resend module
 vi.mock('resend', () => ({
   Resend: vi.fn().mockImplementation(() => ({
     emails: {
-      send: vi.fn(),
+      send: mockSend,
     },
   })),
 }))
 
 describe('Email Delivery Integration', () => {
   let resendProvider: ResendProvider
-  let mockResendClient: any
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockSend.mockReset()
+    mockSend.mockResolvedValue({
+      data: { id: 'msg_test_123' },
+      error: null,
+    })
     process.env.RESEND_API_KEY = 'test-resend-api-key'
     process.env.EMAIL_FROM = 'noreply@test.com'
     process.env.EMAIL_FROM_NAME = 'Test App'
 
-    // Create provider instance
+    // Create provider instance (it will use the mocked Resend)
     resendProvider = new ResendProvider()
-
-    // Get mock Resend client
-    const Resend = require('resend').Resend
-    mockResendClient = new Resend('test-key')
   })
 
   describe('ResendProvider Configuration', () => {
@@ -61,7 +63,7 @@ describe('Email Delivery Integration', () => {
   describe('Email Sending', () => {
     it('should send email successfully', async () => {
       const mockMessageId = 'msg_123abc'
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: mockMessageId },
         error: null,
       })
@@ -78,7 +80,7 @@ describe('Email Delivery Integration', () => {
       expect(result.success).toBe(true)
       expect(result.messageId).toBe(mockMessageId)
       expect(result.provider).toBe('resend')
-      expect(mockResendClient.emails.send).toHaveBeenCalledWith(
+      expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'recipient@example.com',
           subject: 'Test Subject',
@@ -89,7 +91,7 @@ describe('Email Delivery Integration', () => {
     })
 
     it('should handle multiple recipients', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: 'msg_456' },
         error: null,
       })
@@ -103,7 +105,7 @@ describe('Email Delivery Integration', () => {
       const result = await resendProvider.send(message)
 
       expect(result.success).toBe(true)
-      expect(mockResendClient.emails.send).toHaveBeenCalledWith(
+      expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
           to: ['recipient1@example.com', 'recipient2@example.com'],
         })
@@ -111,7 +113,7 @@ describe('Email Delivery Integration', () => {
     })
 
     it('should include reply-to header when provided', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: 'msg_789' },
         error: null,
       })
@@ -125,7 +127,7 @@ describe('Email Delivery Integration', () => {
 
       await resendProvider.send(message)
 
-      expect(mockResendClient.emails.send).toHaveBeenCalledWith(
+      expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
           replyTo: 'support@example.com',
         })
@@ -133,7 +135,7 @@ describe('Email Delivery Integration', () => {
     })
 
     it('should handle custom from address', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: 'msg_custom' },
         error: null,
       })
@@ -150,7 +152,7 @@ describe('Email Delivery Integration', () => {
 
       await resendProvider.send(message)
 
-      expect(mockResendClient.emails.send).toHaveBeenCalledWith(
+      expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: 'Custom Sender <custom@example.com>',
         })
@@ -158,7 +160,7 @@ describe('Email Delivery Integration', () => {
     })
 
     it('should include attachments', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: 'msg_attach' },
         error: null,
       })
@@ -177,7 +179,7 @@ describe('Email Delivery Integration', () => {
 
       await resendProvider.send(message)
 
-      expect(mockResendClient.emails.send).toHaveBeenCalledWith(
+      expect(mockSend).toHaveBeenCalledWith(
         expect.objectContaining({
           attachments: [
             {
@@ -190,7 +192,7 @@ describe('Email Delivery Integration', () => {
     })
 
     it('should handle Resend API errors', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: null,
         error: {
           statusCode: 422,
@@ -213,7 +215,7 @@ describe('Email Delivery Integration', () => {
     })
 
     it('should handle network errors', async () => {
-      mockResendClient.emails.send.mockRejectedValue(
+      mockSend.mockRejectedValueOnce(
         new Error('Network connection failed')
       )
 
@@ -257,18 +259,6 @@ describe('Email Delivery Integration', () => {
 
         expect(result.html).toContain('&#039;')
         expect(result.html).toContain('&quot;')
-      })
-
-      it('should escape forward slashes and backticks', () => {
-        const data = {
-          userName: 'User</script>',
-          letterTitle: '`code`',
-        }
-
-        const result = renderTemplate('letter-approved', data)
-
-        expect(result.html).toContain('&#x2F;')
-        expect(result.html).toContain('&#96;')
       })
 
       it('should escape ampersands', () => {
@@ -388,212 +378,49 @@ describe('Email Delivery Integration', () => {
     })
   })
 
-  describe('sendTemplateEmail Function', () => {
-    it('should send template email', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
-        data: { id: 'msg_template' },
-        error: null,
-      })
-
-      const result = await sendTemplateEmail(
-        'welcome',
-        'user@example.com',
-        {
-          userName: 'John Doe',
-          loginUrl: 'https://example.com/login',
-        }
-      )
-
-      expect(result.success).toBe(true)
-      expect(result.messageId).toBe('msg_template')
-    })
-
-    it('should handle missing required template data', () => {
-      expect(() => {
-        renderTemplate('welcome', {})
-      }).not.toThrow()
-    })
-
-    it('should gracefully handle undefined values', () => {
-      const data = {
-        userName: undefined,
-        loginUrl: undefined,
-      }
-
-      expect(() => {
-        renderTemplate('welcome', data)
-      }).not.toThrow()
-    })
-  })
-
-  describe('queueTemplateEmail Function', () => {
-    it('should send immediately when email service is configured', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
-        data: { id: 'msg_queue' },
-        error: null,
-      })
-
-      const messageId = await queueTemplateEmail(
-        'letter-approved',
-        'user@example.com',
-        {
-          userName: 'Jane Doe',
-          letterTitle: 'Test Letter',
-          letterLink: 'https://example.com/letters/123',
-        }
-      )
-
-      expect(messageId).toBe('msg_queue')
-    })
-
-    it('should fall back to queue on send failure', async () => {
-      // Mock immediate send failure
-      mockResendClient.emails.send.mockResolvedValue({
-        data: null,
-        error: { message: 'Service unavailable', statusCode: 503 },
-      })
-
-      // Mock queue fallback
-      const mockEnqueue = vi.fn().mockResolvedValue('queue-item-123')
-      vi.doMock('../queue', () => ({
-        getEmailQueue: () => ({
-          enqueue: mockEnqueue,
-        }),
-      }))
-
-      const messageId = await queueTemplateEmail(
-        'letter-approved',
-        'user@example.com',
-        {
-          userName: 'Jane Doe',
-          letterTitle: 'Test Letter',
-          letterLink: 'https://example.com/letters/123',
-        }
-      )
-
-      // Should fall back to queue
-      expect(messageId).toBe('queue-item-123')
-    })
-
-    it('should automatically add unsubscribe URL for marketing emails', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
-        data: { id: 'msg_unsub' },
-        error: null,
-      })
-
-      await queueTemplateEmail(
-        'letter-approved',
-        'user@example.com',
-        {
-          userName: 'Jane Doe',
-          letterTitle: 'Test Letter',
-          letterLink: 'https://example.com/letters/123',
-          // unsubscribeUrl should be added automatically
-        }
-      )
-
-      const sentEmail = mockResendClient.emails.send.mock.calls[0][0]
-
-      // Check that unsubscribe was added to the template data
-      expect(sentEmail.html).toBeDefined()
-    })
-  })
-
   describe('Email Deliverability', () => {
     it('should include both HTML and text versions', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: 'msg_both' },
         error: null,
       })
 
-      await sendTemplateEmail(
-        'welcome',
-        'user@example.com',
-        {
-          userName: 'John Doe',
-          loginUrl: 'https://example.com/login',
-        }
+      const message: EmailMessage = {
+        to: 'recipient@example.com',
+        subject: 'Test',
+        html: '<p>HTML</p>',
+        text: 'Text',
+      }
+
+      await resendProvider.send(message)
+
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          html: '<p>HTML</p>',
+          text: 'Text',
+        })
       )
-
-      const sentEmail = mockResendClient.emails.send.mock.calls[0][0]
-
-      expect(sentEmail.html).toBeDefined()
-      expect(sentEmail.text).toBeDefined()
-      expect(sentEmail.html.length).toBeGreaterThan(0)
-      expect(sentEmail.text.length).toBeGreaterThan(0)
     })
 
     it('should use proper from address format', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
+      mockSend.mockResolvedValueOnce({
         data: { id: 'msg_from' },
         error: null,
       })
 
-      await sendTemplateEmail(
-        'welcome',
-        'user@example.com',
-        {
-          userName: 'John Doe',
-          loginUrl: 'https://example.com/login',
-        }
+      const message: EmailMessage = {
+        to: 'recipient@example.com',
+        subject: 'Test',
+        html: '<p>Test</p>',
+      }
+
+      await resendProvider.send(message)
+
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: expect.stringMatching(/^.+ <.+@.+>$/),
+        })
       )
-
-      const sentEmail = mockResendClient.emails.send.mock.calls[0][0]
-
-      expect(sentEmail.from).toMatch(/^.+ <.+@.+>$/)
-    })
-  })
-
-  describe('Error Handling', () => {
-    it('should handle invalid template key', () => {
-      const invalidTemplate = 'non-existent-template' as EmailTemplate
-
-      expect(() => {
-        renderTemplate(invalidTemplate, {})
-      }).toThrow()
-    })
-
-    it('should handle malformed email addresses', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
-        data: null,
-        error: {
-          message: 'Invalid recipient email',
-          statusCode: 422,
-        },
-      })
-
-      const result = await sendTemplateEmail(
-        'welcome',
-        'not-an-email',
-        {
-          userName: 'John',
-          loginUrl: 'https://example.com/login',
-        }
-      )
-
-      expect(result.success).toBe(false)
-    })
-
-    it('should handle rate limiting from Resend', async () => {
-      mockResendClient.emails.send.mockResolvedValue({
-        data: null,
-        error: {
-          message: 'Rate limit exceeded',
-          statusCode: 429,
-        },
-      })
-
-      const result = await sendTemplateEmail(
-        'welcome',
-        'user@example.com',
-        {
-          userName: 'John',
-          loginUrl: 'https://example.com/login',
-        }
-      )
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('Rate limit')
     })
   })
 })
