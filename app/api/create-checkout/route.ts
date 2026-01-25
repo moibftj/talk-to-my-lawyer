@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { subscriptionRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { validateCouponWithFraudDetection } from '@/lib/fraud-detection/coupon-fraud'
 import { authenticateUser } from '@/lib/auth/authenticate-user'

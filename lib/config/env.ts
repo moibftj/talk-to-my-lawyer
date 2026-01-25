@@ -41,6 +41,15 @@ export const email = {
 } as const
 
 /**
+ * Email configuration with apiKey alias for backward compatibility
+ */
+export const emailConfig = {
+  apiKey: process.env.RESEND_API_KEY,
+  from: process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com',
+  fromName: process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer',
+} as const
+
+/**
  * Admin configuration
  */
 export const admin = {
@@ -71,18 +80,33 @@ export const rateLimit = {
 } as const
 
 /**
- * Environment helpers
+ * OpenAI configuration with convenience properties
  */
-function isProduction(): boolean {
+export const openaiConfig = {
+  apiKey: process.env.OPENAI_API_KEY,
+  isConfigured: Boolean(process.env.OPENAI_API_KEY),
+} as const
+
+/**
+ * Environment helpers - exported for use in other modules
+ */
+export function isProduction(): boolean {
   return process.env.NODE_ENV === 'production'
 }
 
-function isDevelopment(): boolean {
+export function isDevelopment(): boolean {
   return process.env.NODE_ENV === 'development'
 }
 
-function isTest(): boolean {
+export function isTest(): boolean {
   return process.env.NODE_ENV === 'test'
+}
+
+/**
+ * Get the application URL
+ */
+export function getAppUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com'
 }
 
 /**

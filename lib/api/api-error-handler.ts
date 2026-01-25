@@ -197,7 +197,13 @@ export const errorResponses = {
   validation: (message: string, details?: unknown) =>
     NextResponse.json({ error: message, code: 'VALIDATION_ERROR', details }, { status: 400 }),
 
+  badRequest: (message: string, details?: unknown) =>
+    NextResponse.json({ error: message, code: 'BAD_REQUEST', details }, { status: 400 }),
+
   serverError: (message = 'Internal server error') =>
+    NextResponse.json({ error: message, code: 'INTERNAL_ERROR' }, { status: 500 }),
+
+  internal: (message = 'Internal server error') =>
     NextResponse.json({ error: message, code: 'INTERNAL_ERROR' }, { status: 500 }),
 
   rateLimited: (message = 'Rate limit exceeded') =>
