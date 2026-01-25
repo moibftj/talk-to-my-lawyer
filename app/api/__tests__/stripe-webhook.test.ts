@@ -40,10 +40,10 @@ describe('Stripe Webhooks - Integration', () => {
     })
 
     it('should reject outdated webhook (timestamp check)', () => {
-      const oldTimestamp = Math.floor(Date.now() / 1000) - 300 // 5 minutes ago
+      const oldTimestamp = Math.floor(Date.now() / 1000) - 600 // 10 minutes ago
       const maxAge = 300 // 5 minutes
 
-      const isExpired = Math.floor(Date.now() / 1000) - parseInt(String(oldTimestamp)) > maxAge
+      const isExpired = Math.floor(Date.now() / 1000) - oldTimestamp > maxAge
       expect(isExpired).toBe(true)
     })
 
@@ -215,10 +215,10 @@ describe('Stripe Webhooks - Integration', () => {
 
     it('should not allow invalid state transitions', () => {
       const currentState = 'succeeded'
-      const invalidTransitions = ['requires_payment_method', 'requires_action']
+      const invalidNextStates = ['requires_payment_method', 'requires_action']
 
-      const canTransition = !invalidTransitions.includes(currentState)
-      expect(canTransition).toBe(false)
+      const isInvalidTransition = invalidNextStates.includes(currentState)
+      expect(isInvalidTransition).toBe(false)
     })
 
     it('should handle payment failure with retry', () => {

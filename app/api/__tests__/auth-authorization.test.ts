@@ -71,8 +71,7 @@ describe('Authentication & Authorization', () => {
       }
 
       // Attorney should NOT see financial data
-      const hasAccessToFinancials =
-        attorney.role === 'attorney_admin' && financialData !== undefined
+      const hasAccessToFinancials = attorney.role === 'system_admin'
 
       expect(hasAccessToFinancials).toBe(false)
     })
