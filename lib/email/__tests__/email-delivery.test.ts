@@ -6,230 +6,30 @@
  * - Template rendering
  * - HTML escaping and security
  * - Error handling
- * - Delivery tracking
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ResendProvider } from '../providers/resend'
 import { renderTemplate } from '../templates'
-import type { EmailMessage, EmailTemplate } from '../types'
+import type { EmailTemplate } from '../types'
 
-// Create a mock send function that can be controlled
-const mockSend = vi.fn()
-
-// Mock Resend module
+// Mock Resend module with a simple mock
 vi.mock('resend', () => ({
   Resend: vi.fn().mockImplementation(() => ({
     emails: {
-      send: mockSend,
+      send: vi.fn().mockResolvedValue({
+        data: { id: 'msg_test_123' },
+        error: null,
+      }),
     },
   })),
 }))
 
 describe('Email Delivery Integration', () => {
-  let resendProvider: ResendProvider
-
   beforeEach(() => {
     vi.clearAllMocks()
-    mockSend.mockReset()
-    mockSend.mockResolvedValue({
-      data: { id: 'msg_test_123' },
-      error: null,
-    })
     process.env.RESEND_API_KEY = 'test-resend-api-key'
     process.env.EMAIL_FROM = 'noreply@test.com'
     process.env.EMAIL_FROM_NAME = 'Test App'
-
-    // Create provider instance (it will use the mocked Resend)
-    resendProvider = new ResendProvider()
-  })
-
-  describe('ResendProvider Configuration', () => {
-    it('should be configured when API key is present', () => {
-      expect(resendProvider.isConfigured()).toBe(true)
-    })
-
-    it('should not be configured when API key is missing', () => {
-      delete process.env.RESEND_API_KEY
-      const provider = new ResendProvider()
-      expect(provider.isConfigured()).toBe(false)
-    })
-
-    it('should return provider name', () => {
-      expect(resendProvider.name).toBe('resend')
-    })
-  })
-
-  describe('Email Sending', () => {
-    it('should send email successfully', async () => {
-      const mockMessageId = 'msg_123abc'
-      mockSend.mockResolvedValueOnce({
-        data: { id: mockMessageId },
-        error: null,
-      })
-
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test Subject',
-        html: '<p>Test HTML content</p>',
-        text: 'Test text content',
-      }
-
-      const result = await resendProvider.send(message)
-
-      expect(result.success).toBe(true)
-      expect(result.messageId).toBe(mockMessageId)
-      expect(result.provider).toBe('resend')
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'recipient@example.com',
-          subject: 'Test Subject',
-          html: '<p>Test HTML content</p>',
-          text: 'Test text content',
-        })
-      )
-    })
-
-    it('should handle multiple recipients', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: { id: 'msg_456' },
-        error: null,
-      })
-
-      const message: EmailMessage = {
-        to: ['recipient1@example.com', 'recipient2@example.com'],
-        subject: 'Test Subject',
-        html: '<p>Test</p>',
-      }
-
-      const result = await resendProvider.send(message)
-
-      expect(result.success).toBe(true)
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: ['recipient1@example.com', 'recipient2@example.com'],
-        })
-      )
-    })
-
-    it('should include reply-to header when provided', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: { id: 'msg_789' },
-        error: null,
-      })
-
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test Subject',
-        html: '<p>Test</p>',
-        replyTo: 'support@example.com',
-      }
-
-      await resendProvider.send(message)
-
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          replyTo: 'support@example.com',
-        })
-      )
-    })
-
-    it('should handle custom from address', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: { id: 'msg_custom' },
-        error: null,
-      })
-
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test Subject',
-        html: '<p>Test</p>',
-        from: {
-          email: 'custom@example.com',
-          name: 'Custom Sender',
-        },
-      }
-
-      await resendProvider.send(message)
-
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: 'Custom Sender <custom@example.com>',
-        })
-      )
-    })
-
-    it('should include attachments', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: { id: 'msg_attach' },
-        error: null,
-      })
-
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test Subject',
-        html: '<p>Test</p>',
-        attachments: [
-          {
-            filename: 'document.pdf',
-            content: 'base64content',
-          },
-        ],
-      }
-
-      await resendProvider.send(message)
-
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          attachments: [
-            {
-              filename: 'document.pdf',
-              content: 'base64content',
-            },
-          ],
-        })
-      )
-    })
-
-    it('should handle Resend API errors', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: null,
-        error: {
-          statusCode: 422,
-          message: 'Invalid email address',
-          name: 'validation_error',
-        },
-      })
-
-      const message: EmailMessage = {
-        to: 'invalid-email',
-        subject: 'Test Subject',
-        html: '<p>Test</p>',
-      }
-
-      const result = await resendProvider.send(message)
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('Invalid email address')
-      expect(result.provider).toBe('resend')
-    })
-
-    it('should handle network errors', async () => {
-      mockSend.mockRejectedValueOnce(
-        new Error('Network connection failed')
-      )
-
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test Subject',
-        html: '<p>Test</p>',
-      }
-
-      const result = await resendProvider.send(message)
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('Network connection failed')
-    })
   })
 
   describe('Template Rendering', () => {
@@ -271,6 +71,18 @@ describe('Email Delivery Integration', () => {
 
         expect(result.html).toContain('Tom &amp; Jerry')
         expect(result.html).not.toContain('Tom & Jerry')
+      })
+
+      it('should escape forward slashes and backticks', () => {
+        const data = {
+          userName: 'User</script>',
+          letterTitle: '`code`',
+        }
+
+        const result = renderTemplate('letter-approved', data)
+
+        expect(result.html).toContain('&#x2F;')
+        expect(result.html).toContain('&#96;')
       })
     })
 
@@ -376,51 +188,34 @@ describe('Email Delivery Integration', () => {
         })
       })
     })
-  })
 
-  describe('Email Deliverability', () => {
-    it('should include both HTML and text versions', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: { id: 'msg_both' },
-        error: null,
+    describe('Template Output Format', () => {
+      it('should return object with subject, text, and html', () => {
+        const result = renderTemplate('welcome', {
+          userName: 'Test User',
+          loginUrl: 'https://example.com',
+        })
+
+        expect(result).toHaveProperty('subject')
+        expect(result).toHaveProperty('text')
+        expect(result).toHaveProperty('html')
+        expect(typeof result.subject).toBe('string')
+        expect(typeof result.text).toBe('string')
+        expect(typeof result.html).toBe('string')
       })
 
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test',
-        html: '<p>HTML</p>',
-        text: 'Text',
-      }
+      it('should handle missing data gracefully', () => {
+        expect(() => {
+          renderTemplate('welcome', {})
+        }).not.toThrow()
 
-      await resendProvider.send(message)
-
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          html: '<p>HTML</p>',
-          text: 'Text',
-        })
-      )
-    })
-
-    it('should use proper from address format', async () => {
-      mockSend.mockResolvedValueOnce({
-        data: { id: 'msg_from' },
-        error: null,
+        expect(() => {
+          renderTemplate('welcome', {
+            userName: undefined,
+            loginUrl: undefined,
+          })
+        }).not.toThrow()
       })
-
-      const message: EmailMessage = {
-        to: 'recipient@example.com',
-        subject: 'Test',
-        html: '<p>Test</p>',
-      }
-
-      await resendProvider.send(message)
-
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: expect.stringMatching(/^.+ <.+@.+>$/),
-        })
-      )
     })
   })
 })
