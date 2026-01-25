@@ -2,10 +2,7 @@
  * Centralized rate limit configurations
  *
  * All rate limits for API routes are defined here for easy adjustment and consistency.
- *
- * NOTE: These configurations are intended to be used with the rate limiter in
- * lib/rate-limit-redis.ts. Currently, rate limits are hardcoded in that file.
- * TODO: Refactor lib/rate-limit-redis.ts to use these configurations.
+ * Use getRateLimitTuple() to get the rate limit values for safeApplyRateLimit().
  */
 
 export type RateLimitConfig = {
