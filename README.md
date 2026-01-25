@@ -1,177 +1,61 @@
-# Supabase CLI
+# Talk-To-My-Lawyer
 
-[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
-](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
+AI-powered legal letter drafting with **mandatory attorney review**. This Next.js (App Router) app uses Supabase for auth + data, Stripe for payments, Resend for email, and Vercel AI SDK (OpenAI) for generation. Subscribers request letters, attorneys approve, and everything is audited.
 
-[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
+## Quick links
+- Setup & configuration: [`docs/SETUP_AND_CONFIGURATION.md`](docs/SETUP_AND_CONFIGURATION.md)
+- Architecture & development guide: [`docs/ARCHITECTURE_AND_DEVELOPMENT.md`](docs/ARCHITECTURE_AND_DEVELOPMENT.md)
+- API & integrations: [`docs/API_AND_INTEGRATIONS.md`](docs/API_AND_INTEGRATIONS.md)
+- Deployment guide: [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md)
+- Email system: [`lib/email/AGENTS.md`](lib/email/AGENTS.md)
 
-This repository contains all the functionality for Supabase CLI.
+## Key features
+- AI letter drafting with Vercel AI SDK (OpenAI) and auditable prompts/responses
+- Attorney review center (Super Admin & Attorney Admin) with approvals/rejections and audit logs
+- Subscription + credit allowance system with Stripe Checkout, coupons, and employee commissions
+- Production email stack (Resend primary, queue with cron processor, templated notifications)
+- Upstash Redis rate limiting, Supabase RLS, and role-scoped access everywhere
+- Admin analytics dashboards and PDF export for approved letters
 
-- [x] Running Supabase locally
-- [x] Managing database migrations
-- [x] Creating and deploying Supabase Functions
-- [x] Generating types directly from your database schema
-- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
+## Tech stack
+- **Frontend/SSR**: Next.js 16 (App Router), React 19, Tailwind + shadcn/ui
+- **Backend**: Supabase (Postgres + RLS), Stripe, Resend, Upstash Redis
+- **AI**: `ai` + `@ai-sdk/openai` (default model: gpt-4-turbo)
+- **Observability**: OpenTelemetry tracing hooks
+- **Tooling**: TypeScript, ESLint, Vitest, pnpm (only)
 
-## Getting started
+## Getting started (local)
+1) Prereqs: Node 20+ and pnpm (`packageManager=pnpm@10.28.0`).
+2) Install deps: `pnpm install`
+3) Configure env: copy `.env.example` → `.env.local`, fill required keys (Supabase, Stripe, OpenAI, Resend). Validate with `pnpm validate-env`.
+4) Run dev server: `pnpm dev` (http://localhost:3000)
+5) Optional: apply Supabase migrations to your project before hitting APIs: `pnpm db:migrate`.
 
-### Install the CLI
+## Core workflows (high level)
+- **Letter generation**: `/api/generate-letter` enforces rate limit → auth (subscriber) → allowance check/deduct → AI draft → status `pending_review`.
+- **Attorney review**: Admin portal (`/secure-admin-gateway`) moves letters through `pending_review` → `under_review` → approve/reject/improve, with audit logging and emails.
+- **Payments**: `/api/create-checkout` for Stripe sessions, coupons/commissions, webhooks for fulfillment; allowance resets per subscription period.
+- **Email**: templated notifications + queue processor at `/api/cron/process-email-queue`; confirmation emails handled by Supabase Auth SMTP.
 
-Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
+## Development scripts
+- `pnpm dev` — run locally
+- `pnpm lint` — ESLint
+- `CI=1 pnpm build` — production build (stricter)
+- `pnpm validate-env` — ensure required env vars are set
+- `pnpm db:migrate` — apply Supabase SQL migrations
+- `pnpm test` — Vitest suite
 
-```bash
-npm i supabase --save-dev
-```
+## Conventions & guardrails
+- Use **pnpm only**; no npm/yarn lockfiles.
+- Respect Supabase RLS and role checks; do not log secrets.
+- Keep admin/auth helpers on API routes; reuse shared error handling in `lib/api/api-error-handler.ts`.
+- Run lint and build before delivery; enable test mode only outside production (`ENABLE_TEST_MODE=false` in prod).
 
-When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
+## Deployment
+- Primary target: Vercel. Ensure all env vars are set in the Vercel dashboard and migrations are applied to the Supabase project before deploy.
+- Production readiness checklist lives in [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md) and the implementation plan (`Talk-to-My-Lawyer_Implementation_Plan.md`).
 
-```
-NODE_OPTIONS=--no-experimental-fetch yarn add supabase
-```
-
-> **Note**
-For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
-
-<details>
-  <summary><b>macOS</b></summary>
-
-  Available via [Homebrew](https://brew.sh). To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To install the beta release channel:
-  
-  ```sh
-  brew install supabase/tap/supabase-beta
-  brew link --overwrite supabase-beta
-  ```
-  
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Windows</b></summary>
-
-  Available via [Scoop](https://scoop.sh). To install:
-
-  ```powershell
-  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
-  scoop install supabase
-  ```
-
-  To upgrade:
-
-  ```powershell
-  scoop update supabase
-  ```
-</details>
-
-<details>
-  <summary><b>Linux</b></summary>
-
-  Available via [Homebrew](https://brew.sh) and Linux packages.
-
-  #### via Homebrew
-
-  To install:
-
-  ```sh
-  brew install supabase/tap/supabase
-  ```
-
-  To upgrade:
-
-  ```sh
-  brew upgrade supabase
-  ```
-
-  #### via Linux packages
-
-  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
-
-  ```sh
-  sudo apk add --allow-untrusted <...>.apk
-  ```
-
-  ```sh
-  sudo dpkg -i <...>.deb
-  ```
-
-  ```sh
-  sudo rpm -i <...>.rpm
-  ```
-
-  ```sh
-  sudo pacman -U <...>.pkg.tar.zst
-  ```
-</details>
-
-<details>
-  <summary><b>Other Platforms</b></summary>
-
-  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
-
-  ```sh
-  go install github.com/supabase/cli@latest
-  ```
-
-  Add a symlink to the binary in `$PATH` for easier access:
-
-  ```sh
-  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
-  ```
-
-  This works on other non-standard Linux distros.
-</details>
-
-<details>
-  <summary><b>Community Maintained Packages</b></summary>
-
-  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
-  To install in your working directory:
-
-  ```bash
-  pkgx install supabase
-  ```
-
-  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
-</details>
-
-### Run the CLI
-
-```bash
-supabase bootstrap
-```
-
-Or using npx:
-
-```bash
-npx supabase bootstrap
-```
-
-The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
-
-## Docs
-
-Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
-
-## Breaking changes
-
-We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
-
-However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
-
-## Developing
-
-To run from source:
-
-```sh
-# Go >= 1.22
-go run . help
-```
+## Troubleshooting
+- Email issues: follow the playbook in `lib/email/AGENTS.md` and `docs/EMAIL_*` (SMTP vs. app emails). Run `node check-email-config.js` and `node test-email-send.js` as needed.
+- Database/allowance/checkout races: see the P0 fixes in `Talk-to-My-Lawyer_Implementation_Plan.md`.
+- For more docs, start at [`docs/README.md`](docs/README.md).
