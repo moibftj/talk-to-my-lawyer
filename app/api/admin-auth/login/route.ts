@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual } from 'crypto'
 import { verifyAdminCredentials, createAdminSession, type AdminSubRole } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 /**
  * Admin login endpoint - Role-based authentication with sub-role routing
@@ -25,7 +26,7 @@ import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 export async function POST(request: NextRequest) {
   try {
     // Apply rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, 10, "15 m")
+    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('AUTH_LOGIN'))
     if (rateLimitResponse) {
       return rateLimitResponse
     }

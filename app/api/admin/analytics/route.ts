@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
 import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
+import { getRateLimitTuple } from '@/lib/config'
 
 export async function GET(request: NextRequest) {
   try {
