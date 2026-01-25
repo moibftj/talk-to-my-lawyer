@@ -12,8 +12,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Use service role key for database integrity tests (bypasses RLS for validation)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 // Skip tests if no Supabase credentials
 const describeIf = supabaseUrl && supabaseKey ? describe : describe.skip
