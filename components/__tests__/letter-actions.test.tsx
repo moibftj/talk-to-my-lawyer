@@ -65,7 +65,14 @@ describe('LetterActions Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     global.console.error = vi.fn()
-    global.alert = vi.fn()
+    // Mock window.alert for happy-dom
+    const alertMock = vi.fn()
+    global.alert = alertMock
+    Object.defineProperty(window, 'alert', {
+      value: alertMock,
+      writable: true,
+      configurable: true,
+    })
   })
 
   describe('Draft Letter Actions', () => {

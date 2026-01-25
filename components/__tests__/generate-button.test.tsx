@@ -26,6 +26,7 @@ global.IntersectionObserver = vi.fn(() => ({
 Object.defineProperty(navigator, 'vibrate', {
   value: vi.fn(),
   writable: true,
+  configurable: true,
 })
 
 describe('GenerateLetterButton Component', () => {
@@ -84,12 +85,8 @@ describe('GenerateLetterButton Component', () => {
     })
 
     it('should call navigator.vibrate with 50ms duration on touch devices', () => {
-      const mockVibrate = vi.fn()
-      Object.defineProperty(navigator, 'vibrate', {
-        value: mockVibrate,
-        writable: true,
-        configurable: true,
-      })
+      const mockVibrate = navigator.vibrate as vi.fn
+      mockVibrate.mockClear()
 
       // Simulate touch device
       window.matchMedia = vi.fn().mockReturnValue({ matches: true }) as any

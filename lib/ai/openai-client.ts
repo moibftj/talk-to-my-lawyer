@@ -9,6 +9,11 @@ import { createOpenAI, OpenAIProvider } from "@ai-sdk/openai"
 
 let openAIProviderInstance: OpenAIProvider | null = null
 
+// Test-only: reset the singleton cache
+export function resetOpenAIProviderForTesting() {
+  openAIProviderInstance = null
+}
+
 /**
  * Get an OpenAI provider configured for direct connection
  *
