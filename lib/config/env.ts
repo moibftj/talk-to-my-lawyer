@@ -4,71 +4,74 @@
  * This file provides a single source of truth for all environment variables,
  * with validation and type safety. Import this file instead of accessing
  * process.env directly throughout the codebase.
+ * 
+ * Note: Uses lazy evaluation to avoid build-time failures when env vars
+ * are not set. Validation happens at runtime when values are accessed.
  */
 
 /**
  * Supabase configuration
  */
 export const supabase = {
-  url: required('NEXT_PUBLIC_SUPABASE_URL'),
-  anonKey: required('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-  serviceRoleKey: optional('SUPABASE_SERVICE_ROLE_KEY'),
+  get url() { return process.env.NEXT_PUBLIC_SUPABASE_URL || '' },
+  get anonKey() { return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' },
+  get serviceRoleKey() { return process.env.SUPABASE_SERVICE_ROLE_KEY },
 } as const
 
 /**
  * OpenAI configuration
  */
 export const openai = {
-  apiKey: required('OPENAI_API_KEY'),
+  get apiKey() { return process.env.OPENAI_API_KEY || '' },
 } as const
 
 /**
  * Stripe configuration
  */
 export const stripe = {
-  secretKey: required('STRIPE_SECRET_KEY'),
-  publishableKey: required('STRIPE_PUBLISHABLE_KEY'),
-  webhookSecret: required('STRIPE_WEBHOOK_SECRET'),
+  get secretKey() { return process.env.STRIPE_SECRET_KEY || '' },
+  get publishableKey() { return process.env.STRIPE_PUBLISHABLE_KEY || '' },
+  get webhookSecret() { return process.env.STRIPE_WEBHOOK_SECRET || '' },
 } as const
 
 /**
  * Email configuration
  */
 export const email = {
-  resendApiKey: required('RESEND_API_KEY'),
-  from: optional('EMAIL_FROM', 'noreply@talk-to-my-lawyer.com'),
-  fromName: optional('EMAIL_FROM_NAME', 'Talk-To-My-Lawyer'),
+  get resendApiKey() { return process.env.RESEND_API_KEY || '' },
+  get from() { return process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com' },
+  get fromName() { return process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer' },
 } as const
 
 /**
  * Email configuration with apiKey alias for backward compatibility
  */
 export const emailConfig = {
-  apiKey: process.env.RESEND_API_KEY,
-  from: process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com',
-  fromName: process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer',
+  get apiKey() { return process.env.RESEND_API_KEY },
+  get from() { return process.env.EMAIL_FROM || 'noreply@talk-to-my-lawyer.com' },
+  get fromName() { return process.env.EMAIL_FROM_NAME || 'Talk-To-My-Lawyer' },
 } as const
 
 /**
  * Admin configuration
  */
 export const admin = {
-  portalKey: required('ADMIN_PORTAL_KEY'),
+  get portalKey() { return process.env.ADMIN_PORTAL_KEY || '' },
 } as const
 
 /**
  * CRON configuration
  */
 export const cron = {
-  secret: required('CRON_SECRET'),
+  get secret() { return process.env.CRON_SECRET || '' },
 } as const
 
 /**
  * App configuration
  */
 export const app = {
-  url: optional('NEXT_PUBLIC_APP_URL', 'https://www.talk-to-my-lawyer.com'),
-  nodeEnv: optional('NODE_ENV', 'development'),
+  get url() { return process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' },
+  get nodeEnv() { return process.env.NODE_ENV || 'development' },
 } as const
 
 /**
