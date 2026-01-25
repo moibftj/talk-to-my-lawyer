@@ -96,9 +96,7 @@ export async function POST(request: NextRequest) {
             usage_count: coupon.usage_count,
             max_uses: coupon.max_uses
           })
-          return NextResponse.json({ 
-            error: 'This coupon has reached its usage limit' 
-          }, { status: 400 })
+          return errorResponses.badRequest('This coupon has reached its usage limit')
         }
 
         // Validate coupon hasn't expired
@@ -107,17 +105,13 @@ export async function POST(request: NextRequest) {
             couponCode,
             expires_at: coupon.expires_at
           })
-          return NextResponse.json({ 
-            error: 'This coupon has expired' 
-          }, { status: 400 })
+          return errorResponses.badRequest('This coupon has expired')
         }
 
         // Reject 100% discount coupons - no free subscriptions allowed
         if (coupon.discount_percent >= 100) {
           console.warn('[Checkout] 100% discount coupon rejected:', couponCode)
-          return NextResponse.json({ 
-            error: 'This coupon code is not valid' 
-          }, { status: 400 })
+          return errorResponses.badRequest('This coupon code is not valid')
         }
 
         discount = coupon.discount_percent
@@ -151,9 +145,7 @@ export async function POST(request: NextRequest) {
     // Safety check: Reject any 0-price transactions (no free subscriptions)
     if (finalPrice <= 0) {
       console.error('[Checkout] Attempted free subscription rejected')
-      return NextResponse.json({ 
-        error: 'Invalid checkout configuration' 
-      }, { status: 400 })
+      return errorResponses.badRequest('Invalid checkout configuration')
     }
 
     // ===== TEST MODE: Simulate successful payment without Stripe =====
