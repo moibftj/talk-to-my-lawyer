@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceRoleClient } from "@/lib/supabase/admin";
+import { verifyCronAuth } from "@/lib/middleware/cron-auth";
 
 export const runtime = "edge";
 
@@ -50,17 +51,8 @@ export async function POST(request: NextRequest) {
       console.log(`[Edge Queue] Processing from IP: ${clientIP}`);
     }
     // Verify cron secret
-    const authHeader = request.headers.get("authorization");
-    const searchParams = request.nextUrl.searchParams;
-    const providedSecret =
-      authHeader?.replace("Bearer ", "") ||
-      searchParams.get("secret") ||
-      request.headers.get("x-cron-secret"); // Support multiple auth methods
-    const expectedSecret = process.env.CRON_SECRET;
-
-    if (expectedSecret && providedSecret !== expectedSecret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authError = verifyCronAuth(request);
+    if (authError) return authError;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -212,13 +204,9 @@ export async function POST(request: NextRequest) {
 
 // GET for health checks
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const providedSecret = searchParams.get("secret");
-  const expectedSecret = process.env.CRON_SECRET;
-
-  if (expectedSecret && providedSecret !== expectedSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Verify cron secret
+  const authError = verifyCronAuth(request);
+  if (authError) return authError;
 
   const supabase = getServiceRoleClient();
 

@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 /**
  * Verify CRON job authentication
  *
- * Supports two authentication methods:
+ * Supports three authentication methods:
  * 1. Authorization header with Bearer token
  * 2. Query parameter 'secret'
+ * 3. x-cron-secret header (for edge compatibility)
  *
  * @param request - The incoming request
  * @returns NextResponse with 401 error if unauthorized, or null if authorized
@@ -21,6 +22,12 @@ export function verifyCronAuth(request: NextRequest): NextResponse | null {
   // Check Authorization header
   const authHeader = request.headers.get('authorization')
   if (authHeader === `Bearer ${cronSecret}`) {
+    return null
+  }
+
+  // Check x-cron-secret header (for edge compatibility)
+  const cronSecretHeader = request.headers.get('x-cron-secret')
+  if (cronSecretHeader === cronSecret) {
     return null
   }
 
