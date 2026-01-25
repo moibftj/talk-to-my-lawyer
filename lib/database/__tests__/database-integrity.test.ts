@@ -9,14 +9,15 @@
  * - Unique constraints
  */
 
-import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest'
-import { createClient } from '@supabase/supabase-js'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-describe('Database Integrity', () => {
-  let supabase: ReturnType<typeof createClient>
+// Singleton client to avoid multiple instance warnings
+// Use <any> because we test constraint violations with intentionally invalid data
+let supabaseClient: SupabaseClient<any> | null = null
 
-  beforeEach(() => {
-    // Read env vars inside beforeEach so they're loaded after .env is processed
+function getSupabaseClient(): SupabaseClient<any> {
+  if (!supabaseClient) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
@@ -24,13 +25,22 @@ describe('Database Integrity', () => {
       throw new Error('Supabase key is required for database integrity tests')
     }
 
-    supabase = createClient(supabaseUrl, supabaseKey)
+    supabaseClient = createClient(supabaseUrl, supabaseKey)
+  }
+  return supabaseClient
+}
+
+describe('Database Integrity', () => {
+  // Reset singleton after all tests
+  afterAll(() => {
+    supabaseClient = null
   })
 
   describe('Foreign Key Constraints', () => {
     it('should enforce letters.user_id → profiles.id foreign key', async () => {
+      const client = getSupabaseClient()
       // Try to insert a letter with invalid user_id
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: '00000000-0000-0000-0000-000000000000', // Invalid UUID
@@ -48,7 +58,8 @@ describe('Database Integrity', () => {
     })
 
     it('should enforce subscriptions.user_id → profiles.id foreign key', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('subscriptions')
         .insert({
           user_id: '00000000-0000-0000-0000-000000000000', // Invalid UUID
@@ -64,21 +75,23 @@ describe('Database Integrity', () => {
       expect(data).toBeNull()
     })
 
-    it.skip('should enforce letter_audit.user_id → profiles.id foreign key', async () => {
-      // NOTE: Skipped because letter_audit table may not exist or is not accessible via REST API
-      // PGRST205 error indicates the table is not found in the PostgREST schema
-      const { data, error } = await supabase
-        .from('letter_audit')
+    it('should enforce letter_audit_trail.letter_id → letters.id foreign key', async () => {
+      const client = getSupabaseClient()
+      // NOTE: Table name is letter_audit_trail, not letter_audit
+      const { data, error } = await client
+        .from('letter_audit_trail')
         .insert({
           letter_id: '00000000-0000-0000-0000-000000000000',
-          user_id: '00000000-0000-0000-0000-000000000000',
+          action: 'test_action',
           old_status: 'draft',
           new_status: 'pending_review',
-          change_reason: 'test',
+          notes: 'test',
         })
         .select()
 
-      expect(error?.code).toBe('23503')
+      // Should fail due to foreign key constraint
+      expect(error).toBeDefined()
+      expect(['23503', '23502']).toContain(error?.code) // FK or NOT NULL
       expect(data).toBeNull()
     })
   })
@@ -88,10 +101,11 @@ describe('Database Integrity', () => {
       // NOTE: Skipped because profiles.id has FK to auth.users
       // Cannot insert profiles directly without auth.users entry
       // Email uniqueness is enforced at the auth layer by Supabase
+      const client = getSupabaseClient()
       const testEmail = `test-${Date.now()}@example.com`
 
       // Create first profile
-      const { data: profile1, error: error1 } = await supabase
+      const { data: profile1, error: error1 } = await client
         .from('profiles')
         .insert({
           id: crypto.randomUUID(),
@@ -105,7 +119,7 @@ describe('Database Integrity', () => {
       expect(profile1).toBeDefined()
 
       // Try to create duplicate
-      const { data: profile2, error: error2 } = await supabase
+      const { data: profile2, error: error2 } = await client
         .from('profiles')
         .insert({
           id: crypto.randomUUID(),
@@ -121,14 +135,15 @@ describe('Database Integrity', () => {
       expect(profile2).toBeNull()
 
       // Cleanup
-      await supabase.from('profiles').delete().eq('id', profile1.id)
+      await client.from('profiles').delete().eq('id', profile1.id)
     })
 
     it('should enforce unique stripe_customer_id in subscriptions', async () => {
+      const client = getSupabaseClient()
       const stripeCustomerId = `cus_test_${Date.now()}`
 
       // Insert first subscription with this customer
-      const { data: sub1, error: error1 } = await supabase
+      const { data: sub1, error: error1 } = await client
         .from('subscriptions')
         .insert({
           user_id: crypto.randomUUID(),
@@ -144,7 +159,7 @@ describe('Database Integrity', () => {
         expect(sub1).toBeDefined()
 
         // Try to insert duplicate stripe_customer_id
-        const { data: sub2, error: error2 } = await supabase
+        const { data: sub2, error: error2 } = await client
           .from('subscriptions')
           .insert({
             user_id: crypto.randomUUID(),
@@ -159,7 +174,7 @@ describe('Database Integrity', () => {
         expect(sub2).toBeNull()
 
         // Cleanup
-        await supabase.from('subscriptions').delete().eq('id', sub1.id)
+        await client.from('subscriptions').delete().eq('id', sub1.id)
       } else {
         // FK or other constraint violation - test still validates schema
         expect(['23503', '23502']).toContain(error1.code)
@@ -169,6 +184,7 @@ describe('Database Integrity', () => {
 
   describe('Check Constraints', () => {
     it('should enforce valid letter status values', async () => {
+      const client = getSupabaseClient()
       const validStatuses = [
         'draft',
         'generating',
@@ -182,7 +198,7 @@ describe('Database Integrity', () => {
 
       // Test each valid status
       for (const status of validStatuses) {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('letters')
           .insert({
             user_id: crypto.randomUUID(),
@@ -201,14 +217,15 @@ describe('Database Integrity', () => {
           expect(data).not.toBeNull()
           // Cleanup
           if (data?.[0]?.id) {
-            await supabase.from('letters').delete().eq('id', data[0].id)
+            await client.from('letters').delete().eq('id', data[0].id)
           }
         }
       }
     })
 
     it('should reject invalid letter status', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -226,10 +243,11 @@ describe('Database Integrity', () => {
     })
 
     it('should enforce valid user role values', async () => {
+      const client = getSupabaseClient()
       const validRoles = ['subscriber', 'employee', 'attorney_admin', 'system_admin']
 
       for (const role of validRoles) {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('profiles')
           .insert({
             id: crypto.randomUUID(),
@@ -245,14 +263,15 @@ describe('Database Integrity', () => {
           expect(data).not.toBeNull()
           // Cleanup
           if (data?.[0]?.id) {
-            await supabase.from('profiles').delete().eq('id', data[0].id)
+            await client.from('profiles').delete().eq('id', data[0].id)
           }
         }
       }
     })
 
     it('should reject invalid user role', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('profiles')
         .insert({
           id: crypto.randomUUID(),
@@ -269,7 +288,8 @@ describe('Database Integrity', () => {
 
   describe('Not Null Constraints', () => {
     it('should require letters.user_id', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: null as any,
@@ -285,7 +305,8 @@ describe('Database Integrity', () => {
     })
 
     it('should require letters.letter_type', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -304,7 +325,8 @@ describe('Database Integrity', () => {
     })
 
     it('should require letters.status', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -324,9 +346,10 @@ describe('Database Integrity', () => {
 
   describe('Default Values', () => {
     it('should set default status for letters', async () => {
+      const client = getSupabaseClient()
       const userId = crypto.randomUUID()
 
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: userId,
@@ -341,12 +364,13 @@ describe('Database Integrity', () => {
       if (!error) {
         expect(data?.status).toBe('draft')
         // Cleanup
-        await supabase.from('letters').delete().eq('id', data.id)
+        await client.from('letters').delete().eq('id', data.id)
       }
     })
 
     it('should set default created_at timestamp', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -360,17 +384,18 @@ describe('Database Integrity', () => {
       if (!error) {
         expect(data?.created_at).toBeDefined()
         // Cleanup
-        await supabase.from('letters').delete().eq('id', data.id)
+        await client.from('letters').delete().eq('id', data.id)
       }
     })
   })
 
   describe('Cascade Behaviors', () => {
     it('should cascade delete letters when user is deleted', async () => {
+      const client = getSupabaseClient()
       const userId = crypto.randomUUID()
 
       // Insert letter (may fail due to FK, that's ok)
-      const { data: letter, error: letterError } = await supabase
+      const { data: letter, error: letterError } = await client
         .from('letters')
         .insert({
           user_id: userId,
@@ -384,14 +409,14 @@ describe('Database Integrity', () => {
 
       if (!letterError && letter) {
         // Delete user profile (may fail if RLS blocks)
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await client
           .from('profiles')
           .delete()
           .eq('id', userId)
 
         if (!deleteError) {
           // Letter should be deleted
-          const { data: remainingLetters } = await supabase
+          const { data: remainingLetters } = await client
             .from('letters')
             .select()
             .eq('user_id', userId)
@@ -399,7 +424,7 @@ describe('Database Integrity', () => {
           expect(remainingLetters?.length || 0).toBe(0)
         } else {
           // Cleanup letter
-          await supabase.from('letters').delete().eq('id', letter.id)
+          await client.from('letters').delete().eq('id', letter.id)
         }
       }
     })
@@ -407,18 +432,18 @@ describe('Database Integrity', () => {
 })
 
 describe('RLS Policy Enforcement', () => {
-  let supabase: ReturnType<typeof createClient>
+  let anonClient: SupabaseClient<any>
 
   beforeAll(() => {
     // Use anon key to test RLS policies (RLS blocks anon access)
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbWlpcXp4YXh5eG54bmR2a2JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzQwNzYsImV4cCI6MjA4MzY5NDA3Nn0.Wi5A7cHcx95-mDogBbxBzLQ9K7ACbJDrGx0hAhKOK1k'
-    supabase = createClient(url, key)
+    anonClient = createClient(url, key)
   })
 
   describe('Anonymous Access', () => {
     it('should block anonymous access to letters table', async () => {
-      const { data, error, status } = await supabase.from('letters').select('*')
+      const { data, error, status } = await anonClient.from('letters').select('*')
 
       // RLS should block access - anonymous requests are unauthorized
       // Supabase returns 200 with empty data when RLS blocks read access
@@ -427,7 +452,7 @@ describe('RLS Policy Enforcement', () => {
     })
 
     it('should block anonymous access to profiles table', async () => {
-      const { data, error, status } = await supabase.from('profiles').select('*')
+      const { data, error, status } = await anonClient.from('profiles').select('*')
 
       // RLS should block access - anonymous requests get 200 with empty data
       expect(status).toBe(200)
@@ -435,7 +460,7 @@ describe('RLS Policy Enforcement', () => {
     })
 
     it('should block anonymous insert to letters table', async () => {
-      const { data, error, status } = await supabase
+      const { data, error, status } = await anonClient
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -455,13 +480,13 @@ describe('RLS Policy Enforcement', () => {
 })
 
 describe('Data Validation', () => {
-  let supabase: ReturnType<typeof createClient>
+  let serviceClient: SupabaseClient<any>
 
   beforeAll(() => {
     // Use service role key to bypass RLS for validation tests
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbWlpcXp4YXh5eG54bmR2a2JlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODMzNDA3NiwiZXhwIjoyMDgzNjk0MDc2fQ.rT5YJKIBRiVEfFYzC8Cgfi49KfvQt6aDmIO9iSTF8RU'
-    supabase = createClient(url, key)
+    serviceClient = createClient(url, key)
   })
 
   describe('Email Format Validation', () => {
@@ -475,7 +500,7 @@ describe('Data Validation', () => {
 
     it.each(invalidEmails)('should reject invalid email: %s', async (email) => {
       // This validates at the DB level through check constraints or triggers
-      const { data, error } = await supabase
+      const { data, error } = await serviceClient
         .from('profiles')
         .insert({
           id: crypto.randomUUID(),
@@ -492,6 +517,7 @@ describe('Data Validation', () => {
 
   describe('JSONB Validation', () => {
     it('should accept valid JSONB for intake_data', async () => {
+      const client = getSupabaseClient()
       const validData = {
         recipient: 'John Doe',
         address: '123 Main St',
@@ -499,7 +525,7 @@ describe('Data Validation', () => {
         amount: 5000,
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -514,12 +540,13 @@ describe('Data Validation', () => {
       if (!error) {
         expect(data?.[0]?.intake_data).toEqual(validData)
         // Cleanup
-        await supabase.from('letters').delete().eq('id', data[0].id)
+        await client.from('letters').delete().eq('id', data[0].id)
       }
     })
 
     it('should accept empty JSONB object for intake_data', async () => {
-      const { data, error } = await supabase
+      const client = getSupabaseClient()
+      const { data, error } = await client
         .from('letters')
         .insert({
           user_id: crypto.randomUUID(),
@@ -533,7 +560,7 @@ describe('Data Validation', () => {
       if (!error) {
         expect(data?.[0]?.intake_data).toEqual({})
         // Cleanup
-        await supabase.from('letters').delete().eq('id', data[0].id)
+        await client.from('letters').delete().eq('id', data[0].id)
       }
     })
   })
