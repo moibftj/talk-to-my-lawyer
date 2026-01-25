@@ -5,8 +5,6 @@
  * type safety across the application and enable better IDE support.
  */
 
-import type { Letter } from '@/types/supabase'
-
 // ============================================================================
 // Base Types
 // ============================================================================
