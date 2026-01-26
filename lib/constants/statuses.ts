@@ -50,9 +50,8 @@ export const VALID_LETTER_TRANSITIONS: Record<LetterStatus, LetterStatus[]> = {
 export const PAYOUT_STATUSES = {
   PENDING: 'pending',
   PROCESSING: 'processing',
-  PAID: 'paid',
-  FAILED: 'failed',
-  CANCELLED: 'cancelled',
+  COMPLETED: 'completed',
+  REJECTED: 'rejected',
 } as const
 
 export type PayoutStatus = typeof PAYOUT_STATUSES[keyof typeof PAYOUT_STATUSES]
@@ -62,13 +61,10 @@ export type PayoutStatus = typeof PAYOUT_STATUSES[keyof typeof PAYOUT_STATUSES]
  */
 export const SUBSCRIPTION_STATUSES = {
   ACTIVE: 'active',
-  CANCELLED: 'cancelled',
+  CANCELED: 'canceled',
   PAST_DUE: 'past_due',
-  UNPAID: 'unpaid',
-  INCOMPLETE: 'incomplete',
-  INCOMPLETE_EXPIRED: 'incomplete_expired',
   TRIALING: 'trialing',
-  PAUSED: 'paused',
+  PAYMENT_FAILED: 'payment_failed',
 } as const
 
 export type SubscriptionStatus = typeof SUBSCRIPTION_STATUSES[keyof typeof SUBSCRIPTION_STATUSES]
@@ -81,7 +77,6 @@ export const EXPORT_STATUSES = {
   PROCESSING: 'processing',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  EXPIRED: 'expired',
 } as const
 
 export type ExportStatus = typeof EXPORT_STATUSES[keyof typeof EXPORT_STATUSES]
@@ -92,7 +87,6 @@ export type ExportStatus = typeof EXPORT_STATUSES[keyof typeof EXPORT_STATUSES]
 export const DELETION_STATUSES = {
   PENDING: 'pending',
   APPROVED: 'approved',
-  PROCESSING: 'processing',
   COMPLETED: 'completed',
   REJECTED: 'rejected',
 } as const
@@ -104,11 +98,9 @@ export type DeletionStatus = typeof DELETION_STATUSES[keyof typeof DELETION_STAT
  */
 export const EMAIL_QUEUE_STATUSES = {
   PENDING: 'pending',
-  SENDING: 'sending',
+  PROCESSING: 'processing',
   SENT: 'sent',
   FAILED: 'failed',
-  RETRYING: 'retrying',
-  ABANDONED: 'abandoned',
 } as const
 
 export type EmailQueueStatus = typeof EMAIL_QUEUE_STATUSES[keyof typeof EMAIL_QUEUE_STATUSES]
@@ -159,12 +151,10 @@ export function getPayoutStatusName(status: string): string {
       return 'Pending'
     case PAYOUT_STATUSES.PROCESSING:
       return 'Processing'
-    case PAYOUT_STATUSES.PAID:
-      return 'Paid'
-    case PAYOUT_STATUSES.FAILED:
-      return 'Failed'
-    case PAYOUT_STATUSES.CANCELLED:
-      return 'Cancelled'
+    case PAYOUT_STATUSES.COMPLETED:
+      return 'Completed'
+    case PAYOUT_STATUSES.REJECTED:
+      return 'Rejected'
     default:
       return 'Unknown'
   }
