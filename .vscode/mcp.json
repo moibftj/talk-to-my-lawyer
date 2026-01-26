@@ -1,34 +1,4 @@
 {
-	"servers": {
-		"supabase": {
-			"type": "http",
-			"url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=functions,account,docs,database,debugging,development,branching,storage"
-		},
-		"io.github.ChromeDevTools/chrome-devtools-mcp": {
-			"command": "npx",
-			"args": [
-				"-y",
-				"chrome-devtools-mcp"
-			],
-			"env": {},
-			"type": "stdio"
-		},
-		"io.github.vercel/next-devtools-mcp": {
-			"type": "stdio",
-			"command": "npx",
-			"args": [
-				"next-devtools-mcp@0.3.6"
-			],
-			"gallery": "https://api.mcp.github.com",
-			"version": "0.3.6"
-		},
-		"com.vercel/vercel-mcp": {
-			"type": "http",
-			"url": "https://mcp.vercel.com",
-			"gallery": "https://api.mcp.github.com",
-			"version": "0.0.3"
-		}
-	},
 	"inputs": [
 		{
 			"id": "project-ref",
@@ -60,5 +30,31 @@
 			"description": "Personal access token for Supabase API",
 			"password": true
 		}
-	]
+	],
+	"servers": {
+		"io.github.ChromeDevTools/chrome-devtools-mcp": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"chrome-devtools-mcp"
+			],
+			"env": {},
+			"type": "stdio"
+		},
+		"io.github.vercel/next-devtools-mcp": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"next-devtools-mcp@0.3.6"
+			],
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.3.6"
+		},
+		"com.vercel/vercel-mcp": {
+			"type": "http",
+			"url": "https://mcp.vercel.com",
+			"gallery": "https://api.mcp.github.com",
+			"version": "0.0.3"
+		}
+	}
 }
