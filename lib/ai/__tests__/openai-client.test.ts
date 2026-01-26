@@ -20,8 +20,8 @@ describe('OpenAI Client', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     // Import the reset function dynamically
-    const module = await import('../openai-client')
-    resetOpenAIProviderForTesting = module.resetOpenAIProviderForTesting
+    const openAiModule = await import('../openai-client')
+    resetOpenAIProviderForTesting = openAiModule.resetOpenAIProviderForTesting
     resetOpenAIProviderForTesting()
   })
 
