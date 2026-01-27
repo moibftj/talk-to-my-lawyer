@@ -77,6 +77,7 @@ requiredTools:
   - run_in_terminal # Command execution (pnpm, git, supabase CLI, node)
   - run_task      # VS Code tasks
   - runSubagent   # Sub-agent spawning (Plan)
+  
 ---
 
 # TTML Archon (Bonkers Edition)
