@@ -130,19 +130,18 @@ export default async function DashboardPage() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {recentLetters.map((letter) => (
+            {recentLetters.map((letter: any) => (
               <Link key={letter.id} href={`/dashboard/letters/${letter.id}`}>
                 <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`p-2 rounded-full ${
-                        letter.status === 'approved' ? 'bg-success/10' :
-                        letter.status === 'rejected' ? 'bg-destructive/10' :
-                        'bg-muted'
-                      }`}>
+                      <div className={`p-2 rounded-full ${letter.status === 'approved' ? 'bg-success/10' :
+                          letter.status === 'rejected' ? 'bg-destructive/10' :
+                            'bg-muted'
+                        }`}>
                         {letter.status === 'approved' ? <CheckCircle className="w-5 h-5 text-success" /> :
-                         letter.status === 'rejected' ? <AlertCircle className="w-5 h-5 text-destructive" /> :
-                         <Clock className="w-5 h-5 text-muted-foreground" />}
+                          letter.status === 'rejected' ? <AlertCircle className="w-5 h-5 text-destructive" /> :
+                            <Clock className="w-5 h-5 text-muted-foreground" />}
                       </div>
                       <div>
                         <h3 className="font-medium text-foreground">{letter.title || 'Untitled Letter'}</h3>

@@ -28,8 +28,8 @@ export default async function ReviewCenterPage() {
     console.error('[ReviewCenter] Error fetching letters:', error)
   }
 
-  const pendingCount = letters?.filter(l => l.status === 'pending_review').length || 0
-  const underReviewCount = letters?.filter(l => l.status === 'under_review').length || 0
+  const pendingCount = letters?.filter((l: any) => l.status === 'pending_review').length || 0
+  const underReviewCount = letters?.filter((l: any) => l.status === 'under_review').length || 0
 
   const statusColors: Record<string, string> = {
     'pending_review': 'bg-yellow-100 text-yellow-800 border-yellow-300',
@@ -117,7 +117,7 @@ export default async function ReviewCenterPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {letters.map((letter) => (
+            {letters.map((letter: any) => (
               <Card key={letter.id} className="hover:bg-muted/30 transition-colors border-l-4" style={{
                 borderLeftColor: letter.status === 'pending_review' ? '#eab308' : '#3b82f6'
               }}>

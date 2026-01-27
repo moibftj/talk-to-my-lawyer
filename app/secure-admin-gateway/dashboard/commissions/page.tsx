@@ -31,10 +31,10 @@ export default async function AdminCommissionsPage() {
     .order('created_at', { ascending: false })
 
   // Calculate stats
-  const totalPending = commissions?.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-  const totalPaid = commissions?.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-  const pendingCount = commissions?.filter(c => c.status === 'pending').length || 0
-  const paidCount = commissions?.filter(c => c.status === 'paid').length || 0
+  const totalPending = commissions?.filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+  const totalPaid = commissions?.filter((c: any) => c.status === 'paid').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+  const pendingCount = commissions?.filter((c: any) => c.status === 'pending').length || 0
+  const paidCount = commissions?.filter((c: any) => c.status === 'paid').length || 0
 
   return (
     <div className="space-y-6">
@@ -89,7 +89,7 @@ export default async function AdminCommissionsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Set(commissions?.map(c => c.employee_id)).size}
+              {new Set(commissions?.map((c: any) => c.employee_id)).size}
             </div>
             <p className="text-xs text-muted-foreground">Employees with commissions</p>
           </CardContent>
@@ -130,7 +130,7 @@ export default async function AdminCommissionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {commissions?.map((commission) => (
+                {commissions?.map((commission: any) => (
                   <tr key={commission.id} className="hover:bg-muted/30">
                     <td className="px-4 py-4">
                       <div className="text-sm font-medium">{commission.profiles?.full_name || 'Unknown'}</div>
@@ -149,8 +149,8 @@ export default async function AdminCommissionsPage() {
                       ${Number(commission.commission_amount).toFixed(2)}
                     </td>
                     <td className="px-4 py-4">
-                      <Badge variant={commission.status === 'paid' ? 'default' : 'secondary'} 
-                             className={commission.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}>
+                      <Badge variant={commission.status === 'paid' ? 'default' : 'secondary'}
+                        className={commission.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}>
                         {commission.status === 'paid' ? (
                           <><CheckCircle className="h-3 w-3 mr-1" /> Paid</>
                         ) : (

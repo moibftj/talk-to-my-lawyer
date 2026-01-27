@@ -42,7 +42,7 @@ export default async function AdminDashboardPage() {
   const subscriberCount = subscribersResult.count || 0
   const employeeCount = employeesResult.count || 0
   const activeCoupons = couponsResult.count || 0
-  const pendingCommissionsTotal = pendingCommissionsResult.data?.reduce((sum, c) => sum + Number(c.commission_amount || 0), 0) || 0
+  const pendingCommissionsTotal = pendingCommissionsResult.data?.reduce((sum: number, c: any) => sum + Number(c.commission_amount || 0), 0) || 0
   const approvedToday = approvedTodayResult.count || 0
   const recentPending = recentPendingResult.data || []
 
@@ -217,7 +217,7 @@ export default async function AdminDashboardPage() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {recentPending.map((letter) => (
+            {recentPending.map((letter: any) => (
               <Card key={letter.id} className="hover:bg-muted/50 transition-colors">
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">

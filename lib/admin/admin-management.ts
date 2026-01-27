@@ -75,7 +75,7 @@ export async function createAdminAccount(
   try {
     // Check if user already exists
     const { data: existingUser } = await supabase.auth.admin.listUsers()
-    const userExists = existingUser.users.find(u => u.email === email)
+    const userExists = existingUser.users.find((u: any) => u.email === email)
 
     if (userExists) {
       // User exists, check if they're already an admin
@@ -196,7 +196,7 @@ export async function deactivateAdminAccount(
   try {
     // Find user by email
     const { data: users } = await supabase.auth.admin.listUsers()
-    const user = users.users.find(u => u.email === email)
+    const user = users.users.find((u: any) => u.email === email)
 
     if (!user) {
       return {
@@ -293,7 +293,7 @@ export async function reactivateAdminAccount(
   try {
     // Find user by email
     const { data: users } = await supabase.auth.admin.listUsers()
-    const user = users.users.find(u => u.email === email)
+    const user = users.users.find((u: any) => u.email === email)
 
     if (!user) {
       return {
@@ -410,7 +410,7 @@ export async function updateAdminPassword(
   try {
     // Find user by email
     const { data: users } = await supabase.auth.admin.listUsers()
-    const user = users.users.find(u => u.email === email)
+    const user = users.users.find((u: any) => u.email === email)
 
     if (!user) {
       return {

@@ -257,7 +257,7 @@ export default async function ReviewLetterDetailPage({ params }: { params: { id:
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {auditTrail.map((entry) => (
+              {auditTrail.map((entry: any) => (
                 <div key={entry.id} className="flex items-start gap-3 pb-3 border-b last:border-b-0">
                   <div className="w-2 h-2 bg-primary rounded-full mt-2"></div>
                   <div className="flex-1">

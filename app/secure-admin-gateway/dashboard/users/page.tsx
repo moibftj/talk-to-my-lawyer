@@ -41,7 +41,7 @@ export default async function UsersManagementPage() {
 
   // Build letter count map
   const lettersByUser: Record<string, number> = {}
-  letterCounts?.forEach(l => {
+  letterCounts?.forEach((l: any) => {
     lettersByUser[l.user_id] = (lettersByUser[l.user_id] || 0) + 1
   })
 
@@ -53,15 +53,15 @@ export default async function UsersManagementPage() {
 
   // Build subscription map
   const subscriptionsByUser: Record<string, any> = {}
-  subscriptions?.forEach(s => {
+  subscriptions?.forEach((s: any) => {
     subscriptionsByUser[s.user_id] = s
   })
 
   // Calculate role stats
   const totalUsers = users?.length || 0
-  const subscribers = users?.filter(u => u.role === 'subscriber').length || 0
-  const employees = users?.filter(u => u.role === 'employee').length || 0
-  const admins = users?.filter(u => u.role === 'admin').length || 0
+  const subscribers = users?.filter((u: any) => u.role === 'subscriber').length || 0
+  const employees = users?.filter((u: any) => u.role === 'employee').length || 0
+  const admins = users?.filter((u: any) => u.role === 'admin').length || 0
 
   const roleColors: Record<string, string> = {
     'subscriber': 'bg-blue-100 text-blue-800 border-blue-300',
@@ -160,7 +160,7 @@ export default async function UsersManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {users?.map((user) => {
+                {users?.map((user: any) => {
                   const RoleIcon = roleIcons[user.role] || UserCheck
                   const subscription = subscriptionsByUser[user.id]
                   const letterCount = lettersByUser[user.id] || 0

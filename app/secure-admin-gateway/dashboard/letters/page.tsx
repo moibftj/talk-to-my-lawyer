@@ -7,13 +7,13 @@ import { format } from 'date-fns'
 
 export default async function AdminLettersPage() {
   const { profile } = await getUser()
-  
+
   if (profile.role !== 'admin') {
     redirect('/dashboard')
   }
 
   const supabase = await createClient()
-  
+
   const { data: letters } = await supabase
     .from('letters')
     .select(`
@@ -37,7 +37,7 @@ export default async function AdminLettersPage() {
 
       {letters && letters.length > 0 ? (
         <div className="space-y-4">
-          {letters.map((letter) => (
+          {letters.map((letter: any) => (
             <div key={letter.id} className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -48,8 +48,8 @@ export default async function AdminLettersPage() {
                     <p>Submitted: {format(new Date(letter.created_at), 'MMM d, yyyy h:mm a')}</p>
                     <p className="font-medium">
                       Status: <span className={
-                        letter.status === 'under_review' 
-                          ? 'text-orange-600' 
+                        letter.status === 'under_review'
+                          ? 'text-orange-600'
                           : 'text-yellow-600'
                       }>
                         {letter.status === 'under_review' ? 'Under Review' : 'Pending Review'}
@@ -59,7 +59,7 @@ export default async function AdminLettersPage() {
                 </div>
                 <ReviewLetterModal letter={letter} />
               </div>
-              
+
               <div className="mt-4 p-4 bg-slate-50 rounded-lg">
                 <h4 className="text-sm font-medium text-slate-700 mb-2">Draft Preview</h4>
                 <p className="text-sm text-slate-600 whitespace-pre-line line-clamp-6">
