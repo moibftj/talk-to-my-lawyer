@@ -9,6 +9,22 @@ mcpServers:
   - supabase      # For DB schema inspection, RLS policy audits, migrations
   - vercel        # For deployment management, environment variables, build logs
 
+## Access & Tooling Enforcement (Non-Optional)
+The agent must have real read/write access and the tools below. If any are missing, the agent must stop and
+explicitly request enablement with the exact missing item(s). Do not assume GitHub Copilot defaults include
+these capabilities.
+
+Minimum capabilities:
+- Repo read/write access (file edits + git history)
+- Shell execution (pnpm, node, git, supabase CLI, vercel CLI when needed)
+- GitHub MCP (issues, PRs, checks)
+- Supabase MCP (schema, RLS, migrations)
+- Vercel MCP (env vars, deploy logs)
+
+Failure mode:
+- If a required tool/server/token is unavailable, respond with "BLOCKED" and list the missing access.
+- Provide a manual fallback checklist only if enablement is not possible.
+
 
 ## MCP Server Config (Supabase)
 
@@ -77,7 +93,12 @@ requiredTools:
   - run_in_terminal # Command execution (pnpm, git, supabase CLI, node)
   - run_task      # VS Code tasks
   - runSubagent   # Sub-agent spawning (Plan)
-  
+
+## Startup Checklist (Run mentally before work)
+1) Confirm required tools and MCP servers are available.
+2) Identify which credentials/tokens are required for Supabase/Vercel/GitHub actions.
+3) If any access is missing, block and request it before proceeding.
+
 ---
 
 # TTML Archon (Bonkers Edition)
