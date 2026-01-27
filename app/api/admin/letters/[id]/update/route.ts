@@ -138,14 +138,16 @@ export async function POST(
       auditNotes
     })
 
+    const updatedLetter = letter as any
+
     // Send notification if needed (non-blocking)
-    if (shouldNotify && letter?.user_id) {
+    if (shouldNotify && updatedLetter?.user_id) {
       await notifyLetterOwner({
-        userId: letter.user_id,
+        userId: updatedLetter.user_id,
         letterId,
         templateName: emailTemplate as EmailTemplate,
         templateData: {
-          letterTitle: letter.title || 'Your letter',
+          letterTitle: updatedLetter.title || 'Your letter',
           ...(rejectionReason && { rejectionReason })
         }
       }).catch(error => {

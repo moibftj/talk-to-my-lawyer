@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const authError = await requireSuperAdminAuth()
     if (authError) return authError
 
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status') || 'all'
     const limit = parseInt(searchParams.get('limit') || '50')
@@ -46,9 +46,9 @@ export async function GET(request: NextRequest) {
       .select('status')
 
     const statusCounts = {
-      pending: stats?.filter(e => e.status === 'pending').length || 0,
-      sent: stats?.filter(e => e.status === 'sent').length || 0,
-      failed: stats?.filter(e => e.status === 'failed').length || 0,
+      pending: stats?.filter((e: any) => e.status === 'pending').length || 0,
+      sent: stats?.filter((e: any) => e.status === 'sent').length || 0,
+      failed: stats?.filter((e: any) => e.status === 'failed').length || 0,
       total: stats?.length || 0
     }
 
@@ -83,13 +83,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { action, emailId } = body
 
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
 
     if (action === 'process') {
       // Trigger the Edge-based email processor for better performance
       const processorUrl = `${process.env.VERCEL_URL || request.nextUrl.origin}/api/email/process-queue`
       const cronSecret = process.env.CRON_SECRET
-      
+
       try {
         const response = await fetch(processorUrl, {
           method: 'POST',
@@ -98,13 +98,13 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json'
           }
         })
-        
+
         const result = await response.json()
-        
+
         if (!response.ok) {
           throw new Error(result.error || 'Failed to trigger email processing')
         }
-        
+
         return NextResponse.json({
           success: true,
           message: 'Email queue processing triggered via Edge runtime',
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         })
       } catch (fetchError: any) {
         console.error('[EmailQueue] Edge processor failed, falling back to direct processing:', fetchError)
-        
+
         // Fallback to direct processing if Edge processor fails
         const { data: emails, error: fetchError2 } = await supabase
           .from('email_queue')
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
           .eq('status', 'pending')
           .order('created_at', { ascending: true })
           .limit(10)
-        
+
         if (fetchError2 || !emails?.length) {
           return NextResponse.json({
             success: true,
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
             result: { processed: 0, sent: 0, failed: 0 }
           })
         }
-        
+
         return NextResponse.json({
           success: false,
           message: 'Edge processor unavailable. Use external email processor.',

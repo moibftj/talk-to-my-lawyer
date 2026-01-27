@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { DatabaseWithRelationships } from '@/lib/supabase/types'
 
-export async function createClient() {
+export async function createClient(): Promise<any> {
   const cookieStore = await cookies()
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -33,7 +33,7 @@ export async function createClient() {
         },
       },
     }
-  )
+  ) as any
 }
 
-export type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>
+export type SupabaseServerClient = any

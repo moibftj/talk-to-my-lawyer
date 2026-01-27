@@ -48,10 +48,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
 
     // Calculate totals
-    const totalEarned = commissions?.reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-    const totalPaid = commissions?.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-    const pendingAmount = commissions?.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-    const requestedAmount = payoutRequests?.filter(p => p.status === 'pending').reduce((sum, p) => sum + Number(p.amount), 0) || 0
+    const totalEarned = commissions?.reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+    const totalPaid = commissions?.filter((c: any) => c.status === 'paid').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+    const pendingAmount = commissions?.filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+    const requestedAmount = payoutRequests?.filter((p: any) => p.status === 'pending').reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0
 
     return NextResponse.json({
       success: true,
@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
       .eq('employee_id', user.id)
       .eq('status', 'pending')
 
-    const pendingCommissions = commissions?.reduce((sum, c) => sum + Number(c.commission_amount || 0), 0) || 0
-    const pendingRequests = existingRequests?.reduce((sum, r) => sum + Number(r.amount), 0) || 0
+    const pendingCommissions = commissions?.reduce((sum: number, c: any) => sum + Number(c.commission_amount || 0), 0) || 0
+    const pendingRequests = existingRequests?.reduce((sum: number, r: any) => sum + Number(r.amount), 0) || 0
     const availableBalance = pendingCommissions - pendingRequests
 
     if (amount > availableBalance) {
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     // Send email notification to admin about new payout request
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@talk-to-my-lawyer.com'
-    
+
     await queueTemplateEmail(
       'admin-alert',
       adminEmail,

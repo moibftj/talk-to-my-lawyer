@@ -47,16 +47,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate totals
-    const totalSpent = subscriptions?.reduce((sum, sub) => {
+    const totalSpent = subscriptions?.reduce((sum: number, sub: any) => {
       return sum + (Number(sub.price) - Number(sub.discount || 0))
     }, 0) || 0
 
-    const totalDiscounts = subscriptions?.reduce((sum, sub) => {
+    const totalDiscounts = subscriptions?.reduce((sum: number, sub: any) => {
       return sum + Number(sub.discount || 0)
     }, 0) || 0
 
     // Format billing history
-    const billingHistory = subscriptions?.map(sub => ({
+    const billingHistory = subscriptions?.map((sub: any) => ({
       id: sub.id,
       date: sub.created_at,
       description: formatPlanType(sub.plan_type),
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
           totalTransactions: billingHistory.length,
           totalSpent,
           totalDiscounts,
-          activeSubscription: billingHistory.find(h => h.status === 'active') || null
+          activeSubscription: billingHistory.find((h: any) => h.status === 'active') || null
         }
       }
     })

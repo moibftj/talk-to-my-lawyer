@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
     const results: { id: string; success: boolean; error?: string }[] = []
 
     // Status mapping for each action

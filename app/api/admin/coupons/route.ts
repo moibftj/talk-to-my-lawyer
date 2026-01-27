@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const authError = await requireSuperAdminAuth()
     if (authError) return authError
 
-    const supabase = await createClient()
+    const supabase = (await createClient()) as any
 
     // Fetch all employee coupons with usage and commission data
     const { data: coupons, error: couponsError } = await supabase
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     // Build commission totals by employee
     const commissionsByEmployee: Record<string, { total: number; paid: number }> = {}
-    commissions?.forEach(c => {
+    commissions?.forEach((c: any) => {
       if (!c.employee_id) return
       if (!commissionsByEmployee[c.employee_id]) {
         commissionsByEmployee[c.employee_id] = { total: 0, paid: 0 }
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
 
     // Build discount totals by employee
     const discountsByEmployee: Record<string, number> = {}
-    subscriptionsWithDiscount?.forEach(s => {
+    subscriptionsWithDiscount?.forEach((s: any) => {
       if (s.employee_id) {
         if (!discountsByEmployee[s.employee_id]) {
           discountsByEmployee[s.employee_id] = 0
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Enrich coupon data
-    const enrichedCoupons = coupons?.map(coupon => {
+    const enrichedCoupons = coupons?.map((coupon: any) => {
       const employeeCommissions = commissionsByEmployee[coupon.employee_id] || { total: 0, paid: 0 }
       const employeeDiscounts = discountsByEmployee[coupon.employee_id] || 0
 
@@ -113,18 +113,18 @@ export async function GET(request: NextRequest) {
     // Calculate summary stats
     const summary = {
       total_coupons: enrichedCoupons.length,
-      active_coupons: enrichedCoupons.filter(c => c.is_active).length,
-      total_uses: enrichedCoupons.reduce((sum, c) => sum + c.usage_count, 0),
-      total_discount_given: enrichedCoupons.reduce((sum, c) => sum + c.total_discount_given, 0),
-      total_commissions_paid: Object.values(commissionsByEmployee).reduce((sum, c) => sum + c.paid, 0),
-      avg_discount_per_use: enrichedCoupons.reduce((sum, c) => sum + c.usage_count, 0) > 0
-        ? enrichedCoupons.reduce((sum, c) => sum + c.total_discount_given, 0) / enrichedCoupons.reduce((sum, c) => sum + c.usage_count, 0)
+      active_coupons: enrichedCoupons.filter((c: any) => c.is_active).length,
+      total_uses: enrichedCoupons.reduce((sum: number, c: any) => sum + c.usage_count, 0),
+      total_discount_given: enrichedCoupons.reduce((sum: number, c: any) => sum + c.total_discount_given, 0),
+      total_commissions_paid: Object.values(commissionsByEmployee).reduce((sum: number, c) => sum + c.paid, 0),
+      avg_discount_per_use: enrichedCoupons.reduce((sum: number, c: any) => sum + c.usage_count, 0) > 0
+        ? enrichedCoupons.reduce((sum: number, c: any) => sum + c.total_discount_given, 0) / enrichedCoupons.reduce((sum: number, c: any) => sum + c.usage_count, 0)
         : 0
     }
 
     // Top performers (top 10 by usage)
     const topPerformers = [...enrichedCoupons]
-      .sort((a, b) => b.usage_count - a.usage_count)
+      .sort((a: any, b: any) => b.usage_count - a.usage_count)
       .slice(0, 10)
 
     return NextResponse.json({
