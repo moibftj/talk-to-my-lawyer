@@ -2,12 +2,12 @@
 
 Talk-To-My-Lawyer: AI legal letter drafts with **mandatory attorney review**.
 
-Last updated: 2025-01-24
+Last updated: 2026-01-27
 
 ## Non‑negotiables (security + roles)
 
 1. **Only subscribers can generate letters.** Employees and admins must never access letter generation APIs.
-2. **Admin bothh Attorney Admin & Super Admin can review letters, it is mandatory.** No “raw AI” letters reach subscribers.
+2. **Both admin sub-roles (`attorney_admin`, `super_admin`) can review letters; review is mandatory.** No “raw AI” letters reach subscribers.
 3. **Employees never see letter content.** They only see coupon stats + commissions.
 4. **Respect Supabase RLS.** Never disable Row Level Security.
 5. **Do not leak secrets.** Never log env var values.
@@ -78,7 +78,9 @@ export async function POST(request: NextRequest) {
 
 ### Auth
 
+- `POST /api/auth/send-email` — Send an auth email.
 - `POST /api/auth/reset-password` — Send a password reset email.
+- `POST /api/auth/resend-confirmation` — Resend confirmation email.
 - `POST /api/auth/update-password` — Update the user password after reset.
 
 ### Admin auth
@@ -161,6 +163,14 @@ export async function POST(request: NextRequest) {
 
 - `POST /api/cron/process-email-queue` — Process queued emails (cron-secured).
 - `GET /api/cron/process-email-queue` — Health/status for the cron endpoint.
+- `GET /api/cron/health-check` — Cron health check endpoint.
+- `POST /api/cron/daily-analytics` — Daily analytics rollup job.
+- `POST /api/cron/weekly-cleanup` — Weekly cleanup job.
+- `POST /api/cron/cleanup-expired-sessions` — Cleanup expired admin sessions.
+
+### Email (app)
+
+- `POST /api/email/process-queue` — Process email queue items (app endpoint).
 
 ### Stripe
 
