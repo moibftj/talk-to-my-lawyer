@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 - `GET /api/health` — Basic service health check.
 - `GET /api/health/detailed` — Detailed health diagnostics.
 
-## Admin auth
+## Admin auth notes
 
 - Prefer `requireAdminAuth()` from `lib/auth/admin-guard.ts` for admin-only routes.
 - “Admin portal key” is a **3rd factor** for admin login (do not bypass).
