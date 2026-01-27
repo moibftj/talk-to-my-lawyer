@@ -6,13 +6,13 @@ import { format } from 'date-fns'
 
 export default async function CommissionsPage() {
   const { profile } = await getUser()
-  
+
   if (profile.role !== 'employee' && profile.role !== 'admin') {
     redirect('/dashboard/letters')
   }
 
   const supabase = await createClient()
-  
+
   // Get commission records
   const { data: commissions } = await supabase
     .from('commissions')
@@ -28,15 +28,15 @@ export default async function CommissionsPage() {
     .order('created_at', { ascending: false })
 
   // Calculate stats
-  const totalEarned = commissions?.reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-  const pendingAmount = commissions?.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-  const paidAmount = commissions?.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
-  
-  const thisMonth = commissions?.filter(c => {
+  const totalEarned = commissions?.reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+  const pendingAmount = commissions?.filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+  const paidAmount = commissions?.filter((c: any) => c.status === 'paid').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
+
+  const thisMonth = commissions?.filter((c: any) => {
     const date = new Date(c.created_at)
     const now = new Date()
     return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
-  }).reduce((sum, c) => sum + Number(c.commission_amount), 0) || 0
+  }).reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
 
   return (
     <DashboardLayout>
@@ -89,7 +89,7 @@ export default async function CommissionsPage() {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
-              {commissions.map((commission) => (
+              {commissions.map((commission: any) => (
                 <tr key={commission.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     {format(new Date(commission.created_at), 'MMM d, yyyy')}
@@ -104,9 +104,8 @@ export default async function CommissionsPage() {
                     ${Number(commission.commission_amount).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      commission.status === 'paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
-                    }`}>
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${commission.status === 'paid' ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                      }`}>
                       {commission.status}
                     </span>
                   </td>
