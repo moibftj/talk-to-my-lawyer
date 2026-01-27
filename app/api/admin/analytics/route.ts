@@ -19,16 +19,17 @@ export async function GET(request: NextRequest) {
     const daysBack = parseInt(searchParams.get('days') || '30', 10)
     const monthsBack = parseInt(searchParams.get('months') || '12', 10)
 
+    const rpc = supabase.rpc as any
     const [
       dashboardStats,
       letterStats,
       subscriptionAnalytics,
       revenueSummary
     ] = await Promise.all([
-      supabase.rpc('get_admin_dashboard_stats'),
-      supabase.rpc('get_letter_statistics', { days_back: daysBack }),
-      supabase.rpc('get_subscription_analytics'),
-      supabase.rpc('get_revenue_summary', { months_back: monthsBack })
+      rpc('get_admin_dashboard_stats'),
+      rpc('get_letter_statistics', { days_back: daysBack }),
+      rpc('get_subscription_analytics'),
+      rpc('get_revenue_summary', { months_back: monthsBack })
     ])
 
     if (dashboardStats.error) {
