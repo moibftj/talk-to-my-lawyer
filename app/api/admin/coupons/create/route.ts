@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient()
+    const couponsTable = (supabase as any).from('employee_coupons')
 
     // Generate or validate coupon code
     const couponCode = code?.toUpperCase().trim() || generateCouponCode()
 
     // Check if code already exists
-    const { data: existing } = await supabase
-      .from('employee_coupons')
+    const { data: existing } = await couponsTable
       .select('code')
       .eq('code', couponCode)
       .single()
@@ -65,8 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the promo coupon (employee_id is NULL for promo codes)
-    const { data: coupon, error: insertError } = await supabase
-      .from('employee_coupons')
+    const { data: coupon, error: insertError } = await couponsTable
       .insert({
         employee_id: null, // NULL indicates this is a promo code, not employee coupon
         code: couponCode,
@@ -136,8 +135,8 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = await createClient()
 
-    const { data, error } = await supabase
-      .from('employee_coupons')
+    const couponsTable = (supabase as any).from('employee_coupons')
+    const { data, error } = await couponsTable
       .update({ is_active: isActive })
       .eq('id', couponId)
       .select()
