@@ -35,6 +35,7 @@ Last updated: 2026-01-27
 - Subscriber UI: `app/dashboard/**`
 - Admin portals: `app/secure-admin-gateway/**` (super admin) and `app/attorney-portal/**`
 - Server Supabase client: `lib/supabase/server.ts`
+- Service role Supabase client: `lib/supabase/admin.ts`
 - Client Supabase client: `lib/supabase/client.ts`
 - Shared API responses/errors: `lib/api/api-error-handler.ts`
 - Rate limiting: `lib/rate-limit-redis.ts`
@@ -172,6 +173,10 @@ export async function POST(request: NextRequest) {
 
 - `POST /api/email/process-queue` — Process email queue items (app endpoint).
 
+### Test
+
+- `POST /api/test/create-accounts` — Create test accounts (requires test mode).
+
 ### Stripe
 
 - `POST /api/stripe/webhook` — Handle Stripe webhook events.
@@ -188,18 +193,29 @@ export async function POST(request: NextRequest) {
 
 ## Environment variables (minimum)
 
+Required by `pnpm validate-env`:
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - OpenAI: `OPENAI_API_KEY`
 - Stripe: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+- Email: `RESEND_API_KEY`
 - Admin: `ADMIN_PORTAL_KEY`
 - Cron: `CRON_SECRET`
-- Email (at least one provider): `RESEND_API_KEY` + `EMAIL_FROM`
+
+Also required for full functionality:
+- Supabase service role (server-only): `SUPABASE_SERVICE_ROLE_KEY`
+- Stripe publishable key used in client code: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- Site/app URL (used in email links): `NEXT_PUBLIC_SITE_URL` (preferred) or `NEXT_PUBLIC_APP_URL` (legacy)
+- Email sender: `EMAIL_FROM` (+ optional `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`)
+- Test mode toggles: `ENABLE_TEST_MODE`, `NEXT_PUBLIC_TEST_MODE`
+
+Note: Stripe publishable key is currently read from both `STRIPE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in different modules. Set both until unified.
+Note: Rate limiting uses Upstash envs `KV_REST_API_URL` and `KV_REST_API_TOKEN` (see `lib/rate-limit-redis.ts`).
 
 ## Email (Resend)
 
 - Templates live in `lib/email/templates.ts` and are keyed by `EmailTemplate` (see `lib/email/types.ts`).
 - Use `sendTemplateEmail()` / `sendEmail()` from `lib/email/service.ts` for direct sends.
-- For reliability (retries + persistence), enqueue via `lib/email/queue.ts` and process via `POST /api/cron/process-email-queue` (or the super-admin tools under `/api/admin/email-queue`).
+- For reliability (retries + persistence), enqueue via `lib/email/queue.ts` and process via `POST /api/email/process-queue` (cron endpoints proxy to this). Admin tools live under `/api/admin/email-queue`.
 
 **Send a template (direct):**
 
@@ -231,6 +247,12 @@ pnpm dev
 pnpm lint
 CI=1 pnpm build
 pnpm validate-env
+pnpm db:migrate
+pnpm db:verify
+pnpm audit:security
+pnpm precommit
+pnpm test
+pnpm test:run
 ```
 
 ## Pointers (use these instead of duplicating details here)
