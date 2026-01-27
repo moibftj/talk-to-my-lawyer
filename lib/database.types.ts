@@ -1,3 +1,11 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 export type UserRole = "subscriber" | "employee" | "admin";
 export type AdminSubRole = "super_admin" | "attorney_admin";
 
@@ -617,6 +625,28 @@ export interface Database {
       letter_status: LetterStatus;
       subscription_status: SubscriptionStatus;
       commission_status: CommissionStatus;
+    };
+    Functions: {
+      get_admin_dashboard_stats: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      get_letter_statistics: {
+        Args: {
+          days_back?: number;
+        };
+        Returns: Json;
+      };
+      get_subscription_analytics: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      get_revenue_summary: {
+        Args: {
+          months_back?: number;
+        };
+        Returns: Json;
+      };
     };
   };
 }
