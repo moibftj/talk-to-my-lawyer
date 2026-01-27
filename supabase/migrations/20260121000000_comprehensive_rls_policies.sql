@@ -235,7 +235,7 @@ CREATE POLICY "letters_subscriber_delete"
   USING (
     user_id = (SELECT auth.uid()) AND
     EXISTS (SELECT 1 FROM public.profiles WHERE id = (SELECT auth.uid()) AND role = 'subscriber') AND
-    status IN ('draft', 'pending')  -- Can only delete drafts/pending
+    status IN ('draft', 'pending_review')  -- Can only delete drafts/pending_review
   );
 
 -- Attorney Admins: View all letters + update for review
