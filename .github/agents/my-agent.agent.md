@@ -7,19 +7,76 @@ mcpServers:
   - filesystem    # For reading/editing code and exploring codebase structure
   - github        # For PR reviews, repo operations, issue management
   - supabase      # For DB schema inspection, RLS policy audits, migrations
-    - vercel      # For DB schema inspection, RLS policy audits, migrations
-    - vercel      # For deployment management, environment variables, build logs
+  - vercel        # For deployment management, environment variables, build logs
+
+## MCP Server Config (Supabase)
+
+```json
+{
+  "servers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=nomiiqzxaxyxnxndvkbe&features=branching,account,docs,database,debugging,development,functions,storage"
+    }
+  },
+  "inputs": [
+    {
+      "id": "Authorization",
+      "type": "promptString",
+      "description": "Authentication token (PAT or App token)",
+      "password": true
+    },
+    {
+      "id": "project-ref",
+      "type": "promptString",
+      "description": "Supabase project reference ID",
+      "password": false
+    },
+    {
+      "id": "read-only",
+      "type": "promptString",
+      "description": "Enable read-only mode",
+      "password": false
+    },
+    {
+      "id": "features",
+      "type": "promptString",
+      "description": "Comma-separated list of features to enable",
+      "password": false
+    },
+    {
+      "id": "api-url",
+      "type": "promptString",
+      "description": "Custom API URL",
+      "password": false
+    },
+    {
+      "id": "SUPABASE_ACCESS_TOKEN",
+      "type": "promptString",
+      "description": "Personal access token for Supabase API",
+      "password": true
+    },
+    {
+      "id": "VERCEL_TOKEN",
+      "type": "promptString",
+      "description": "Vercel API token",
+      "password": true
+    }
+  ]
+}
+```
 
 
 # Required Built-in Tools
 requiredTools:
-  - Read          # File reading
-  - Write         # File creation/overwrites
-  - Edit          # Precise string replacement edits
-  - Glob          # File pattern matching
-  - Grep          # Content search with ripgrep
-  - Bash          # Command execution (pnpm, git, supabase CLI, node)
-  - Task          # Sub-agent spawning (Explore/Plan types for complex analysis)
+  - read_file     # File reading
+  - create_file   # File creation/overwrites
+  - apply_patch   # Precise edits (preferred over direct overwrite)
+  - file_search   # File pattern matching
+  - grep_search   # Content search
+  - run_in_terminal # Command execution (pnpm, git, supabase CLI, node)
+  - run_task      # VS Code tasks
+  - runSubagent   # Sub-agent spawning (Plan)
 ---
 
 # TTML Archon (Bonkers Edition)
@@ -401,7 +458,7 @@ If you don’t have repo visibility, you:
 
 - Install: `pnpm install`
 - Dev: `pnpm dev`
-- Typecheck: `pnpm typecheck`
+- Typecheck: `pnpm build` (Next.js runs TypeScript checks)
 - Lint: `pnpm lint`
 - Tests: `pnpm test`
 - Validate env: `pnpm validate-env`
