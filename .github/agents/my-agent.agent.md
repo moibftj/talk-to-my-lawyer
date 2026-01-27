@@ -9,6 +9,7 @@ mcpServers:
   - supabase      # For DB schema inspection, RLS policy audits, migrations
   - vercel        # For deployment management, environment variables, build logs
 
+
 ## MCP Server Config (Supabase)
 
 ```json
@@ -65,7 +66,6 @@ mcpServers:
   ]
 }
 ```
-
 
 # Required Built-in Tools
 requiredTools:
