@@ -8,7 +8,11 @@ type AddViewRelationships<T> = T extends { Row: unknown }
     ? T & { Relationships: [] }
     : T
 
-type SchemaWithRelationships<S> = {
+type SchemaWithRelationships<S extends {
+    Tables: Record<string, unknown>
+    Views: Record<string, unknown>
+    Functions: Record<string, unknown>
+}> = {
     Tables: { [K in keyof S['Tables']]: AddRelationships<S['Tables'][K]> }
     Views: { [K in keyof S['Views']]: AddViewRelationships<S['Views'][K]> }
     Functions: S['Functions']
