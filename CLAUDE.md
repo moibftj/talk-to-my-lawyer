@@ -21,7 +21,20 @@ Last updated: 2026-01-27
 - Stripe (payments)
 - Resend (email) + email queue
 - Upstash Redis (rate limiting; falls back to in-memory)
+- n8n workflow for letter generation monitoring + alerts
 - OpenTelemetry tracing
+- Vercel (hosting + deployment)
+- pnpm (package management)
+- Zod (validation)
+- Playwright + Vitest (testing)
+- Husky (pre-commit hooks)
+- Prisma (optional, for certain DB operations)
+- Claude (architecture planning agent)
+- ESLint + Prettier (linting/formatting)
+- Commitlint (commit message standards)
+
+
+
 
 ## Key flows (mental model)
 
