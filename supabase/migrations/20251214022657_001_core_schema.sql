@@ -66,31 +66,26 @@
 */
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 DO $$ BEGIN
     CREATE TYPE user_role AS ENUM ('subscriber', 'employee', 'admin');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
-
 DO $$ BEGIN
     CREATE TYPE letter_status AS ENUM ('draft', 'generating', 'pending_review', 'under_review', 'approved', 'rejected', 'completed', 'failed');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
-
 DO $$ BEGIN
     CREATE TYPE subscription_status AS ENUM ('active', 'canceled', 'past_due', 'trialing');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
-
 DO $$ BEGIN
     CREATE TYPE commission_status AS ENUM ('pending', 'paid');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
-
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT NOT NULL UNIQUE,
@@ -103,7 +98,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS employee_coupons (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     employee_id UUID NOT NULL UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
@@ -114,7 +108,6 @@ CREATE TABLE IF NOT EXISTS employee_coupons (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -134,7 +127,6 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS commissions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     employee_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -146,7 +138,6 @@ CREATE TABLE IF NOT EXISTS commissions (
     paid_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE TABLE IF NOT EXISTS letters (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -166,7 +157,6 @@ CREATE TABLE IF NOT EXISTS letters (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_profiles_role ON profiles(role);
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_stripe_customer ON profiles(stripe_customer_id);
@@ -180,7 +170,6 @@ CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_plan_type ON subscriptions(plan_type);
-
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE employee_coupons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;

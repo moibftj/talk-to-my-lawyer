@@ -33,20 +33,16 @@ CREATE TABLE IF NOT EXISTS letter_audit_trail (
     metadata JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_audit_letter ON letter_audit_trail(letter_id);
 CREATE INDEX IF NOT EXISTS idx_audit_performed_by ON letter_audit_trail(performed_by);
 CREATE INDEX IF NOT EXISTS idx_audit_created_at ON letter_audit_trail(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_action ON letter_audit_trail(action);
-
 ALTER TABLE letter_audit_trail ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Admins view all audit logs" ON letter_audit_trail;
 CREATE POLICY "Admins view all audit logs"
     ON letter_audit_trail FOR SELECT
     TO authenticated
     USING (public.get_user_role() = 'admin');
-
 DROP POLICY IF EXISTS "Users view own letter audit" ON letter_audit_trail;
 CREATE POLICY "Users view own letter audit"
     ON letter_audit_trail FOR SELECT
@@ -56,13 +52,11 @@ CREATE POLICY "Users view own letter audit"
             SELECT id FROM public.letters WHERE user_id = auth.uid()
         )
     );
-
 DROP POLICY IF EXISTS "System can insert audit logs" ON letter_audit_trail;
 CREATE POLICY "System can insert audit logs"
     ON letter_audit_trail FOR INSERT
     TO authenticated
     WITH CHECK (true);
-
 CREATE OR REPLACE FUNCTION public.log_letter_audit(
     p_letter_id UUID,
     p_action TEXT,
@@ -92,5 +86,4 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 GRANT EXECUTE ON FUNCTION public.log_letter_audit TO authenticated;

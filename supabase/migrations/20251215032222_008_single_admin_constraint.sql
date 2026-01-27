@@ -24,7 +24,6 @@ BEGIN
         EXECUTE 'CREATE UNIQUE INDEX IF NOT EXISTS one_admin_only ON public.profiles ((TRUE)) WHERE role = ''admin''';
     END IF;
 END $$;
-
 -- Function to check if an admin already exists
 CREATE OR REPLACE FUNCTION public.admin_exists()
 RETURNS BOOLEAN AS $$
@@ -34,7 +33,6 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Function to get the current admin user ID
 CREATE OR REPLACE FUNCTION public.get_admin_user_id()
 RETURNS UUID AS $$
@@ -44,7 +42,6 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Trigger function to prevent multiple admins
 CREATE OR REPLACE FUNCTION public.enforce_single_admin()
 RETURNS TRIGGER AS $$
@@ -68,10 +65,8 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Drop existing trigger if it exists
 DROP TRIGGER IF EXISTS enforce_single_admin_trigger ON public.profiles;
-
 -- Create trigger to enforce single admin on insert and update (only if safe)
 DO $$
 BEGIN
@@ -82,11 +77,9 @@ BEGIN
             EXECUTE FUNCTION public.enforce_single_admin()';
     END IF;
 END $$;
-
 -- Grant execute permissions
 GRANT EXECUTE ON FUNCTION public.admin_exists TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_admin_user_id TO authenticated;
-
 -- Add comments
 DO $$
 BEGIN

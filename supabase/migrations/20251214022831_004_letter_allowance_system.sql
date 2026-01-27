@@ -51,7 +51,6 @@ BEGIN
         false;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.deduct_letter_allowance(UUID);
 CREATE OR REPLACE FUNCTION public.deduct_letter_allowance(u_id UUID)
 RETURNS BOOLEAN AS $$
@@ -82,7 +81,6 @@ BEGIN
     RETURN true;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.add_letter_allowances(UUID, TEXT);
 CREATE OR REPLACE FUNCTION public.add_letter_allowances(sub_id UUID, plan TEXT)
 RETURNS VOID AS $$
@@ -107,7 +105,6 @@ BEGIN
     WHERE id = sub_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.reset_monthly_allowances();
 CREATE OR REPLACE FUNCTION public.reset_monthly_allowances()
 RETURNS VOID AS $$
@@ -130,7 +127,6 @@ BEGIN
       AND DATE_TRUNC('month', last_reset_at) < DATE_TRUNC('month', NOW());
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.count_user_letters(UUID);
 CREATE OR REPLACE FUNCTION public.count_user_letters(u_id UUID)
 RETURNS INTEGER AS $$
@@ -144,7 +140,6 @@ BEGIN
     RETURN letter_count;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 GRANT EXECUTE ON FUNCTION public.check_letter_allowance TO authenticated;
 GRANT EXECUTE ON FUNCTION public.deduct_letter_allowance TO authenticated;
 GRANT EXECUTE ON FUNCTION public.count_user_letters TO authenticated;

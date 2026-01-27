@@ -49,39 +49,32 @@ CREATE TABLE IF NOT EXISTS coupon_usage (
     amount_after NUMERIC(10,2) CHECK (amount_after >= 0),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_coupon_usage_user ON coupon_usage(user_id);
 CREATE INDEX IF NOT EXISTS idx_coupon_usage_code ON coupon_usage(coupon_code);
 CREATE INDEX IF NOT EXISTS idx_coupon_usage_employee ON coupon_usage(employee_id);
 CREATE INDEX IF NOT EXISTS idx_coupon_usage_subscription ON coupon_usage(subscription_id);
 CREATE INDEX IF NOT EXISTS idx_coupon_usage_created_at ON coupon_usage(created_at DESC);
-
 ALTER TABLE coupon_usage ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Users can view own coupon usage" ON coupon_usage;
 CREATE POLICY "Users can view own coupon usage"
     ON coupon_usage FOR SELECT
     TO authenticated
     USING (auth.uid() = user_id);
-
 DROP POLICY IF EXISTS "Employees can view their coupon usage" ON coupon_usage;
 CREATE POLICY "Employees can view their coupon usage"
     ON coupon_usage FOR SELECT
     TO authenticated
     USING (auth.uid() = employee_id);
-
 DROP POLICY IF EXISTS "Admins can view all coupon usage" ON coupon_usage;
 CREATE POLICY "Admins can view all coupon usage"
     ON coupon_usage FOR SELECT
     TO authenticated
     USING (public.get_user_role() = 'admin');
-
 DROP POLICY IF EXISTS "System can insert coupon usage" ON coupon_usage;
 CREATE POLICY "System can insert coupon usage"
     ON coupon_usage FOR INSERT
     TO authenticated
     WITH CHECK (true);
-
 COMMENT ON TABLE coupon_usage IS 'Tracks coupon code redemptions during checkout for analytics and commission calculation';
 COMMENT ON COLUMN coupon_usage.user_id IS 'User who used the coupon';
 COMMENT ON COLUMN coupon_usage.coupon_code IS 'Coupon code that was applied (e.g., TALK3, employee codes)';
@@ -90,7 +83,6 @@ COMMENT ON COLUMN coupon_usage.subscription_id IS 'Subscription created with thi
 COMMENT ON COLUMN coupon_usage.discount_percent IS 'Discount percentage applied (0-100)';
 COMMENT ON COLUMN coupon_usage.amount_before IS 'Original price before discount';
 COMMENT ON COLUMN coupon_usage.amount_after IS 'Final price after discount';
-
 CREATE TABLE IF NOT EXISTS security_config (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     key TEXT NOT NULL UNIQUE,
@@ -99,22 +91,18 @@ CREATE TABLE IF NOT EXISTS security_config (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 ALTER TABLE security_config ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Admins only access security config" ON security_config;
 CREATE POLICY "Admins only access security config"
     ON security_config FOR ALL
     TO authenticated
     USING (public.get_user_role() = 'admin');
-
 INSERT INTO security_config (key, value, description) VALUES
     ('max_letter_generation_per_hour', '10', 'Maximum letters a user can generate per hour'),
     ('max_ai_improvements_per_letter', '5', 'Maximum AI improvement requests per letter'),
     ('session_timeout_minutes', '60', 'Session timeout in minutes'),
     ('require_email_verification', 'false', 'Require email verification before account activation')
 ON CONFLICT (key) DO NOTHING;
-
 CREATE TABLE IF NOT EXISTS security_audit_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES profiles(id),
@@ -124,25 +112,20 @@ CREATE TABLE IF NOT EXISTS security_audit_log (
     details JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 CREATE INDEX IF NOT EXISTS idx_security_audit_user ON security_audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_security_audit_event ON security_audit_log(event_type);
 CREATE INDEX IF NOT EXISTS idx_security_audit_created ON security_audit_log(created_at DESC);
-
 ALTER TABLE security_audit_log ENABLE ROW LEVEL SECURITY;
-
 DROP POLICY IF EXISTS "Admins view security audit log" ON security_audit_log;
 CREATE POLICY "Admins view security audit log"
     ON security_audit_log FOR SELECT
     TO authenticated
     USING (public.get_user_role() = 'admin');
-
 DROP POLICY IF EXISTS "System can insert security events" ON security_audit_log;
 CREATE POLICY "System can insert security events"
     ON security_audit_log FOR INSERT
     TO authenticated
     WITH CHECK (true);
-
 DROP FUNCTION IF EXISTS public.log_security_event(UUID, TEXT, INET, TEXT, JSONB);
 CREATE OR REPLACE FUNCTION public.log_security_event(
     p_user_id UUID,
@@ -168,7 +151,6 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.detect_suspicious_activity(UUID, TEXT);
 CREATE OR REPLACE FUNCTION public.detect_suspicious_activity(p_user_id UUID, action_type TEXT)
 RETURNS BOOLEAN AS $$
@@ -185,6 +167,5 @@ BEGIN
     RETURN action_count > 20;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 GRANT EXECUTE ON FUNCTION public.log_security_event TO authenticated;
 GRANT EXECUTE ON FUNCTION public.detect_suspicious_activity TO authenticated;

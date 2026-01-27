@@ -41,7 +41,6 @@ BEGIN
         COALESCE((SELECT SUM(commission_amount) FROM public.commissions WHERE status = 'pending'), 0)::NUMERIC as pending_commissions;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.get_letter_statistics(INTEGER);
 CREATE OR REPLACE FUNCTION public.get_letter_statistics(days_back INTEGER DEFAULT 30)
 RETURNS TABLE(
@@ -69,7 +68,6 @@ BEGIN
         ), 0)::NUMERIC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.get_subscription_analytics();
 CREATE OR REPLACE FUNCTION public.get_subscription_analytics()
 RETURNS TABLE(
@@ -91,7 +89,6 @@ BEGIN
         COALESCE((SELECT AVG(COALESCE(credits_remaining, remaining_letters, 0))::NUMERIC(10,2) FROM public.subscriptions WHERE status = 'active'), 0)::NUMERIC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.get_revenue_summary(INTEGER);
 CREATE OR REPLACE FUNCTION public.get_revenue_summary(months_back INTEGER DEFAULT 12)
 RETURNS TABLE(
@@ -123,7 +120,6 @@ BEGIN
     ORDER BY m.month_start DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.cleanup_failed_letters(INTEGER);
 CREATE OR REPLACE FUNCTION public.cleanup_failed_letters(older_than_days INTEGER DEFAULT 30)
 RETURNS INTEGER AS $$
@@ -138,7 +134,6 @@ BEGIN
     RETURN deleted_count;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP FUNCTION IF EXISTS public.get_user_activity_summary(UUID);
 CREATE OR REPLACE FUNCTION public.get_user_activity_summary(u_id UUID)
 RETURNS TABLE(
@@ -160,7 +155,6 @@ BEGIN
         (SELECT p.created_at FROM public.profiles p WHERE p.id = u_id)::TIMESTAMPTZ;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 CREATE INDEX IF NOT EXISTS idx_letters_user_status ON public.letters(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_letters_created_status ON public.letters(created_at DESC, status);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user_status ON public.subscriptions(user_id, status);
@@ -168,7 +162,6 @@ CREATE INDEX IF NOT EXISTS idx_commissions_employee_status ON public.commissions
 CREATE INDEX IF NOT EXISTS idx_letters_pending ON public.letters(created_at DESC) WHERE status IN ('pending_review', 'under_review');
 CREATE INDEX IF NOT EXISTS idx_subscriptions_active ON public.subscriptions(user_id) WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS idx_commissions_pending ON public.commissions(employee_id) WHERE status = 'pending';
-
 CREATE OR REPLACE VIEW public.active_subscriptions_view AS
 SELECT 
     s.id,
@@ -185,7 +178,6 @@ SELECT
 FROM public.subscriptions s
 JOIN public.profiles p ON s.user_id = p.id
 WHERE s.status = 'active';
-
 CREATE OR REPLACE VIEW public.pending_review_letters_view AS
 SELECT 
     l.id,
@@ -202,13 +194,11 @@ FROM public.letters l
 JOIN public.profiles p ON l.user_id = p.id
 WHERE l.status IN ('pending_review', 'under_review')
 ORDER BY l.created_at ASC;
-
 GRANT EXECUTE ON FUNCTION public.get_admin_dashboard_stats TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_letter_statistics TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_subscription_analytics TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_revenue_summary TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_activity_summary TO authenticated;
-
 COMMENT ON FUNCTION public.get_admin_dashboard_stats IS 'Returns key metrics for the admin dashboard including user counts, pending letters, and revenue';
 COMMENT ON FUNCTION public.get_letter_statistics IS 'Returns letter generation statistics for the specified time period';
 COMMENT ON FUNCTION public.get_subscription_analytics IS 'Returns subscription metrics including active plans and credit utilization';

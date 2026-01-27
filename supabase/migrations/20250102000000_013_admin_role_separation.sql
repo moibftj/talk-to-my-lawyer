@@ -20,14 +20,11 @@ DO $$ BEGIN
 EXCEPTION
   WHEN duplicate_object THEN null;
 END $$;
-
 -- Add admin_sub_role column to profiles table (nullable - only admin users should have this populated)
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS admin_sub_role admin_sub_role;
-
 -- Add comment for documentation
 COMMENT ON COLUMN profiles.admin_sub_role IS 'Sub-role for admin users only: super_admin (full access), attorney_admin (letter review only). NULL for subscribers/employees.';
-
 -- Create helper function to get current user's admin sub-role
 CREATE OR REPLACE FUNCTION public.get_admin_sub_role()
 RETURNS admin_sub_role AS $$
@@ -54,7 +51,6 @@ BEGIN
   RETURN admin_sub;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Create helper function to get admin sub-role by user ID (for server-side checks)
 CREATE OR REPLACE FUNCTION public.get_admin_sub_role_by_id(user_id UUID)
 RETURNS admin_sub_role AS $$
@@ -81,7 +77,6 @@ BEGIN
   RETURN admin_sub;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Create helper function to check if user is system admin
 CREATE OR REPLACE FUNCTION public.is_super_admin()
 RETURNS BOOLEAN AS $$
@@ -95,7 +90,6 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Create helper function to check if user is attorney admin
 CREATE OR REPLACE FUNCTION public.is_attorney_admin()
 RETURNS BOOLEAN AS $$
@@ -109,7 +103,6 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Create helper function to check if user can review letters (both system and attorney admins can)
 CREATE OR REPLACE FUNCTION public.can_review_letters()
 RETURNS BOOLEAN AS $$
@@ -122,13 +115,11 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 -- Default existing admins to super_admin (if they don't have a sub-role set)
 UPDATE profiles
 SET admin_sub_role = 'super_admin'
 WHERE role = 'admin'::user_role
 AND admin_sub_role IS NULL;
-
 -- Add check constraint: only admin users can have non-null admin_sub_role (idempotent)
 DO $$
 BEGIN
@@ -146,14 +137,12 @@ BEGIN
     );
   END IF;
 END $$;
-
 -- Grant execute on helper functions
 GRANT EXECUTE ON FUNCTION public.get_admin_sub_role TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_admin_sub_role_by_id(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_super_admin TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_attorney_admin TO authenticated;
 GRANT EXECUTE ON FUNCTION public.can_review_letters TO authenticated;
-
 -- Add comments
 COMMENT ON FUNCTION public.get_admin_sub_role IS 'Returns the current admin user''s sub-role (super_admin or attorney_admin)';
 COMMENT ON FUNCTION public.get_admin_sub_role_by_id IS 'Returns the admin sub-role for a specific user ID';

@@ -43,12 +43,10 @@ EXCEPTION
         RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
 CREATE OR REPLACE FUNCTION public.create_employee_coupon()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -65,13 +63,11 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 DROP TRIGGER IF EXISTS trigger_create_employee_coupon ON profiles;
 CREATE TRIGGER trigger_create_employee_coupon
     AFTER INSERT ON profiles
     FOR EACH ROW
     EXECUTE FUNCTION public.create_employee_coupon();
-
 CREATE OR REPLACE FUNCTION public.validate_coupon(coupon_code TEXT)
 RETURNS TABLE(
     is_valid BOOLEAN,
@@ -99,7 +95,6 @@ BEGIN
         'Coupon valid'::TEXT;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 CREATE OR REPLACE FUNCTION public.increment_usage(row_id UUID)
 RETURNS INTEGER AS $$
 DECLARE
@@ -114,7 +109,6 @@ BEGIN
     RETURN COALESCE(current_count, 0);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 CREATE OR REPLACE FUNCTION public.get_employee_coupon(p_employee_id UUID)
 RETURNS TABLE (
     id UUID,
@@ -139,7 +133,6 @@ BEGIN
     LIMIT 1;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 CREATE OR REPLACE FUNCTION public.get_commission_summary(emp_id UUID)
 RETURNS TABLE(
     total_earned NUMERIC,
@@ -158,7 +151,6 @@ BEGIN
     WHERE c.employee_id = emp_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
 GRANT EXECUTE ON FUNCTION public.validate_coupon TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_employee_coupon TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_commission_summary TO authenticated;

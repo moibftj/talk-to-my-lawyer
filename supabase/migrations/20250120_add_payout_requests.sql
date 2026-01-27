@@ -16,27 +16,22 @@ CREATE TABLE IF NOT EXISTS payout_requests (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_payout_requests_employee_id ON payout_requests(employee_id);
 CREATE INDEX IF NOT EXISTS idx_payout_requests_status ON payout_requests(status);
 CREATE INDEX IF NOT EXISTS idx_payout_requests_created_at ON payout_requests(created_at DESC);
-
 -- Add RLS policies
 ALTER TABLE payout_requests ENABLE ROW LEVEL SECURITY;
-
 -- Employees can view their own payout requests
 DROP POLICY IF EXISTS "Employees can view own payout requests" ON payout_requests;
 CREATE POLICY "Employees can view own payout requests"
   ON payout_requests FOR SELECT
   USING (auth.uid() = employee_id);
-
 -- Employees can create payout requests
 DROP POLICY IF EXISTS "Employees can create payout requests" ON payout_requests;
 CREATE POLICY "Employees can create payout requests"
   ON payout_requests FOR INSERT
   WITH CHECK (auth.uid() = employee_id);
-
 -- Add draft_metadata column to letters table for auto-save feature
 DO $$
 BEGIN
@@ -45,7 +40,6 @@ BEGIN
     ALTER TABLE letters ADD COLUMN draft_metadata JSONB DEFAULT NULL;
   END IF;
 END $$;
-
 -- Add description column to employee_coupons for promo codes
 DO $$
 BEGIN
@@ -54,7 +48,6 @@ BEGIN
     ALTER TABLE employee_coupons ADD COLUMN description TEXT;
   END IF;
 END $$;
-
 -- Add max_uses column to employee_coupons
 DO $$
 BEGIN
@@ -63,7 +56,6 @@ BEGIN
     ALTER TABLE employee_coupons ADD COLUMN max_uses INTEGER DEFAULT NULL;
   END IF;
 END $$;
-
 -- Add expires_at column to employee_coupons
 DO $$
 BEGIN
@@ -72,7 +64,6 @@ BEGIN
     ALTER TABLE employee_coupons ADD COLUMN expires_at TIMESTAMPTZ DEFAULT NULL;
   END IF;
 END $$;
-
 -- Function to process payout (admin only)
 CREATE OR REPLACE FUNCTION process_payout(
   p_payout_id UUID,
@@ -134,5 +125,4 @@ BEGIN
   RETURN v_result;
 END;
 $$;
-
 COMMENT ON TABLE payout_requests IS 'Employee payout/withdrawal requests for commission earnings';
