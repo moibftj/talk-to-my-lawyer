@@ -307,6 +307,10 @@ DROP POLICY IF EXISTS "Users can view own coupon usage" ON public.coupon_usage;
 DROP POLICY IF EXISTS "Employees can view their coupon usage" ON public.coupon_usage;
 DROP POLICY IF EXISTS "Admins can view all coupon usage" ON public.coupon_usage;
 DROP POLICY IF EXISTS "System can insert coupon usage" ON public.coupon_usage;
+DROP POLICY IF EXISTS "coupon_usage_user_select" ON public.coupon_usage;
+DROP POLICY IF EXISTS "coupon_usage_employee_select" ON public.coupon_usage;
+DROP POLICY IF EXISTS "coupon_usage_admin_select" ON public.coupon_usage;
+DROP POLICY IF EXISTS "coupon_usage_service_insert" ON public.coupon_usage;
 
 CREATE POLICY "coupon_usage_user_select"
   ON public.coupon_usage FOR SELECT
