@@ -16,8 +16,8 @@ type SchemaWithRelationships<S extends {
     Tables: { [K in keyof S['Tables']]: AddRelationships<S['Tables'][K]> }
     Views: { [K in keyof S['Views']]: AddViewRelationships<S['Views'][K]> }
     Functions: S['Functions']
-    Enums: S extends { Enums: infer E } ? E : {}
-    CompositeTypes: S extends { CompositeTypes: infer C } ? C : {}
+    Enums: S extends { Enums: infer E } ? E : Record<string, never>
+    CompositeTypes: S extends { CompositeTypes: infer C } ? C : Record<string, never>
 }
 
 export type DatabaseWithRelationships = {
