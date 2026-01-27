@@ -33,9 +33,6 @@ Last updated: 2026-01-27
 - ESLint + Prettier (linting/formatting)
 - Commitlint (commit message standards)
 
-
-
-
 ## Key flows (mental model)
 
 - **Letter lifecycle**: `draft` → `generating` → `pending_review` → `under_review` → `approved|rejected` → `completed|failed`
