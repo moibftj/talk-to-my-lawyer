@@ -6,13 +6,13 @@ import { CouponInsightsCard } from '@/components/coupon-insights-card'
 
 export default async function CouponsPage() {
   const { profile } = await getUser()
-  
+
   if (profile.role !== 'employee' && profile.role !== 'admin') {
     redirect('/dashboard/letters')
   }
 
   const supabase = await createClient()
-  
+
   const { data: coupon } = await supabase
     .from('employee_coupons')
     .select('*')
@@ -30,8 +30,8 @@ export default async function CouponsPage() {
     .eq('employee_id', profile.id)
 
   const totalRedemptions = usageStats?.length || 0
-  const totalRevenue = usageStats?.reduce((sum, usage) => sum + Number(usage.amount_after || 0), 0) || 0
-  const totalCommission = commissions?.reduce((sum, c) => sum + Number(c.commission_amount || 0), 0) || 0
+  const totalRevenue = usageStats?.reduce((sum: number, usage: any) => sum + Number(usage.amount_after || 0), 0) || 0
+  const totalCommission = commissions?.reduce((sum: number, c: any) => sum + Number(c.commission_amount || 0), 0) || 0
   const totalPoints = commissions?.length || 0 // 1 point per commission
 
   return (
