@@ -9,28 +9,28 @@ import { format } from 'date-fns'
 
 export default async function MyLettersPage() {
   const { profile } = await getUser()
-  
+
   if (profile.role === 'employee') {
     redirect('/dashboard/commissions')
   }
 
   const supabase = await createClient()
-  
+
   const query = supabase
     .from('letters')
     .select('*')
     .order('created_at', { ascending: false })
-  
+
   if (profile.role === 'subscriber') {
     query.eq('user_id', profile.id)
   } else if (profile.role === 'admin') {
     // Admins see all letters
   }
-  
+
   const { data: letters } = await query
 
-  const approvedLetters = (letters || []).filter(l => l.status === 'approved')
-  const inProgressLetters = (letters || []).filter(l => l.status !== 'approved')
+  const approvedLetters = (letters || []).filter((l: any) => l.status === 'approved')
+  const inProgressLetters = (letters || []).filter((l: any) => l.status !== 'approved')
 
   const statusColors: Record<string, string> = {
     'draft': 'bg-muted text-muted-foreground',
@@ -80,7 +80,7 @@ export default async function MyLettersPage() {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
-              {letters.map((letter) => (
+              {letters.map((letter: any) => (
                 <tr key={letter.id} className="hover:bg-muted/30">
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium">{letter.title}</div>
@@ -126,7 +126,7 @@ export default async function MyLettersPage() {
       {letters && letters.length > 0 ? (
         <>
           <LetterTable letters={approvedLetters} title="My Approved Letters" />
-          
+
           {inProgressLetters.length > 0 && (
             <LetterTable letters={inProgressLetters} title="In Progress / Under Review" />
           )}
