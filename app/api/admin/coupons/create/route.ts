@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log admin action
-    await supabase.from('admin_audit_log').insert({
+    await (supabase as any).from('admin_audit_log').insert({
       admin_id: (await supabase.auth.getUser()).data.user?.id || 'system',
       action: 'create_promo_coupon',
       resource_type: 'coupon',
