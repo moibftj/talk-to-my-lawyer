@@ -1,6 +1,18 @@
 
 version: 3.0
-tags: [architecture, security, supabase, nextjs, stripe, openai, analytics, observability, reliability]
+tags:
+  - architecture
+  - security
+  - supabase
+  - nextjs
+  - stripe
+  - openai
+  - analytics
+  - observability
+  - reliability
+  - testing
+  - e2e
+  - integration
 
 # MCP Servers Required
 mcpServers:
