@@ -26,6 +26,10 @@ const requiredEnvVars = {
       description: "Stripe publishable key",
     },
     {
+      name: "STRIPE_PUBLISHABLE_KEY",
+      description: "Stripe publishable key (server-side, used by env config)",
+    },
+    {
       name: "STRIPE_WEBHOOK_SECRET",
       description: "Stripe webhook secret (server-only)",
     },
@@ -170,6 +174,29 @@ function validateEnv() {
       "\nEmail Configuration: No email provider configured (emails will fail in production)",
     );
     hasWarnings = true;
+  }
+
+  // Stripe publishable key consistency (client + server expectations)
+  const stripePublishablePublic = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const stripePublishableServer = process.env.STRIPE_PUBLISHABLE_KEY;
+
+  if (!stripePublishablePublic) {
+    const message =
+      "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required for client-side Stripe usage";
+    console.log(`\n[WARN] Stripe: ${message}`);
+    hasWarnings = true;
+  }
+
+  if (!stripePublishableServer) {
+    const message =
+      "STRIPE_PUBLISHABLE_KEY is required by server-side env config";
+    if (isProduction && !testMode) {
+      console.log(`\n[ERROR] Stripe: ${message}`);
+      hasErrors = true;
+    } else {
+      console.log(`\n[WARN] Stripe: ${message}`);
+      hasWarnings = true;
+    }
   }
 
   // Rate limiting configuration (strongly recommended for production)
