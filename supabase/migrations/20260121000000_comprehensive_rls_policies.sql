@@ -531,6 +531,8 @@ ALTER TABLE public.admin_audit_log FORCE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Admins can view audit log" ON public.admin_audit_log;
 DROP POLICY IF EXISTS "Service role can insert audit log" ON public.admin_audit_log;
+DROP POLICY IF EXISTS "admin_audit_log_admin_select" ON public.admin_audit_log;
+DROP POLICY IF EXISTS "admin_audit_log_service_insert" ON public.admin_audit_log;
 
 CREATE POLICY "admin_audit_log_admin_select"
   ON public.admin_audit_log FOR SELECT
