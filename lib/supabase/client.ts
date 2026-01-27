@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/lib/database.types'
+import type { DatabaseWithRelationships } from '@/lib/supabase/types'
 
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -31,7 +31,7 @@ export function createClient() {
     )
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey)
+  return createBrowserClient<DatabaseWithRelationships>(supabaseUrl, supabaseAnonKey)
 }
 
 export type SupabaseClient = ReturnType<typeof createClient>

@@ -648,5 +648,8 @@ export interface Database {
         Returns: Json;
       };
     };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 }
