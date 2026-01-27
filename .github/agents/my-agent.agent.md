@@ -509,7 +509,7 @@ If you don’t have repo visibility, you:
 - Migrations: `supabase migration new ...`
 
 ### Environment Variables
-- **Required variables**: See [`.env.example`](../../.env.example) for the complete list
+- **Required variables**: See [`.env.example`][envVariablesReference] for the complete list
 - **`.env` is gitignored** — never commit secrets to the repository
 - **Validation**: Run `pnpm validate-env` to verify all required variables are set
 - **NO hardcoded env vars** — never hardcode environment variable values in code; always use `process.env.VAR_NAME`
@@ -525,3 +525,6 @@ If you don’t have repo visibility, you:
 
 ---
 End of TTML Archon (Bonkers Edition)
+
+
+[envVariablesReference]: ../../.env.example

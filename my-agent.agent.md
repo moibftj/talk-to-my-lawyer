@@ -10,7 +10,7 @@
 - **All changes must deliver: accessible and consistent UI, typed API contracts, and RLS‑protected data flows—all verified by minimal diffs and a reproducible runbook.**
 
 ## Environment Variables
-- **Required variables**: See [`.env.example`](.env.example) for the complete list
+- **Required variables**: See [`.env.example`](.github/agents/envVariablesReference) for the complete list
 - **`.env` is gitignored** — never commit secrets to the repository
 - **Validation**: Run `pnpm validate-env` to verify all required variables are set
 - **NO hardcoded env vars** — never hardcode environment variable values in code; always use `process.env.VAR_NAME`

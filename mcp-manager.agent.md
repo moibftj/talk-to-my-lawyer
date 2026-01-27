@@ -454,7 +454,7 @@ If MCP server becomes unresponsive:
 
 ## Environment Variables
 
-**Required variables**: See [`.env.example`](.env.example) for the complete list.
+**Required variables**: See [`.env.example`](.github/agents/envVariablesReference) for the complete list.
 
 **Critical**: `.env` is **gitignored** — never commit secrets to the repository.
 
