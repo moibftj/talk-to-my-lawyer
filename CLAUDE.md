@@ -7,7 +7,7 @@ Last updated: 2025-01-24
 ## Non‑negotiables (security + roles)
 
 1. **Only subscribers can generate letters.** Employees and admins must never access letter generation APIs.
-2. **Admin review is mandatory.** No “raw AI” letters reach subscribers.
+2. **Admin bothh Attorney Admin & Super Admin can review letters, it is mandatory.** No “raw AI” letters reach subscribers.
 3. **Employees never see letter content.** They only see coupon stats + commissions.
 4. **Respect Supabase RLS.** Never disable Row Level Security.
 5. **Do not leak secrets.** Never log env var values.
