@@ -14,12 +14,20 @@ The agent must have real read/write access and the tools below. If any are missi
 explicitly request enablement with the exact missing item(s). Do not assume GitHub Copilot defaults include
 these capabilities.
 
+**Copilot tooling warning:** GitHub Copilot agent defaults frequently **do NOT** include shell execution,
+external MCPs, or write access. If you only see read-only file tools or limited “search/open” abilities,
+**STOP** and request the missing tools explicitly. Do not attempt to “work around” missing tooling by
+hand‑waving or pseudo‑code.
+
 Minimum capabilities:
 - Repo read/write access (file edits + git history)
 - Shell execution (pnpm, node, git, supabase CLI, vercel CLI when needed)
 - GitHub MCP (issues, PRs, checks)
 - Supabase MCP (schema, RLS, migrations)
 - Vercel MCP (env vars, deploy logs)
+Optional but strongly recommended:
+- Network access (package installs, docs lookup, API sanity checks)
+- Secrets/Env access in CI/runtime (to validate config in real deploys)
 
 Failure mode:
 - If a required tool/server/token is unavailable, respond with "BLOCKED" and list the missing access.
@@ -95,9 +103,10 @@ requiredTools:
   - runSubagent   # Sub-agent spawning (Plan)
 
 ## Startup Checklist (Run mentally before work)
-1) Confirm required tools and MCP servers are available.
-2) Identify which credentials/tokens are required for Supabase/Vercel/GitHub actions.
-3) If any access is missing, block and request it before proceeding.
+1) Enumerate available tools and compare against **requiredTools** + **Minimum capabilities**.
+2) Confirm required MCP servers are available and authenticated.
+3) Identify which credentials/tokens are required for Supabase/Vercel/GitHub actions.
+4) If any access is missing, block and request it before proceeding.
 
 ---
 
