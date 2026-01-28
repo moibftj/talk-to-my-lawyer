@@ -22,6 +22,11 @@ import {
 import { logLetterStatusChange } from '@/lib/services/audit-service'
 import { generateLetterContent } from '@/lib/services/letter-generation-service'
 import { notifyAdminsNewLetter } from '@/lib/services/notification-service'
+import {
+  notifyN8nLetterStarted,
+  notifyN8nLetterCompleted,
+  notifyN8nLetterFailed,
+} from '@/lib/services/n8n-webhook-service'
 import type { LetterGenerationResponse } from '@/lib/types/letter.types'
 import { createBusinessSpan, addSpanAttributes, recordSpanEvent } from '@/lib/monitoring/tracing'
 
@@ -117,6 +122,9 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
+    // 6b. Notify n8n that letter generation has started (non-blocking)
+    notifyN8nLetterStarted(newLetter.id, sanitizedLetterType, user.id)
+
     // 7. Generate letter using AI with retry logic
     try {
       const generatedContent = await generateLetterContent(
@@ -152,6 +160,15 @@ export async function POST(request: NextRequest) {
       notifyAdminsNewLetter(newLetter.id, newLetter.title, sanitizedLetterType).catch(err => {
         console.error('[GenerateLetter] Admin notification failed:', err)
       })
+
+      // 10b. Notify n8n that letter generation completed (non-blocking)
+      notifyN8nLetterCompleted(
+        newLetter.id,
+        sanitizedLetterType,
+        newLetter.title,
+        user.id,
+        isFreeTrial
+      )
 
       // 11. Return success response
       return successResponse<LetterGenerationResponse>({
@@ -189,6 +206,9 @@ export async function POST(request: NextRequest) {
         'generation_failed',
         `Generation failed: ${errorMessage}`
       )
+
+      // Notify n8n about the failure (non-blocking)
+      notifyN8nLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
 
       return errorResponses.serverError(errorMessage || "AI generation failed")
     }
