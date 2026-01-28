@@ -220,6 +220,7 @@ Also required for full functionality:
 
 Note: Stripe publishable key is currently read from both `STRIPE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in different modules. Set both until unified.
 Note: Rate limiting uses Upstash envs `KV_REST_API_URL` and `KV_REST_API_TOKEN` (see `lib/rate-limit-redis.ts`).
+Note: n8n webhook integration uses `N8N_WEBHOOK_URL` (see `lib/services/n8n-webhook-service.ts`).
 
 ## Email (Resend)
 
