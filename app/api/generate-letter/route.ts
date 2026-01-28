@@ -5,7 +5,7 @@
  * Handles intelligent letter generation with:
  * - User authentication and authorization
  * - Allowance checking (free trial, paid, super user)
- * - AI generation with retry logic
+ * - AI generation via n8n workflow (primary) or local OpenAI (fallback)
  * - Audit trail logging
  * - Admin notifications
  */
@@ -23,7 +23,9 @@ import { logLetterStatusChange } from '@/lib/services/audit-service'
 import { generateLetterContent } from '@/lib/services/letter-generation-service'
 import { notifyAdminsNewLetter } from '@/lib/services/notification-service'
 import {
-  notifyN8nLetterStarted,
+  isN8nConfigured,
+  generateLetterViaN8n,
+  transformIntakeToN8nFormat,
   notifyN8nLetterCompleted,
   notifyN8nLetterFailed,
 } from '@/lib/services/n8n-webhook-service'
@@ -34,6 +36,8 @@ export const runtime = "nodejs"
 
 /**
  * Generate a letter using AI
+ *
+ * Uses n8n workflow for generation if configured, otherwise falls back to local OpenAI.
  */
 export async function POST(request: NextRequest) {
   const span = createBusinessSpan('generate_letter', {
@@ -41,8 +45,12 @@ export async function POST(request: NextRequest) {
     'http.route': '/api/generate-letter',
   })
 
+  // Track which generation method is used
+  const useN8n = isN8nConfigured()
+
   try {
     recordSpanEvent('letter_generation_started')
+    addSpanAttributes({ 'generation.method': useN8n ? 'n8n' : 'openai' })
 
     // 1. Apply rate limiting
     const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, ...getRateLimitTuple('LETTER_GENERATE'))
@@ -77,9 +85,9 @@ export async function POST(request: NextRequest) {
     const sanitizedLetterType = letterType
     const sanitizedIntakeData = validation.data!
 
-    // 4. Check API configuration
-    if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
-      console.error("[GenerateLetter] OPENAI_API_KEY is not configured. Letter generation requires a valid OpenAI API key.")
+    // 4. Check API configuration (only if not using n8n)
+    if (!useN8n && (!openaiConfig.apiKey || !openaiConfig.isConfigured)) {
+      console.error("[GenerateLetter] Neither n8n nor OpenAI is configured.")
       return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
     }
 
@@ -122,15 +130,35 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
-    // 6b. Notify n8n that letter generation has started (non-blocking)
-    notifyN8nLetterStarted(newLetter.id, sanitizedLetterType, user.id)
-
-    // 7. Generate letter using AI with retry logic
+    // 7. Generate letter using AI
     try {
-      const generatedContent = await generateLetterContent(
-        sanitizedLetterType,
-        sanitizedIntakeData
-      )
+      let generatedContent: string
+
+      if (useN8n) {
+        // Use n8n workflow for generation
+        console.log("[GenerateLetter] Using n8n workflow for generation")
+        recordSpanEvent('n8n_generation_started')
+
+        const n8nFormData = transformIntakeToN8nFormat(
+          newLetter.id,
+          user.id,
+          sanitizedLetterType,
+          sanitizedIntakeData as Record<string, unknown>
+        )
+
+        generatedContent = await generateLetterViaN8n(n8nFormData)
+        recordSpanEvent('n8n_generation_completed')
+      } else {
+        // Use local OpenAI service as fallback
+        console.log("[GenerateLetter] Using local OpenAI for generation")
+        recordSpanEvent('openai_generation_started')
+
+        generatedContent = await generateLetterContent(
+          sanitizedLetterType,
+          sanitizedIntakeData
+        )
+        recordSpanEvent('openai_generation_completed')
+      }
 
       // 8. Update letter with generated content
       const { error: updateError } = await supabase
@@ -153,7 +181,7 @@ export async function POST(request: NextRequest) {
         'generating',
         'pending_review',
         'created',
-        'Letter generated successfully by AI'
+        `Letter generated successfully via ${useN8n ? 'n8n' : 'OpenAI'}`
       )
 
       // 10. Notify admins (non-blocking for the response)
@@ -161,7 +189,7 @@ export async function POST(request: NextRequest) {
         console.error('[GenerateLetter] Admin notification failed:', err)
       })
 
-      // 10b. Notify n8n that letter generation completed (non-blocking)
+      // 10b. Send completion event to n8n monitoring (non-blocking, optional)
       notifyN8nLetterCompleted(
         newLetter.id,
         sanitizedLetterType,
@@ -204,10 +232,10 @@ export async function POST(request: NextRequest) {
         'generating',
         'failed',
         'generation_failed',
-        `Generation failed: ${errorMessage}`
+        `Generation failed (${useN8n ? 'n8n' : 'OpenAI'}): ${errorMessage}`
       )
 
-      // Notify n8n about the failure (non-blocking)
+      // Notify n8n about the failure (non-blocking, for alerting)
       notifyN8nLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
 
       return errorResponses.serverError(errorMessage || "AI generation failed")
