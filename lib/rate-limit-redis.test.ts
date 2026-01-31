@@ -6,11 +6,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
 // Mock Upstash modules
-vi.mock('@upstash/ratelimit', () => ({
-  Ratelimit: {
-    fixedWindow: (limit: number, window: string) => ({ limit, window }),
-  },
-}))
+vi.mock('@upstash/ratelimit', () => {
+  class MockRatelimit {
+    static fixedWindow(limit: number, window: string) {
+      return { limit, window }
+    }
+  }
+
+  return { Ratelimit: MockRatelimit }
+})
 
 vi.mock('@upstash/redis', () => ({
   Redis: vi.fn(),
@@ -38,6 +42,11 @@ import {
   safeApplyRateLimit,
 } from './rate-limit-redis'
 
+const hasRedisConfig =
+  !!process.env.KV_REST_API_URL &&
+  !!process.env.KV_REST_API_TOKEN &&
+  process.env.KV_REST_API_URL.trim().startsWith('https://')
+
 // Helper to create mock NextRequest
 const createMockRequest = (headers: Record<string, string> = {}): NextRequest => {
   return {
@@ -49,24 +58,43 @@ const createMockRequest = (headers: Record<string, string> = {}): NextRequest =>
 
 describe('Rate limiters', () => {
   it('authRateLimit is defined with correct config', () => {
-    // In test environment without Redis, this will be null
-    expect(authRateLimit).toBeNull()
+    if (hasRedisConfig) {
+      expect(authRateLimit).not.toBeNull()
+    } else {
+      expect(authRateLimit).toBeNull()
+    }
   })
 
   it('apiRateLimit is defined', () => {
-    expect(apiRateLimit).toBeNull()
+    if (hasRedisConfig) {
+      expect(apiRateLimit).not.toBeNull()
+    } else {
+      expect(apiRateLimit).toBeNull()
+    }
   })
 
   it('adminRateLimit is defined', () => {
-    expect(adminRateLimit).toBeNull()
+    if (hasRedisConfig) {
+      expect(adminRateLimit).not.toBeNull()
+    } else {
+      expect(adminRateLimit).toBeNull()
+    }
   })
 
   it('letterGenerationRateLimit is defined', () => {
-    expect(letterGenerationRateLimit).toBeNull()
+    if (hasRedisConfig) {
+      expect(letterGenerationRateLimit).not.toBeNull()
+    } else {
+      expect(letterGenerationRateLimit).toBeNull()
+    }
   })
 
   it('subscriptionRateLimit is defined', () => {
-    expect(subscriptionRateLimit).toBeNull()
+    if (hasRedisConfig) {
+      expect(subscriptionRateLimit).not.toBeNull()
+    } else {
+      expect(subscriptionRateLimit).toBeNull()
+    }
   })
 })
 

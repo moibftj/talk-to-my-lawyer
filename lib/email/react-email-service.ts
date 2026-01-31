@@ -41,7 +41,7 @@ export async function sendReactEmail(
   }
 
   // Render the React component to HTML
-  const html = render(createElement(Component, props));
+  const html = await render(createElement(Component, props));
 
   // Create the email message
   const message: EmailMessage = {
@@ -58,10 +58,10 @@ export async function sendReactEmail(
 /**
  * Render a React Email component to HTML string (useful for testing)
  */
-export function renderReactEmail(
+export async function renderReactEmail(
   templateName: string,
   props: ReactEmailProps
-): string {
+): Promise<string> {
   const Component = emailComponents[templateName];
 
   if (!Component) {
