@@ -21,6 +21,7 @@
     "db:migrate": "node scripts/run-migrations.js",
     "db:verify": "node scripts/verify-database-connection.js",
     "audit:security": "pnpm audit --audit-level=high",
+    "security:scan": "pnpm audit --audit-level=high",
     "update:packages": "pnpm update --latest",
     "autocommit": "git add -A && git diff --staged --quiet || (git commit -m \"Auto-commit: $(date)\" && git push origin main)",
     "commit": "git add -A && git commit -m",

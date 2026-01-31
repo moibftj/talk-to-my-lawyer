@@ -4,10 +4,6 @@ const requiredEnvVars = {
   critical: [
     { name: "NEXT_PUBLIC_SUPABASE_URL", description: "Supabase project URL" },
     {
-      name: "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-      description: "Supabase anonymous key",
-    },
-    {
       name: "OPENAI_API_KEY",
       description: "OpenAI API key for letter generation",
     },
@@ -88,6 +84,10 @@ function validateEnv() {
   const testMode = process.env.ENABLE_TEST_MODE === "true";
   const isCI =
     process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabasePublishableKey =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+  const supabaseKey = supabaseAnonKey || supabasePublishableKey;
 
   let hasErrors = false;
   let hasWarnings = false;
@@ -124,6 +124,26 @@ function validateEnv() {
       }
     }
   });
+
+  if (!supabaseKey) {
+    console.log(
+      "  [ERROR] NEXT_PUBLIC_SUPABASE_ANON_KEY: Missing - Supabase anonymous key",
+    );
+    console.log(
+      "  [ERROR] NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: Missing - Supabase publishable key (anon replacement)",
+    );
+    hasErrors = true;
+  } else {
+    const masked = supabaseKey.substring(0, 8) + "...";
+    if (supabasePublishableKey && !supabaseAnonKey) {
+      console.log(
+        `  [WARN] NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY: ${masked} (using publishable key as anon)`,
+      );
+      hasWarnings = true;
+    } else {
+      console.log(`  [OK] NEXT_PUBLIC_SUPABASE_ANON_KEY: ${masked}`);
+    }
+  }
 
   if (isProduction && !testMode) {
     console.log("\nProduction Variables:");
