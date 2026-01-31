@@ -2,7 +2,7 @@
 
 Talk-To-My-Lawyer: AI legal letter drafts with **mandatory attorney review**.
 
-Last updated: 2026-01-27
+Last updated: 2026-01-31
 
 ## Non‑negotiables (security + roles)
 
