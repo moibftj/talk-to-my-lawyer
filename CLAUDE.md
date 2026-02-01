@@ -234,6 +234,8 @@ Also required for full functionality:
 - Site/app URL (used in email links): `NEXT_PUBLIC_SITE_URL` (preferred) or `NEXT_PUBLIC_APP_URL` (legacy)
 - Email sender: `EMAIL_FROM` (+ optional `EMAIL_FROM_NAME`, `EMAIL_REPLY_TO`)
 - Test mode toggles: `ENABLE_TEST_MODE`, `NEXT_PUBLIC_TEST_MODE`
+- Zapier webhook (optional): `ZAPIER_WEBHOOK_URL` for letter generation fallback
+- Zapier events (optional): `ZAPIER_EVENTS_WEBHOOK_URL` for monitoring/alerting
 
 Note: Stripe publishable key is currently read from both `STRIPE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in different modules. Set both until unified.
 Note: Rate limiting uses Upstash envs `KV_REST_API_URL` and `KV_REST_API_TOKEN` (see `lib/rate-limit-redis.ts`).
