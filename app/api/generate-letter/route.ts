@@ -5,7 +5,7 @@
  * Handles intelligent letter generation with:
  * - User authentication and authorization
  * - Allowance checking (free trial, paid, super user)
- * - AI generation via OpenAI (primary) or Zapier workflow (fallback)
+ * - AI generation via Zapier (primary) or OpenAI (fallback)
  * - Audit trail logging
  * - Admin notifications
  */
@@ -37,7 +37,7 @@ export const runtime = "nodejs"
 /**
  * Generate a letter using AI
  *
- * Uses n8n workflow for generation if configured, otherwise falls back to local OpenAI.
+ * Uses Zapier webhook for generation (primary), falls back to OpenAI if Zapier fails.
  */
 export async function POST(request: NextRequest) {
   const span = createBusinessSpan('generate_letter', {
@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
     'http.route': '/api/generate-letter',
   })
 
-  // Track which generation method is used (OpenAI primary, Zapier fallback)
+  // Track which generation method is used (Zapier primary, OpenAI fallback)
   const zapierAvailable = isZapierConfigured()
 
   try {
     recordSpanEvent('letter_generation_started')
-    addSpanAttributes({ 'generation.method': 'openai_primary', 'zapier_available': zapierAvailable })
+    addSpanAttributes({ 'generation.method': 'zapier_primary', 'openai_available': true, 'zapier_available': zapierAvailable })
 
     // 1. Apply rate limiting
     const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, ...getRateLimitTuple('LETTER_GENERATE'))
@@ -85,7 +85,13 @@ export async function POST(request: NextRequest) {
     const sanitizedLetterType = letterType
     const sanitizedIntakeData = validation.data!
 
-    // 4. Check API configuration (OpenAI is primary, n8n and Zapier are optional fallbacks)
+    // 4. Check API configuration (Zapier is primary, OpenAI is fallback)
+    // Note: We require at least one generation method to be configured
+    const hasGenerationMethod = zapierAvailable || (openaiConfig.apiKey && openaiConfig.isConfigured)
+    if (!hasGenerationMethod) {
+      console.error("[GenerateLetter] No generation method configured. Set ZAPIER_WEBHOOK_URL or OPENAI_API_KEY.")
+      return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
+    }
     if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
       console.error("[GenerateLetter] OpenAI is not configured.")
       return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
@@ -130,31 +136,16 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
-    // 7. Generate letter using AI (OpenAI primary, Zapier fallback)
-    let generationMethod: 'openai' | 'zapier' = 'openai'
+    // 7. Generate letter using AI (Zapier primary, OpenAI fallback)
+    let generationMethod: 'zapier' | 'openai' = 'zapier'
     try {
       let generatedContent: string
 
-      // Try OpenAI first (direct SDK - more reliable)
+      // Try Zapier first (primary)
       try {
-        console.log("[GenerateLetter] Using OpenAI SDK for generation (primary)")
-        recordSpanEvent('openai_generation_started')
-
-        generatedContent = await generateLetterContent(
-          sanitizedLetterType,
-          sanitizedIntakeData
-        )
-        recordSpanEvent('openai_generation_completed')
-        generationMethod = 'openai'
-
-      } catch (openaiError) {
-        // OpenAI failed, try Zapier fallback if available
         if (zapierAvailable) {
-          console.warn("[GenerateLetter] OpenAI generation failed, falling back to Zapier:", openaiError)
-          recordSpanEvent('openai_failed', {
-            error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
-          })
-          recordSpanEvent('zapier_fallback_started')
+          console.log("[GenerateLetter] Using Zapier webhook for generation (primary)")
+          recordSpanEvent('zapier_generation_started')
 
           const zapierFormData = transformIntakeToZapierFormat(
             newLetter.id,
@@ -164,11 +155,30 @@ export async function POST(request: NextRequest) {
           )
 
           generatedContent = await generateLetterViaZapier(zapierFormData)
-          recordSpanEvent('zapier_fallback_succeeded')
+          recordSpanEvent('zapier_generation_completed')
           generationMethod = 'zapier'
         } else {
-          // No fallback available, re-throw the OpenAI error
-          throw openaiError
+          throw new Error('Zapier not configured, skipping to fallback')
+        }
+
+      } catch (zapierError) {
+        // Zapier failed, try OpenAI fallback
+        if (openaiConfig.apiKey && openaiConfig.isConfigured) {
+          console.warn("[GenerateLetter] Zapier generation failed, falling back to OpenAI:", zapierError)
+          recordSpanEvent('zapier_failed', {
+            error: zapierError instanceof Error ? zapierError.message : 'Unknown error'
+          })
+          recordSpanEvent('openai_fallback_started')
+
+          generatedContent = await generateLetterContent(
+            sanitizedLetterType,
+            sanitizedIntakeData
+          )
+          recordSpanEvent('openai_fallback_succeeded')
+          generationMethod = 'openai'
+        } else {
+          // No fallback available, re-throw the Zapier error
+          throw zapierError
         }
       }
 
@@ -187,8 +197,8 @@ export async function POST(request: NextRequest) {
       }
 
       // 9. Log audit trail
-      const methodDescription = generationMethod === 'zapier' ? 'Zapier (fallback)' :
-                                'OpenAI (primary)'
+      const methodDescription = generationMethod === 'zapier' ? 'Zapier (primary)' :
+                                'OpenAI (fallback)'
       await logLetterStatusChange(
         supabase,
         newLetter.id,
@@ -240,8 +250,8 @@ export async function POST(request: NextRequest) {
 
       // Log audit trail
       const errorMessage = generationError instanceof Error ? generationError.message : "Unknown error"
-      const failedMethod = generationMethod === 'zapier' ? 'Zapier (fallback)' :
-                          'OpenAI (primary)'
+      const failedMethod = generationMethod === 'zapier' ? 'Zapier (primary)' :
+                          'OpenAI (fallback)'
       await logLetterStatusChange(
         supabase,
         newLetter.id,

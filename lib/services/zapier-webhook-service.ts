@@ -1,12 +1,13 @@
 /**
  * Zapier Webhook Service
  *
- * Integrates with Zapier workflows for letter generation.
- * Sends form data to Zapier, which can trigger custom workflows.
+ * Integrates with Zapier workflows for letter generation notifications.
+ * Sends generated letter data to Zapier, which can trigger custom workflows.
  */
 
 /**
  * Form data structure expected by Zapier workflow
+ * Matches the ChatGPT prompt template in Zapier
  */
 export interface ZapierLetterFormData {
   // Letter metadata
@@ -28,10 +29,11 @@ export interface ZapierLetterFormData {
   recipientEmail?: string
   recipientPhone?: string
 
-  // Letter content
-  issueDescription: string
-  desiredOutcome: string
+  // Letter content - mapped to match Zapier ChatGPT template
+  issueDetails: string  // Maps from issueDescription
+  desiredOutcome?: string
   additionalDetails?: string
+  tone?: string  // Optional tone parameter
 
   // Optional fields
   amountDemanded?: number
@@ -73,6 +75,96 @@ export const zapierConfig: ZapierConfig = {
 }
 
 /**
+ * Send generated letter to Zapier webhook (fire-and-forget notification)
+ *
+ * This sends the completed letter to Zapier after generation.
+ * Used for logging, analytics, or triggering downstream workflows.
+ *
+ * @param letterId - The letter ID
+ * @param letterType - Type of letter generated
+ * @param letterTitle - Title of the letter
+ * @param userId - User who generated the letter
+ * @param generatedContent - The actual generated letter content
+ * @param intakeData - Original form data submitted
+ */
+export async function sendToZapierWebhook(
+  letterId: string,
+  letterType: string,
+  letterTitle: string,
+  userId: string,
+  generatedContent: string,
+  intakeData: Record<string, unknown>
+): Promise<void> {
+  if (!zapierConfig.isConfigured || !zapierConfig.webhookUrl) {
+    console.log('[Zapier] Webhook not configured, skipping notification')
+    return
+  }
+
+  const webhookUrl = zapierConfig.webhookUrl
+  console.log('[Zapier] Sending letter notification for:', letterId)
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout for notification
+
+    // Prepare the payload with all relevant data
+    const payload = {
+      // Letter metadata
+      letterId,
+      letterType,
+      letterTitle,
+      userId,
+      timestamp: new Date().toISOString(),
+
+      // Form data (intake)
+      senderName: intakeData.senderName,
+      senderAddress: intakeData.senderAddress,
+      senderState: intakeData.senderState,
+      senderEmail: intakeData.senderEmail,
+      senderPhone: intakeData.senderPhone,
+
+      recipientName: intakeData.recipientName,
+      recipientAddress: intakeData.recipientAddress,
+      recipientState: intakeData.recipientState,
+      recipientEmail: intakeData.recipientEmail,
+      recipientPhone: intakeData.recipientPhone,
+
+      issueDescription: intakeData.issueDescription,
+      desiredOutcome: intakeData.desiredOutcome,
+      additionalDetails: intakeData.additionalDetails,
+
+      // The generated letter content
+      generatedContent,
+
+      // Source identifier
+      source: 'talk-to-my-lawyer',
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Source': 'talk-to-my-lawyer',
+        'X-Letter-Id': letterId,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (response.ok) {
+      console.log('[Zapier] Letter notification sent successfully for:', letterId)
+    } else {
+      console.warn('[Zapier] Webhook returned non-OK status:', response.status)
+    }
+  } catch (error) {
+    // Don't throw - this is a non-critical notification
+    console.warn('[Zapier] Webhook notification failed (non-critical):', error)
+  }
+}
+
+/**
  * Check if Zapier integration is available
  */
 export function isZapierConfigured(): boolean {
@@ -103,38 +195,20 @@ export async function generateLetterViaZapier(
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), zapierConfig.timeout)
 
-      // Transform form data to match Zapier's expected structure
+      // Transform form data to match Zapier's ChatGPT template
       const zapierPayload = {
+        // Required fields for ChatGPT prompt template
         letterType: formData.letterType,
-        letterId: formData.letterId,
-        userId: formData.userId,
-
-        // Sender info
         senderName: formData.senderName,
         senderAddress: formData.senderAddress,
-        senderState: formData.senderState,
-        senderEmail: formData.senderEmail,
-        senderPhone: formData.senderPhone,
-
-        // Recipient info
         recipientName: formData.recipientName,
         recipientAddress: formData.recipientAddress,
-        recipientState: formData.recipientState,
-        recipientEmail: formData.recipientEmail,
-        recipientPhone: formData.recipientPhone,
+        issueDetails: formData.issueDetails,  // Key field for ChatGPT prompt
+        tone: formData.tone || 'professional',  // Default tone
 
-        // Content
-        issueDescription: formData.issueDescription,
-        desiredOutcome: formData.desiredOutcome,
-        additionalDetails: formData.additionalDetails,
-
-        // Optional fields
-        amountDemanded: formData.amountDemanded,
-        deadline: formData.deadline,
-        incidentDate: formData.incidentDate,
-        courtType: formData.courtType,
-
-        // Metadata
+        // Optional metadata (not used in ChatGPT prompt but useful for tracking)
+        letterId: formData.letterId,
+        userId: formData.userId,
         timestamp: new Date().toISOString(),
         source: 'talk-to-my-lawyer',
       }
@@ -258,10 +332,10 @@ export function transformIntakeToZapierFormat(
     recipientEmail: intakeData.recipientEmail ? String(intakeData.recipientEmail) : undefined,
     recipientPhone: intakeData.recipientPhone ? String(intakeData.recipientPhone) : undefined,
 
-    // Content
-    issueDescription: String(intakeData.issueDescription || ''),
-    desiredOutcome: String(intakeData.desiredOutcome || ''),
-    additionalDetails: intakeData.additionalDetails ? String(intakeData.additionalDetails) : undefined,
+    // Content - mapped to match Zapier ChatGPT template
+    // Combine issueDescription and desiredOutcome into a comprehensive issueDetails field
+    issueDetails: `${String(intakeData.issueDescription || '')}\n\nDesired Outcome: ${String(intakeData.desiredOutcome || '')}${intakeData.additionalDetails ? `\n\nAdditional Details: ${String(intakeData.additionalDetails)}` : ''}`,
+    tone: intakeData.tone ? String(intakeData.tone) : 'professional',  // Default tone
 
     // Optional
     amountDemanded: typeof intakeData.amountDemanded === 'number' ? intakeData.amountDemanded : undefined,

@@ -242,28 +242,40 @@ Note: Rate limiting uses Upstash envs `KV_REST_API_URL` and `KV_REST_API_TOKEN` 
 
 ## Zapier Integration
 
-Letter generation can use Zapier workflows as a fallback to OpenAI. When configured, the app sends form data to Zapier, which can trigger custom workflows and return the generated letter.
+Letter generation uses Zapier workflows as the **primary** generation method, with OpenAI as fallback. The app sends form data to Zapier, which processes it through ChatGPT and returns the generated letter.
 
 **Environment variables:**
-- `ZAPIER_WEBHOOK_URL` - Primary webhook URL for letter generation (required for Zapier mode)
+- `ZAPIER_WEBHOOK_URL` - Primary webhook URL for letter generation (strongly recommended)
 - `ZAPIER_EVENTS_WEBHOOK_URL` - Optional webhook for monitoring/alerting events
 
 **How it works:**
 1. App handles auth, rate limiting, allowance checking
 2. App creates letter record with `generating` status
-3. App sends form data to Zapier webhook
-4. Zapier triggers your ZAP workflow (e.g., via ChatGPT, other AI services)
+3. App sends form data to Zapier webhook (PRIMARY method)
+4. Zapier triggers your ZAP workflow (via ChatGPT)
 5. Zapier returns `{ success: true, generatedContent: "..." }`
 6. App saves content, updates status, notifies admins
 
-**Fallback:** If `ZAPIER_WEBHOOK_URL` is not set, the app uses local OpenAI integration (primary).
+**Fallback:** If Zapier fails or is not configured, the app uses local OpenAI integration (fallback).
+
+**Zapier webhook payload format:**
+```json
+{
+  "letterType": "demand_letter",
+  "senderName": "John Doe",
+  "senderAddress": "123 Main St",
+  "recipientName": "Jane Smith",
+  "recipientAddress": "456 Oak Ave",
+  "issueDetails": "Issue description and desired outcome...",
+  "tone": "professional"
+}
+```
 
 **Zapier workflow response format:**
 ```json
 {
   "success": true,
-  "generatedContent": "Dear Mr. Smith,\n\nThis letter serves as formal notice...",
-  "letterId": "uuid-here"
+  "generatedContent": "Dear Mr. Smith,\n\nThis letter serves as formal notice..."
 }
 ```
 
