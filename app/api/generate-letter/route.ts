@@ -5,7 +5,7 @@
  * Handles intelligent letter generation with:
  * - User authentication and authorization
  * - Allowance checking (free trial, paid, super user)
- * - AI generation via OpenAI (primary), n8n workflow (fallback 1), or Zapier (fallback 2)
+ * - AI generation via OpenAI (primary) or Zapier workflow (fallback)
  * - Audit trail logging
  * - Admin notifications
  */
@@ -45,13 +45,12 @@ export async function POST(request: NextRequest) {
     'http.route': '/api/generate-letter',
   })
 
-  // Track which generation method is used (OpenAI primary, n8n fallback 1, Zapier fallback 2)
-  const n8nAvailable = isN8nConfigured()
+  // Track which generation method is used (OpenAI primary, Zapier fallback)
   const zapierAvailable = isZapierConfigured()
 
   try {
     recordSpanEvent('letter_generation_started')
-    addSpanAttributes({ 'generation.method': 'openai_primary', 'n8n_available': n8nAvailable, 'zapier_available': zapierAvailable })
+    addSpanAttributes({ 'generation.method': 'openai_primary', 'zapier_available': zapierAvailable })
 
     // 1. Apply rate limiting
     const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, ...getRateLimitTuple('LETTER_GENERATE'))
