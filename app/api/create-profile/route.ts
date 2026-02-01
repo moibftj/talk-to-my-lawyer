@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     // We verify it was created successfully here.
     if (role === "employee") {
       // Wait a moment for trigger to complete, then verify coupon exists
-      const { data: couponData, error: couponCheckError } = await serviceClient
+      const { data: couponData, error: couponCheckError } = await (serviceClient as any)
         .from("employee_coupons")
         .select("code")
         .eq("employee_id", user.id)
