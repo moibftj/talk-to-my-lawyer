@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
-    // 7. Generate letter using AI (OpenAI primary, n8n fallback 1, Zapier fallback 2)
-    let generationMethod: 'openai' | 'n8n' | 'zapier' = 'openai'
+    // 7. Generate letter using AI (OpenAI primary, Zapier fallback)
+    let generationMethod: 'openai' | 'zapier' = 'openai'
     try {
       let generatedContent: string
 
@@ -240,8 +240,7 @@ export async function POST(request: NextRequest) {
 
       // Log audit trail
       const errorMessage = generationError instanceof Error ? generationError.message : "Unknown error"
-      const failedMethod = generationMethod === 'n8n' ? 'n8n (fallback 1)' :
-                          generationMethod === 'zapier' ? 'Zapier (fallback 2)' :
+      const failedMethod = generationMethod === 'zapier' ? 'Zapier (fallback)' :
                           'OpenAI (primary)'
       await logLetterStatusChange(
         supabase,
@@ -251,9 +250,6 @@ export async function POST(request: NextRequest) {
         'generation_failed',
         `Generation failed (${failedMethod}): ${errorMessage}`
       )
-
-      // Notify n8n about the failure (non-blocking, for alerting)
-      notifyN8nLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
 
       // Notify Zapier about the failure (non-blocking, for alerting)
       notifyZapierLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
