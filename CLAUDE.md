@@ -238,25 +238,25 @@ Also required for full functionality:
 Note: Stripe publishable key is currently read from both `STRIPE_PUBLISHABLE_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in different modules. Set both until unified.
 Note: Rate limiting uses Upstash envs `KV_REST_API_URL` and `KV_REST_API_TOKEN` (see `lib/rate-limit-redis.ts`).
 
-## n8n Integration
+## Zapier Integration
 
-Letter generation can use n8n workflows instead of direct OpenAI calls. When configured, the app sends form data to n8n, which processes it through ChatGPT and returns the generated letter.
+Letter generation can use Zapier workflows as a fallback to OpenAI. When configured, the app sends form data to Zapier, which can trigger custom workflows and return the generated letter.
 
 **Environment variables:**
-- `N8N_WEBHOOK_URL` - Primary webhook URL for letter generation (required for n8n mode)
-- `N8N_EVENTS_WEBHOOK_URL` - Optional webhook for monitoring/alerting events
+- `ZAPIER_WEBHOOK_URL` - Primary webhook URL for letter generation (required for Zapier mode)
+- `ZAPIER_EVENTS_WEBHOOK_URL` - Optional webhook for monitoring/alerting events
 
 **How it works:**
 1. App handles auth, rate limiting, allowance checking
 2. App creates letter record with `generating` status
-3. App sends form data to n8n webhook
-4. n8n generates letter via ChatGPT
-5. n8n returns `{ success: true, generatedContent: "..." }`
+3. App sends form data to Zapier webhook
+4. Zapier triggers your ZAP workflow (e.g., via ChatGPT, other AI services)
+5. Zapier returns `{ success: true, generatedContent: "..." }`
 6. App saves content, updates status, notifies admins
 
-**Fallback:** If `N8N_WEBHOOK_URL` is not set, the app uses local OpenAI integration.
+**Fallback:** If `ZAPIER_WEBHOOK_URL` is not set, the app uses local OpenAI integration (primary).
 
-**n8n workflow response format:**
+**Zapier workflow response format:**
 ```json
 {
   "success": true,
@@ -265,7 +265,7 @@ Letter generation can use n8n workflows instead of direct OpenAI calls. When con
 }
 ```
 
-See `lib/services/n8n-webhook-service.ts` for implementation details.
+See `lib/services/zapier-webhook-service.ts` for implementation details.
 
 ## Email (Resend)
 
