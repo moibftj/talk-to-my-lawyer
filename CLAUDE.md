@@ -50,7 +50,24 @@ Last updated: 2026-01-31
 - Shared API responses/errors: `lib/api/api-error-handler.ts`
 - Rate limiting: `lib/rate-limit-redis.ts`
 - Validation: `lib/validation/**`
-- Request proxy: `proxy.ts` (Next.js request proxy)
+- **Next.js Middleware (Edge Runtime):** `proxy.ts` (see below)
+- API middleware helpers: `lib/api/middleware.ts` (higher-order functions for routes)
+
+## Next.js Middleware (`proxy.ts`)
+
+**IMPORTANT:** This project uses `proxy.ts` as the Next.js middleware file (instead of `middleware.ts`).
+
+- Location: Root level `proxy.ts` (this IS the Next.js middleware)
+- Alternative names: `middleware.ts` (standard), `proxy.ts` (used here)
+- Purpose: Edge Runtime middleware that runs on EVERY request before pages/API routes
+- Implementation: `proxy.ts` → calls `lib/supabase/proxy.ts` (updateSession function)
+- Handles:
+  - Session refresh for authenticated users
+  - Route protection based on user roles
+  - Admin portal authentication (separate from Supabase auth)
+  - Role-based redirects
+
+**DO NOT rename `proxy.ts` to `middleware.ts` without updating all references!**
 
 ## API route pattern (copy/paste)
 
