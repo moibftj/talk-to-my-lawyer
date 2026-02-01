@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
     'http.route': '/api/generate-letter',
   })
 
-  // Track which generation method is used
-  const useN8n = isN8nConfigured()
+  // Track which generation method is used (OpenAI primary, n8n fallback)
+  const n8nAvailable = isN8nConfigured()
 
   try {
     recordSpanEvent('letter_generation_started')
-    addSpanAttributes({ 'generation.method': useN8n ? 'n8n' : 'openai' })
+    addSpanAttributes({ 'generation.method': 'openai_primary', 'n8n_available': n8nAvailable })
 
     // 1. Apply rate limiting
     const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, ...getRateLimitTuple('LETTER_GENERATE'))
@@ -85,9 +85,9 @@ export async function POST(request: NextRequest) {
     const sanitizedLetterType = letterType
     const sanitizedIntakeData = validation.data!
 
-    // 4. Check API configuration (only if not using n8n)
-    if (!useN8n && (!openaiConfig.apiKey || !openaiConfig.isConfigured)) {
-      console.error("[GenerateLetter] Neither n8n nor OpenAI is configured.")
+    // 4. Check API configuration (OpenAI is primary, n8n is optional fallback)
+    if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
+      console.error("[GenerateLetter] OpenAI is not configured.")
       return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
     }
 
@@ -130,27 +130,14 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
-    // 7. Generate letter using AI
+    // 7. Generate letter using AI (OpenAI primary, n8n fallback)
+    let generationMethod: 'openai' | 'n8n' = 'openai'
     try {
       let generatedContent: string
 
-      if (useN8n) {
-        // Use n8n workflow for generation
-        console.log("[GenerateLetter] Using n8n workflow for generation")
-        recordSpanEvent('n8n_generation_started')
-
-        const n8nFormData = transformIntakeToN8nFormat(
-          newLetter.id,
-          user.id,
-          sanitizedLetterType,
-          sanitizedIntakeData as Record<string, unknown>
-        )
-
-        generatedContent = await generateLetterViaN8n(n8nFormData)
-        recordSpanEvent('n8n_generation_completed')
-      } else {
-        // Use local OpenAI service as fallback
-        console.log("[GenerateLetter] Using local OpenAI for generation")
+      // Try OpenAI first (direct SDK - more reliable)
+      try {
+        console.log("[GenerateLetter] Using OpenAI SDK for generation (primary)")
         recordSpanEvent('openai_generation_started')
 
         generatedContent = await generateLetterContent(
@@ -158,6 +145,31 @@ export async function POST(request: NextRequest) {
           sanitizedIntakeData
         )
         recordSpanEvent('openai_generation_completed')
+        generationMethod = 'openai'
+
+      } catch (openaiError) {
+        // OpenAI failed, try n8n fallback if available
+        if (n8nAvailable) {
+          console.warn("[GenerateLetter] OpenAI generation failed, falling back to n8n:", openaiError)
+          recordSpanEvent('openai_failed', {
+            error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
+          })
+          recordSpanEvent('n8n_fallback_started')
+
+          const n8nFormData = transformIntakeToN8nFormat(
+            newLetter.id,
+            user.id,
+            sanitizedLetterType,
+            sanitizedIntakeData as Record<string, unknown>
+          )
+
+          generatedContent = await generateLetterViaN8n(n8nFormData)
+          recordSpanEvent('n8n_fallback_succeeded')
+          generationMethod = 'n8n'
+        } else {
+          // No fallback available, re-throw the OpenAI error
+          throw openaiError
+        }
       }
 
       // 8. Update letter with generated content
@@ -181,7 +193,7 @@ export async function POST(request: NextRequest) {
         'generating',
         'pending_review',
         'created',
-        `Letter generated successfully via ${useN8n ? 'n8n' : 'OpenAI'}`
+        `Letter generated successfully via ${generationMethod === 'n8n' ? 'n8n (fallback)' : 'OpenAI (primary)'}`
       )
 
       // 10. Notify admins (non-blocking for the response)
@@ -232,7 +244,7 @@ export async function POST(request: NextRequest) {
         'generating',
         'failed',
         'generation_failed',
-        `Generation failed (${useN8n ? 'n8n' : 'OpenAI'}): ${errorMessage}`
+        `Generation failed (${generationMethod === 'n8n' ? 'n8n fallback' : 'OpenAI primary'}): ${errorMessage}`
       )
 
       // Notify n8n about the failure (non-blocking, for alerting)
