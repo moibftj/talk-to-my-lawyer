@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
-    // 7. Generate letter using AI (OpenAI primary, n8n fallback)
-    let generationMethod: 'openai' | 'n8n' = 'openai'
+    // 7. Generate letter using AI (OpenAI primary, n8n fallback 1, Zapier fallback 2)
+    let generationMethod: 'openai' | 'n8n' | 'zapier' = 'openai'
     try {
       let generatedContent: string
 
