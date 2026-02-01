@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const supabase = getServiceRoleClient()
 
     // Check idempotency - prevent duplicate processing on webhook retry
-    const { data: idempotencyCheck, error: idempotencyError } = await supabase.rpc('check_and_record_webhook', {
+    const { data: idempotencyCheck, error: idempotencyError } = await (supabase as any).rpc('check_and_record_webhook', {
       p_stripe_event_id: event.id,
       p_event_type: event.type,
       p_metadata: event.created ? {
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
         } else {
           const result = atomicResult[0]
           const alreadyCompleted = result.already_completed || false
-          console.log('[StripeWebhook] Subscription completed atomically:', result.subscription_id, 
-                      alreadyCompleted ? '(already completed by verify-payment)' : '')
+          console.log('[StripeWebhook] Subscription completed atomically:', result.subscription_id,
+            alreadyCompleted ? '(already completed by verify-payment)' : '')
 
           // Send commission earned email if commission was created
           if (result.commission_id && employeeId && !alreadyCompleted) {
