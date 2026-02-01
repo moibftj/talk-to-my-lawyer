@@ -7,6 +7,7 @@ AI-powered legal letter drafting with **mandatory attorney review**. This Next.j
 - Architecture & development guide: [`docs/ARCHITECTURE_AND_DEVELOPMENT.md`](docs/ARCHITECTURE_AND_DEVELOPMENT.md)
 - API & integrations: [`docs/API_AND_INTEGRATIONS.md`](docs/API_AND_INTEGRATIONS.md)
 - Deployment guide: [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md)
+- Product roadmap: [`docs/ROADMAP.md`](docs/ROADMAP.md)
 - Email system: [`lib/email/AGENTS.md`](lib/email/AGENTS.md)
 
 ## Key features
