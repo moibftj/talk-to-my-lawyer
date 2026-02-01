@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get pending emails using RPC function with batch size
-    const { data: emails, error: fetchError } = await supabase.rpc(
+    const { data: emails, error: fetchError } = await (supabase as any).rpc(
       "get_pending_emails",
       { p_limit: batchSize },
     );
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
         if (response.ok) {
           // Mark as sent
-          await supabase.rpc("mark_email_sent", {
+          await (supabase as any).rpc("mark_email_sent", {
             p_email_id: email.id,
             p_provider: "resend",
             p_response_time_ms: responseTime,
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
           error instanceof Error ? error.message : "Unknown error";
 
         // Mark as failed (will retry based on attempts)
-        await supabase.rpc("mark_email_failed", {
+        await (supabase as any).rpc("mark_email_failed", {
           p_email_id: email.id,
           p_error_message: message,
           p_provider: "resend",
