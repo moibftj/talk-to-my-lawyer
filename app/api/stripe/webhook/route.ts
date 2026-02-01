@@ -109,10 +109,10 @@ export async function POST(request: NextRequest) {
               .eq('id', employeeId)
               .single()
 
-            if (employeeProfile?.email) {
+            if ((employeeProfile as any)?.email) {
               const commissionAmount = finalPrice * 0.05
-              queueTemplateEmail('commission-earned', employeeProfile.email, {
-                userName: employeeProfile.full_name || 'there',
+              queueTemplateEmail('commission-earned', (employeeProfile as any).email, {
+                userName: (employeeProfile as any).full_name || 'there',
                 commissionAmount: commissionAmount,
                 actionUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard/commissions`,
               }).catch((error: unknown) => {
@@ -131,10 +131,10 @@ export async function POST(request: NextRequest) {
           .eq('id', metadata.user_id)
           .single()
 
-        if (userProfile?.email) {
+        if ((userProfile as any)?.email) {
           const planName = metadata.plan_type || 'Subscription'
-          queueTemplateEmail('subscription-confirmation', userProfile.email, {
-            userName: userProfile.full_name || 'there',
+          queueTemplateEmail('subscription-confirmation', (userProfile as any).email, {
+            userName: (userProfile as any).full_name || 'there',
             subscriptionPlan: planName,
             actionUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard`,
           }).catch(error => {
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
 
         if (metadata) {
           // Update subscription status to canceled
-          await supabase
+          await (supabase as any)
             .from('subscriptions')
             .update({
               status: 'canceled',
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
 
         // Update any pending subscription to failed
         if (paymentIntent.metadata?.user_id) {
-          await supabase
+          await (supabase as any)
             .from('subscriptions')
             .update({
               status: 'payment_failed',
