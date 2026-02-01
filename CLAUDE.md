@@ -21,7 +21,7 @@ Last updated: 2026-01-31
 - Stripe (payments)
 - Resend (email) + email queue
 - Upstash Redis (rate limiting; falls back to in-memory)
-- n8n workflow for letter generation monitoring + alerts
+- Zapier workflow for letter generation monitoring + alerts
 - OpenTelemetry tracing
 - Vercel (hosting + deployment)
 - pnpm (package management)
