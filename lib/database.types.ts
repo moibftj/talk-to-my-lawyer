@@ -647,6 +647,167 @@ export interface Database {
         };
         Returns: Json;
       };
+      // Payment and subscription functions
+      verify_and_complete_subscription: {
+        Args: {
+          p_stripe_customer_id: string;
+          p_stripe_subscription_id: string;
+          p_plan_type: string;
+          p_amount: number;
+          p_coupon_code?: string;
+        };
+        Returns: Json;
+      };
+      create_free_subscription: {
+        Args: {
+          p_user_id: string;
+          p_coupon_code: string;
+        };
+        Returns: Json;
+      };
+      // Email queue functions
+      get_pending_emails: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
+      claim_pending_emails: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
+      mark_email_sent: {
+        Args: {
+          p_email_id: string;
+          p_provider?: string;
+          p_response_time_ms?: number;
+        };
+        Returns: void;
+      };
+      mark_email_failed: {
+        Args: {
+          p_email_id: string;
+          p_error_message: string;
+          p_provider?: string;
+        };
+        Returns: void;
+      };
+      get_email_queue_stats: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      reset_stuck_processing_emails: {
+        Args: {
+          p_timeout_minutes?: number;
+        };
+        Returns: Json;
+      };
+      // Webhook functions
+      check_and_record_webhook: {
+        Args: {
+          p_stripe_event_id: string;
+          p_event_type: string;
+          p_metadata?: Json;
+        };
+        Returns: Json;
+      };
+      // Letter audit functions
+      log_letter_audit: {
+        Args: {
+          p_letter_id: string;
+          p_action: string;
+          p_admin_id: string;
+          p_details?: Json;
+          p_old_status?: string;
+          p_new_status?: string;
+        };
+        Returns: void;
+      };
+      // GDPR functions
+      record_privacy_acceptance: {
+        Args: {
+          p_user_id: string;
+          p_policy_version: string;
+          p_ip_address: string;
+          p_user_agent: string;
+          p_marketing_consent: boolean;
+          p_analytics_consent: boolean;
+        };
+        Returns: Json;
+      };
+      has_accepted_privacy_policy: {
+        Args: {
+          p_user_id: string;
+          p_required_version: string;
+        };
+        Returns: boolean;
+      };
+      export_user_data: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      log_data_access: {
+        Args: {
+          p_user_id: string;
+          p_accessed_by: string;
+          p_access_type: string;
+          p_resource_type: string;
+          p_resource_id: string;
+          p_ip_address: string;
+          p_user_agent: string;
+          p_details?: string;
+        };
+        Returns: void;
+      };
+      // Security functions
+      log_security_event: {
+        Args: {
+          p_user_id?: string;
+          p_event_type: string;
+          p_severity: string;
+          p_description: string;
+          p_ip_address?: string;
+          p_user_agent?: string;
+          p_metadata?: Json;
+        };
+        Returns: void;
+      };
+      detect_suspicious_activity: {
+        Args: {
+          p_user_id: string;
+          action_type: string;
+        };
+        Returns: Json;
+      };
+      // Payout functions  
+      process_payout: {
+        Args: {
+          p_payout_id: string;
+          p_admin_id: string;
+          p_action: string;
+          p_rejection_reason?: string;
+        };
+        Returns: Json;
+      };
+      // Cleanup functions
+      cleanup_old_email_queue: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      cleanup_old_audit_logs: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      cleanup_old_webhook_events: {
+        Args: {
+          p_days_old?: number;
+        };
+        Returns: Json;
+      };
     };
     CompositeTypes: {
       [_ in never]: never;
