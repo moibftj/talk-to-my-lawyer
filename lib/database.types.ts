@@ -817,6 +817,10 @@ export interface Database {
         };
         Returns: Json;
       };
+      reset_monthly_allowances: {
+        Args: Record<PropertyKey, never>;
+        Returns: void;
+      };
     };
     CompositeTypes: {
       [_ in never]: never;

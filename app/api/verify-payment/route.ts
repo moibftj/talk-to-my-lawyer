@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const employeeId = metadata.employee_id || null
 
     // Use improved atomic RPC that handles all race conditions internally
-    const { data: atomicResult, error: atomicError } = await supabase.rpc('verify_and_complete_subscription', {
+    const { data: atomicResult, error: atomicError } = await (supabase as any).rpc('verify_and_complete_subscription', {
       p_user_id: userId,
       p_stripe_session_id: sessionId,
       p_stripe_customer_id: session.customer as string || null,

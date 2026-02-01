@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       return authResult.errorResponse!
     }
     const user = authResult.user
-    
+
     console.log('[Checkout] Auth check - user:', user.id)
 
     const supabase = await createClient()
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
             fraud_detection_data: couponValidation.fraudResult || null,
             created_at: new Date().toISOString()
           })
-          console.log('[Checkout] Coupon usage logged')
+        console.log('[Checkout] Coupon usage logged')
       }
     }
 
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
       console.log('[Checkout] TEST MODE: Simulating payment for user:', user.id)
 
       // Use atomic subscription creation function to prevent race conditions
-      const { data: atomicResult, error: atomicError } = await supabase.rpc('create_free_subscription', {
+      const { data: atomicResult, error: atomicError } = await (supabase as any).rpc('create_free_subscription', {
         p_user_id: user.id,
         p_plan_type: planType,
         p_monthly_allowance: selectedPlan.letters,

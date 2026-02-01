@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Log audit trail
-        await supabase.rpc('log_letter_audit', {
+        await (supabase as any).rpc('log_letter_audit', {
           p_letter_id: letterId,
           p_action: `batch_${action}`,
           p_old_status: letter.status,

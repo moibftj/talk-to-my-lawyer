@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get pending emails using RPC function with batch size
-    const { data: emails, error: fetchError } = await supabase.rpc(
+    const { data: emails, error: fetchError } = await (supabase as any).rpc(
       "get_pending_emails",
-      batchSize,
+      { p_limit: batchSize },
     );
 
     if (fetchError) {

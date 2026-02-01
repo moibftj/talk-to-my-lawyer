@@ -6,11 +6,11 @@ export async function POST(request: NextRequest) {
     // Verify admin or cron authorization
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
-    
+
     if (authHeader !== `Bearer ${cronSecret}`) {
       const supabase = await createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
+
       if (authError || !user) {
         return NextResponse.json(
           { error: "Unauthorized" },
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Call reset_monthly_allowances function
     const supabase = await createClient();
-    const { error } = await supabase.rpc('reset_monthly_allowances');
+    const { error } = await (supabase as any).rpc('reset_monthly_allowances');
 
     if (error) {
       console.error('[ResetMonthly] RPC error:', error);

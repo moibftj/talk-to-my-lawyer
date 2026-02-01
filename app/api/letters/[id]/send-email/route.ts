@@ -154,7 +154,7 @@ export async function POST(
     }
 
     try {
-      await supabase.rpc('log_letter_audit', {
+      await (supabase as any).rpc('log_letter_audit', {
         p_letter_id: letter.id,
         p_action: 'email_sent',
         p_old_status: letter.status,

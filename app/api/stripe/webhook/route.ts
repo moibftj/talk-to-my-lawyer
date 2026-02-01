@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         const couponCode = metadata.coupon_code || null
         const employeeId = metadata.employee_id || null
 
-        const { data: atomicResult, error: atomicError } = await supabase.rpc('verify_and_complete_subscription', {
+        const { data: atomicResult, error: atomicError } = await (supabase as any).rpc('verify_and_complete_subscription', {
           p_user_id: metadata.user_id,
           p_stripe_session_id: session.id,
           p_stripe_customer_id: session.customer as string,
