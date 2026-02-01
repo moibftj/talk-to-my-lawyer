@@ -17,7 +17,7 @@
  * ```
  */
 
-import { createClient as createServerClient } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { DatabaseWithRelationships } from '@/lib/supabase/types'
@@ -27,7 +27,7 @@ import type { DatabaseWithRelationships } from '@/lib/supabase/types'
 // ============================================================================
 
 export type SupabaseServerClient = ReturnType<typeof createServerClient<DatabaseWithRelationships>>
-export type SupabaseServiceRoleClient = ReturnType<typeof createClient<DatabaseWithRelationships>>
+export type SupabaseServiceRoleClient = ReturnType<typeof createSupabaseClient<DatabaseWithRelationships>>
 
 // ============================================================================
 // Service Role Client (Singleton)
