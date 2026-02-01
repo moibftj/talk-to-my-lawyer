@@ -72,7 +72,7 @@ export async function POST(
     }
 
     // Log audit trail for status change
-    await supabase.rpc('log_letter_audit', {
+    await (supabase as any).rpc('log_letter_audit', {
       p_letter_id: id,
       p_action: 'submitted',
       p_old_status: oldStatus,

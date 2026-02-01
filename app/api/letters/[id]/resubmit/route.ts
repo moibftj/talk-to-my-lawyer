@@ -123,7 +123,7 @@ export async function POST(
         .eq('id', id)
 
       // Log audit trail
-      await supabase.rpc('log_letter_audit', {
+      await (supabase as any).rpc('log_letter_audit', {
         p_letter_id: id,
         p_action: 'resubmit_failed',
         p_old_status: 'rejected',
