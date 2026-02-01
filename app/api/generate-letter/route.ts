@@ -148,51 +148,8 @@ export async function POST(request: NextRequest) {
         generationMethod = 'openai'
 
       } catch (openaiError) {
-        // OpenAI failed, try n8n fallback if available
-        if (n8nAvailable) {
-          console.warn("[GenerateLetter] OpenAI generation failed, falling back to n8n:", openaiError)
-          recordSpanEvent('openai_failed', {
-            error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
-          })
-          recordSpanEvent('n8n_fallback_started')
-
-          try {
-            const n8nFormData = transformIntakeToN8nFormat(
-              newLetter.id,
-              user.id,
-              sanitizedLetterType,
-              sanitizedIntakeData as Record<string, unknown>
-            )
-
-            generatedContent = await generateLetterViaN8n(n8nFormData)
-            recordSpanEvent('n8n_fallback_succeeded')
-            generationMethod = 'n8n'
-          } catch (n8nError) {
-            // n8n also failed, try Zapier if available
-            if (zapierAvailable) {
-              console.warn("[GenerateLetter] n8n fallback also failed, trying Zapier:", n8nError)
-              recordSpanEvent('n8n_failed', {
-                error: n8nError instanceof Error ? n8nError.message : 'Unknown error'
-              })
-              recordSpanEvent('zapier_fallback_started')
-
-              const zapierFormData = transformIntakeToZapierFormat(
-                newLetter.id,
-                user.id,
-                sanitizedLetterType,
-                sanitizedIntakeData as Record<string, unknown>
-              )
-
-              generatedContent = await generateLetterViaZapier(zapierFormData)
-              recordSpanEvent('zapier_fallback_succeeded')
-              generationMethod = 'zapier'
-            } else {
-              // No Zapier fallback available, re-throw the n8n error
-              throw n8nError
-            }
-          }
-        } else if (zapierAvailable) {
-          // n8n not available, try Zapier fallback directly
+        // OpenAI failed, try Zapier fallback if available
+        if (zapierAvailable) {
           console.warn("[GenerateLetter] OpenAI generation failed, falling back to Zapier:", openaiError)
           recordSpanEvent('openai_failed', {
             error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
