@@ -29,6 +29,13 @@ import {
   notifyN8nLetterCompleted,
   notifyN8nLetterFailed,
 } from '@/lib/services/n8n-webhook-service'
+import {
+  isZapierConfigured,
+  generateLetterViaZapier,
+  transformIntakeToZapierFormat,
+  notifyZapierLetterCompleted,
+  notifyZapierLetterFailed,
+} from '@/lib/services/zapier-webhook-service'
 import type { LetterGenerationResponse } from '@/lib/types/letter.types'
 import { createBusinessSpan, addSpanAttributes, recordSpanEvent } from '@/lib/monitoring/tracing'
 
