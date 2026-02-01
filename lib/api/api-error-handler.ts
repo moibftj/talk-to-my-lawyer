@@ -173,12 +173,13 @@ export function apiRouteHandler(
 
 /**
  * Success response helper
+ * Wraps response in { success: true, ...data } for consistency
  */
 export function successResponse<T = unknown>(
   data: T,
   status: number = 200
-): NextResponse<T> {
-  return NextResponse.json(data, { status })
+): NextResponse<{ success: true } & T> {
+  return NextResponse.json({ success: true, ...data } as { success: true } & T, { status })
 }
 
 /**

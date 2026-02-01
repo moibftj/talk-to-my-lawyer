@@ -1,9 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * GDPR Account Deletion API
+ *
+ * POST: Creates a request to delete user account (GDPR Article 17 - Right to Erasure)
+ * GET: Get deletion request status for the current user
+ * DELETE: Admin endpoint to approve and execute account deletion
+ */
+import { NextRequest } from 'next/server'
 import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
-import { getServiceRoleClient } from '@/lib/supabase/admin'
 import { requireSuperAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 /**
  * POST /api/gdpr/delete-account
@@ -14,9 +21,6 @@ import { getRateLimitTuple } from '@/lib/config'
  * Body:
  * - reason: string (optional) - Why the user wants to delete their account
  * - confirmEmail: string (required) - User must confirm by typing their email
- *
- * Note: Deletion requests require admin approval for security and legal compliance.
- * Some data may be retained for legal/regulatory requirements (e.g., financial records).
  */
 export async function POST(request: NextRequest) {
   try {
@@ -26,12 +30,12 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     const body = await request.json()
@@ -46,9 +50,9 @@ export async function POST(request: NextRequest) {
 
     // Verify email confirmation
     if (!confirmEmail || confirmEmail.toLowerCase() !== profile?.email?.toLowerCase()) {
-      return NextResponse.json({
-        error: 'Email confirmation does not match your account email',
-      }, { status: 400 })
+      return errorResponses.validation('Email confirmation does not match your account email', [
+        { field: 'confirmEmail', message: 'Please type your email address exactly as it appears on your account' }
+      ])
     }
 
     // Get client IP and user agent
@@ -66,10 +70,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existingRequest) {
-      return NextResponse.json({
-        error: 'You already have a pending deletion request',
-        existingRequest,
-      }, { status: 429 })
+      return errorResponses.rateLimited('You already have a pending deletion request')
     }
 
     // Create deletion request
@@ -102,18 +103,13 @@ export async function POST(request: NextRequest) {
       p_details: JSON.stringify({ deletion_request_id: deletionRequest.id }),
     })
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       requestId: deletionRequest.id,
       status: 'pending',
       message: 'Your account deletion request has been submitted. An administrator will review it within 30 days. You will receive an email confirmation.',
     })
-  } catch (error: any) {
-    console.error('[DeleteAccount] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create deletion request', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'DeleteAccount')
   }
 }
 
@@ -124,12 +120,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Get all deletion requests for this user
@@ -144,16 +140,11 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       requests: requests || [],
     })
-  } catch (error: any) {
-    console.error('[GetDeletionRequests] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to get deletion requests', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'GetDeletionRequests')
   }
 }
 
@@ -174,20 +165,21 @@ export async function DELETE(request: NextRequest) {
     // Get admin session for audit logging
     const adminSession = await getAdminSession()
     if (!adminSession) {
-      return NextResponse.json({ error: 'Admin session not found' }, { status: 401 })
+      return errorResponses.unauthorized('Admin session not found')
     }
 
     const body = await request.json()
     const { requestId, userId } = body
 
     if (!requestId || !userId) {
-      return NextResponse.json({
-        error: 'requestId and userId are required',
-      }, { status: 400 })
+      return errorResponses.validation('Missing required fields', [
+        { field: 'requestId', message: 'Request ID is required' },
+        { field: 'userId', message: 'User ID is required' }
+      ])
     }
 
     // Use service role for deletions
-    const supabase = getServiceRoleClient()
+    const supabase = db.serviceRole()
 
     // Update deletion request to approved and completed
     await supabase
@@ -226,15 +218,10 @@ export async function DELETE(request: NextRequest) {
       throw deleteAuthError
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       message: 'Account and all associated data have been permanently deleted',
     })
-  } catch (error: any) {
-    console.error('[DeleteAccount] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete account', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'DeleteAccountAdmin')
   }
 }

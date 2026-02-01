@@ -1,7 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+/**
+ * Password Update API
+ *
+ * Updates the authenticated user's password.
+ * Used after clicking the password reset link from email.
+ */
+import { NextRequest } from 'next/server'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,14 +21,18 @@ export async function POST(request: NextRequest) {
     const { newPassword } = await request.json()
 
     if (!newPassword) {
-      return NextResponse.json({ error: 'New password is required' }, { status: 400 })
+      return errorResponses.validation('New password is required', [
+        { field: 'newPassword', message: 'Password is required' }
+      ])
     }
 
     if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 })
+      return errorResponses.validation('Password must be at least 6 characters long', [
+        { field: 'newPassword', message: 'Password must be at least 6 characters' }
+      ])
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // For Supabase password reset, we don't need to manually handle tokens
     // The session will have the user context when they click the reset link
@@ -29,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (userError || !user) {
       console.error('[Update Password] No authenticated user:', userError)
-      return NextResponse.json({ error: 'Invalid or expired reset link' }, { status: 400 })
+      return errorResponses.badRequest('Invalid or expired reset link')
     }
 
     // Update the user's password
@@ -39,19 +50,13 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[Update Password] Error:', error)
-      return NextResponse.json({ error: 'Failed to update password' }, { status: 400 })
+      return errorResponses.badRequest('Failed to update password')
     }
 
-    return NextResponse.json({
-      message: 'Password updated successfully',
-      success: true
+    return successResponse({
+      message: 'Password updated successfully'
     })
-
-  } catch (error: any) {
-    console.error('[Update Password] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update password' },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'UpdatePassword')
   }
 }

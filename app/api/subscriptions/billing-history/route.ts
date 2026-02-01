@@ -1,7 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * Billing History API
+ *
+ * Fetches payment/subscription history for the authenticated user.
+ */
+import { NextRequest } from 'next/server'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 export const runtime = 'nodejs'
 
@@ -14,12 +20,12 @@ export async function GET(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Get all subscriptions (payment history)
@@ -43,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     if (subError) {
       console.error('[BillingHistory] Error:', subError)
-      return NextResponse.json({ error: 'Failed to fetch billing history' }, { status: 500 })
+      return errorResponses.serverError('Failed to fetch billing history')
     }
 
     // Calculate totals
@@ -71,8 +77,7 @@ export async function GET(request: NextRequest) {
       creditsRemaining: sub.credits_remaining
     })) || []
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       data: {
         history: billingHistory,
         summary: {
@@ -83,9 +88,8 @@ export async function GET(request: NextRequest) {
         }
       }
     })
-  } catch (error: any) {
-    console.error('[BillingHistory] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'BillingHistory')
   }
 }
 

@@ -1,8 +1,15 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * Employee Payouts API
+ *
+ * GET: Get employee's commission summary and payout requests
+ * POST: Request a commission payout
+ */
+import { NextRequest } from 'next/server'
 import { queueTemplateEmail } from '@/lib/email/service'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 export const runtime = 'nodejs'
 
@@ -15,11 +22,11 @@ export async function GET(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Verify user is an employee
@@ -30,7 +37,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (!profile || profile.role !== 'employee') {
-      return NextResponse.json({ error: 'Only employees can access payouts' }, { status: 403 })
+      return errorResponses.forbidden('Only employees can access payouts')
     }
 
     // Get all commissions for this employee
@@ -53,23 +60,19 @@ export async function GET(request: NextRequest) {
     const pendingAmount = commissions?.filter((c: any) => c.status === 'pending').reduce((sum: number, c: any) => sum + Number(c.commission_amount), 0) || 0
     const requestedAmount = payoutRequests?.filter((p: any) => p.status === 'pending').reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        summary: {
-          totalEarned,
-          totalPaid,
-          pendingAmount,
-          availableForPayout: pendingAmount - requestedAmount,
-          requestedAmount
-        },
-        commissions: commissions || [],
-        payoutRequests: payoutRequests || []
-      }
+    return successResponse({
+      summary: {
+        totalEarned,
+        totalPaid,
+        pendingAmount,
+        availableForPayout: pendingAmount - requestedAmount,
+        requestedAmount
+      },
+      commissions: commissions || [],
+      payoutRequests: payoutRequests || []
     })
-  } catch (error: any) {
-    console.error('[EmployeePayouts] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'EmployeePayouts')
   }
 }
 
@@ -82,11 +85,11 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Verify user is an employee
@@ -97,18 +100,22 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!profile || profile.role !== 'employee') {
-      return NextResponse.json({ error: 'Only employees can request payouts' }, { status: 403 })
+      return errorResponses.forbidden('Only employees can request payouts')
     }
 
     const body = await request.json()
     const { amount, paymentMethod, paymentDetails, notes } = body
 
     if (!amount || amount <= 0) {
-      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
+      return errorResponses.validation('Invalid amount', [
+        { field: 'amount', message: 'Amount must be greater than 0' }
+      ])
     }
 
     if (!paymentMethod) {
-      return NextResponse.json({ error: 'Payment method is required' }, { status: 400 })
+      return errorResponses.validation('Payment method is required', [
+        { field: 'paymentMethod', message: 'Payment method is required' }
+      ])
     }
 
     // Calculate available balance
@@ -129,10 +136,9 @@ export async function POST(request: NextRequest) {
     const availableBalance = pendingCommissions - pendingRequests
 
     if (amount > availableBalance) {
-      return NextResponse.json({
-        error: `Requested amount ($${amount}) exceeds available balance ($${availableBalance.toFixed(2)})`,
-        availableBalance
-      }, { status: 400 })
+      return errorResponses.validation(`Requested amount ($${amount}) exceeds available balance ($${availableBalance.toFixed(2)})`, [
+        { field: 'amount', message: `Maximum available: $${availableBalance.toFixed(2)}` }
+      ])
     }
 
     // Create payout request
@@ -153,8 +159,7 @@ export async function POST(request: NextRequest) {
       // If table doesn't exist, create a simple tracking record instead
       if (insertError.code === '42P01') {
         console.log('[EmployeePayouts] payout_requests table not found, creating record in commissions notes')
-        return NextResponse.json({
-          success: true,
+        return successResponse({
           message: 'Payout request recorded. Admin will contact you shortly.',
           pendingReview: true
         })
@@ -177,13 +182,11 @@ export async function POST(request: NextRequest) {
       console.error('[EmployeePayouts] Failed to send admin notification:', error)
     })
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       message: 'Payout request submitted successfully',
       payoutRequest
     })
-  } catch (error: any) {
-    console.error('[EmployeePayouts] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'EmployeePayouts')
   }
 }

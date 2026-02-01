@@ -18,7 +18,7 @@
  */
 
 import { createClient as createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { DatabaseWithRelationships } from '@/lib/supabase/types'
 
@@ -70,7 +70,7 @@ export function getServiceRoleClient(): SupabaseServiceRoleClient {
   const url = getServiceRoleUrl()
   const key = getServiceRoleKey()
 
-  serviceRoleClient = createClient<DatabaseWithRelationships>(url, key, {
+  serviceRoleClient = createSupabaseClient<DatabaseWithRelationships>(url, key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

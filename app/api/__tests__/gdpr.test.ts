@@ -17,6 +17,13 @@ vi.mock('@/lib/supabase/admin', () => ({
   getServiceRoleClient: vi.fn(),
 }))
 
+vi.mock('@/lib/db/client-factory', () => ({
+  db: {
+    server: vi.fn(),
+    serviceRole: vi.fn(),
+  },
+}))
+
 vi.mock('@/lib/auth/admin-session', () => ({
   requireSuperAdminAuth: vi.fn(() => Promise.resolve(null)),
   getAdminSession: vi.fn(() => Promise.resolve({
@@ -37,10 +44,12 @@ vi.mock('@/lib/config', () => ({
 
 import { createClient } from '@/lib/supabase/server'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
+import { db } from '@/lib/db/client-factory'
 import { requireSuperAdminAuth, getAdminSession } from '@/lib/auth/admin-session'
 
 const mockCreateClient = createClient as any
 const mockGetServiceRoleClient = getServiceRoleClient as any
+const mockDb = db as any
 const mockRequireSuperAdminAuth = requireSuperAdminAuth as any
 const mockGetAdminSession = getAdminSession as any
 
@@ -116,7 +125,7 @@ describe('GDPR API', () => {
         return {}
       })
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/export-data', {
         method: 'POST',
@@ -162,7 +171,7 @@ describe('GDPR API', () => {
         from: from1Mock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/export-data', {
         method: 'POST',
@@ -188,7 +197,7 @@ describe('GDPR API', () => {
         },
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/export-data', {
         method: 'POST',
@@ -246,7 +255,7 @@ describe('GDPR API', () => {
         rpc: rpcMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/export-data', {
         method: 'POST',
@@ -300,7 +309,7 @@ describe('GDPR API', () => {
         from: from1Mock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/export-data')
       const response = await ExportGET(request as any)
@@ -321,7 +330,7 @@ describe('GDPR API', () => {
         },
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/export-data')
       const response = await ExportGET(request as any)
@@ -389,7 +398,7 @@ describe('GDPR API', () => {
         rpc: rpcMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/delete-account', {
         method: 'POST',
@@ -436,7 +445,7 @@ describe('GDPR API', () => {
         from: from1Mock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/delete-account', {
         method: 'POST',
@@ -511,7 +520,7 @@ describe('GDPR API', () => {
         rpc: rpcMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/delete-account', {
         method: 'POST',
@@ -551,7 +560,7 @@ describe('GDPR API', () => {
         },
       }
 
-      mockGetServiceRoleClient.mockReturnValue(mockServiceRoleSupabase)
+      mockDb.serviceRole.mockReturnValue(mockServiceRoleSupabase)
 
       const request = new Request('http://localhost:3000/api/gdpr/delete-account', {
         method: 'DELETE',

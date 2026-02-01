@@ -1,16 +1,19 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * GDPR Data Export API
+ *
+ * POST: Creates a request to export all user data (GDPR Article 20 - Right to Data Portability)
+ * GET: Get list of export requests for the current user
+ */
+import { NextRequest } from 'next/server'
 import { safeApplyRateLimit, apiRateLimit } from '@/lib/rate-limit-redis'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 /**
  * POST /api/gdpr/export-data
  *
  * Creates a request to export all user data (GDPR Article 20 - Right to Data Portability)
- *
- * This endpoint creates an export request. The actual data generation can be:
- * 1. Immediate (for small datasets)
- * 2. Background job (for large datasets)
  *
  * The exported data includes:
  * - Profile information
@@ -27,12 +30,12 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Get client IP and user agent
@@ -52,10 +55,7 @@ export async function POST(request: NextRequest) {
     if (recentRequests && recentRequests.length > 0) {
       const latestRequest = recentRequests[0]
       if (latestRequest.status === 'pending' || latestRequest.status === 'processing') {
-        return NextResponse.json({
-          error: 'You already have a pending export request',
-          existingRequest: latestRequest,
-        }, { status: 429 })
+        return errorResponses.rateLimited('You already have a pending export request')
       }
     }
 
@@ -109,8 +109,7 @@ export async function POST(request: NextRequest) {
         p_user_agent: userAgent,
       })
 
-      return NextResponse.json({
-        success: true,
+      return successResponse({
         requestId: exportRequest.id,
         status: 'completed',
         data: userData,
@@ -129,12 +128,8 @@ export async function POST(request: NextRequest) {
 
       throw exportError
     }
-  } catch (error: any) {
-    console.error('[ExportData] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to export data', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'ExportData')
   }
 }
 
@@ -145,12 +140,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Get all export requests for this user
@@ -166,15 +161,10 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       requests: requests || [],
     })
-  } catch (error: any) {
-    console.error('[GetExportRequests] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to get export requests', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'GetExportRequests')
   }
 }

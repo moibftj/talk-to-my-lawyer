@@ -1,7 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+/**
+ * Privacy Policy Acceptance API
+ *
+ * POST: Records user's acceptance of the privacy policy
+ * GET: Checks if user has accepted the current privacy policy
+ */
+import { NextRequest } from 'next/server'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 /**
  * POST /api/gdpr/accept-privacy-policy
@@ -21,12 +28,12 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     const body = await request.json()
@@ -57,17 +64,12 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    return NextResponse.json({
-      success: true,
+    return successResponse({
       acceptanceId: data,
       policyVersion,
     })
-  } catch (error: any) {
-    console.error('[AcceptPrivacyPolicy] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to record privacy policy acceptance', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'AcceptPrivacyPolicy')
   }
 }
 
@@ -78,12 +80,12 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     // Check authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     const searchParams = request.nextUrl.searchParams
@@ -107,16 +109,12 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .order('accepted_at', { ascending: false })
 
-    return NextResponse.json({
+    return successResponse({
       hasAccepted: hasAccepted || false,
       requiredVersion,
       acceptances: acceptances || [],
     })
-  } catch (error: any) {
-    console.error('[CheckPrivacyPolicy] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to check privacy policy acceptance', message: error.message },
-      { status: 500 }
-    )
+  } catch (error) {
+    return handleApiError(error, 'CheckPrivacyPolicy')
   }
 }

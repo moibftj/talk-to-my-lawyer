@@ -14,6 +14,13 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }))
 
+vi.mock('@/lib/db/client-factory', () => ({
+  db: {
+    server: vi.fn(),
+    serviceRole: vi.fn(),
+  },
+}))
+
 vi.mock('@/lib/rate-limit-redis', () => ({
   safeApplyRateLimit: vi.fn(() => Promise.resolve(null)),
   apiRateLimit: {},
@@ -30,10 +37,12 @@ vi.mock('@/lib/auth/authenticate-user', () => ({
 }))
 
 import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/db/client-factory'
 import { requireAuth } from '@/lib/auth/authenticate-user'
 import { AuthenticationError } from '@/lib/api/api-error-handler'
 
 const mockCreateClient = createClient as any
+const mockDb = db as any
 const mockRequireAuth = requireAuth as any
 
 // Helper to create a Supabase query chain mock
@@ -285,6 +294,7 @@ describe('Subscription & Allowance API', () => {
         },
       }
 
+      // This route still uses createClient() directly, not db.server()
       mockCreateClient.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/subscriptions/activate', {
@@ -346,7 +356,7 @@ describe('Subscription & Allowance API', () => {
         from: fromMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/subscriptions/billing-history')
       const response = await BillingGET(request as any)
@@ -403,7 +413,7 @@ describe('Subscription & Allowance API', () => {
         from: fromMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/subscriptions/billing-history')
       const response = await BillingGET(request as any)
@@ -435,7 +445,7 @@ describe('Subscription & Allowance API', () => {
         from: fromMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/subscriptions/billing-history')
       const response = await BillingGET(request as any)
@@ -457,7 +467,7 @@ describe('Subscription & Allowance API', () => {
         },
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/subscriptions/billing-history')
       const response = await BillingGET(request as any)
@@ -515,7 +525,7 @@ describe('Subscription & Allowance API', () => {
         from: fromMock,
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabase)
+      mockDb.server.mockResolvedValue(mockSupabase)
 
       const request = new Request('http://localhost:3000/api/subscriptions/billing-history')
       const response = await BillingGET(request as any)
