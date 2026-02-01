@@ -20,14 +20,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import type { DatabaseWithRelationships } from '@/lib/supabase/types'
+import type { Database } from '@/lib/database.types'
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type SupabaseServerClient = ReturnType<typeof createServerClient<DatabaseWithRelationships>>
-export type SupabaseServiceRoleClient = ReturnType<typeof createSupabaseClient<DatabaseWithRelationships>>
+export type SupabaseServerClient = ReturnType<typeof createServerClient<Database>>
+export type SupabaseServiceRoleClient = ReturnType<typeof createSupabaseClient<Database>>
 
 // ============================================================================
 // Service Role Client (Singleton)
@@ -70,7 +70,7 @@ export function getServiceRoleClient(): SupabaseServiceRoleClient {
   const url = getServiceRoleUrl()
   const key = getServiceRoleKey()
 
-  serviceRoleClient = createSupabaseClient<DatabaseWithRelationships>(url, key, {
+  serviceRoleClient = createSupabaseClient<Database>(url, key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -110,7 +110,7 @@ export async function getServerClient(): Promise<SupabaseServerClient> {
     )
   }
 
-  return createServerClient<DatabaseWithRelationships>(
+  return createServerClient<Database>(
     url,
     key,
     {

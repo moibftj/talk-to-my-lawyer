@@ -1,14 +1,14 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import type { DatabaseWithRelationships } from "@/lib/supabase/types";
+import type { Database } from "@/lib/database.types";
 
 // Singleton service role client with proper typing
-let serviceRoleClient: SupabaseClient<any> | null = null;
+let serviceRoleClient: SupabaseClient<Database> | null = null;
 
 /**
  * Gets a singleton Supabase client with Service Role privileges.
  * WARNING: This client bypasses RLS! Use only for admin/system tasks.
  */
-export function getServiceRoleClient(): SupabaseClient<any> {
+export function getServiceRoleClient(): SupabaseClient<Database> {
   if (serviceRoleClient) return serviceRoleClient;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,12 +20,12 @@ export function getServiceRoleClient(): SupabaseClient<any> {
     );
   }
 
-  serviceRoleClient = createClient<DatabaseWithRelationships>(supabaseUrl, supabaseServiceRoleKey, {
+  serviceRoleClient = createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
-  }) as SupabaseClient<any>;
+  });
 
   return serviceRoleClient;
 }
@@ -37,4 +37,4 @@ export function resetServiceRoleClient(): void {
   serviceRoleClient = null;
 }
 
-export type SupabaseAdminClient = SupabaseClient<any>;
+export type SupabaseAdminClient = SupabaseClient<Database>;
