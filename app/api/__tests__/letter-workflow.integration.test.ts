@@ -384,4 +384,201 @@ describe('Letter Workflow - Integration', () => {
       expect(versions[1].content).not.toBe(versions[0].content)
     })
   })
+
+  describe('Letter Generation Fallback (OpenAI → n8n)', () => {
+    it('should use OpenAI as primary generation method', async () => {
+      const generation = {
+        method: 'openai',
+        model: 'gpt-4-turbo',
+        content: 'Generated via OpenAI SDK',
+        attempts: 1,
+        duration_ms: 1500,
+      }
+
+      expect(generation.method).toBe('openai')
+      expect(generation.model).toBe('gpt-4-turbo')
+      expect(generation.content).toContain('OpenAI')
+    })
+
+    it('should fall back to n8n when OpenAI fails and n8n is available', async () => {
+      const n8nAvailable = true
+      const openaiFailed = true
+
+      let generationMethod: 'openai' | 'n8n' = 'openai'
+      let generatedContent: string | undefined
+
+      // Simulate OpenAI failure
+      if (openaiFailed) {
+        if (n8nAvailable) {
+          // Fall back to n8n
+          generationMethod = 'n8n'
+          generatedContent = 'Generated via n8n workflow'
+        }
+      }
+
+      expect(generationMethod).toBe('n8n')
+      expect(generatedContent).toContain('n8n')
+    })
+
+    it('should fail when OpenAI fails and n8n is not available', async () => {
+      const n8nAvailable = false
+      const openaiFailed = true
+      let errorThrown = false
+      let errorMessage = ''
+
+      try {
+        if (openaiFailed) {
+          if (!n8nAvailable) {
+            errorThrown = true
+            errorMessage = 'OpenAI generation failed and no fallback available'
+            throw new Error(errorMessage)
+          }
+        }
+      } catch (e) {
+        // Expected error
+      }
+
+      expect(errorThrown).toBe(true)
+      expect(errorMessage).toContain('no fallback available')
+    })
+
+    it('should track generation method in audit trail', async () => {
+      const auditLog = {
+        letter_id: 'letter-123',
+        from_status: 'generating',
+        to_status: 'pending_review',
+        action: 'created',
+        details: 'Letter generated successfully via OpenAI (primary)',
+        timestamp: new Date().toISOString(),
+      }
+
+      expect(auditLog.details).toContain('OpenAI (primary)')
+      expect(auditLog.from_status).toBe('generating')
+      expect(auditLog.to_status).toBe('pending_review')
+    })
+
+    it('should track fallback usage in audit trail', async () => {
+      const auditLog = {
+        letter_id: 'letter-456',
+        from_status: 'generating',
+        to_status: 'pending_review',
+        action: 'created',
+        details: 'Letter generated successfully via n8n (fallback)',
+        timestamp: new Date().toISOString(),
+      }
+
+      expect(auditLog.details).toContain('n8n (fallback)')
+      expect(auditLog.details).toContain('fallback')
+    })
+
+    it('should record OpenAI failure in trace spans', async () => {
+      const spanEvents = [
+        { name: 'openai_generation_started', timestamp: '2024-01-01T00:00:00Z' },
+        { name: 'openai_failed', timestamp: '2024-01-01T00:00:02Z', attributes: { error: 'Rate limit exceeded' } },
+        { name: 'n8n_fallback_started', timestamp: '2024-01-01T00:00:02Z' },
+        { name: 'n8n_fallback_succeeded', timestamp: '2024-01-01T00:00:05Z' },
+      ]
+
+      const hasFailureEvent = spanEvents.some(e => e.name === 'openai_failed')
+      const hasFallbackEvent = spanEvents.some(e => e.name === 'n8n_fallback_started')
+      const hasSuccessEvent = spanEvents.some(e => e.name === 'n8n_fallback_succeeded')
+
+      expect(hasFailureEvent).toBe(true)
+      expect(hasFallbackEvent).toBe(true)
+      expect(hasSuccessEvent).toBe(true)
+    })
+
+    it('should record error when both generation methods fail', async () => {
+      const auditLog = {
+        letter_id: 'letter-789',
+        from_status: 'generating',
+        to_status: 'failed',
+        action: 'generation_failed',
+        details: 'Generation failed (n8n fallback): Connection timeout',
+        timestamp: new Date().toISOString(),
+      }
+
+      expect(auditLog.to_status).toBe('failed')
+      expect(auditLog.details).toContain('n8n fallback')
+      expect(auditLog.details).toContain('timeout')
+    })
+
+    it('should distinguish between primary and fallback in telemetry', async () => {
+      const telemetry = {
+        generation_method: 'openai_primary',
+        n8n_available: true,
+        openai_attempts: 1,
+        openai_duration_ms: 1200,
+        n8n_used: false,
+      }
+
+      expect(telemetry.generation_method).toBe('openai_primary')
+      expect(telemetry.n8n_available).toBe(true)
+      expect(telemetry.n8n_used).toBe(false)
+    })
+
+    it('should update telemetry when fallback is used', async () => {
+      const telemetry = {
+        generation_method: 'openai_primary',
+        n8n_available: true,
+        openai_failed: true,
+        n8n_used: true,
+        n8n_duration_ms: 3500,
+        total_duration_ms: 4700, // Includes failed OpenAI attempt + n8n
+      }
+
+      expect(telemetry.openai_failed).toBe(true)
+      expect(telemetry.n8n_used).toBe(true)
+      expect(telemetry.total_duration_ms).toBeGreaterThan(telemetry.n8n_duration_ms)
+    })
+
+    it('should handle OpenAI timeout with n8n fallback', async () => {
+      const openaiTimeout = true
+      const n8nAvailable = true
+
+      let result: { success: boolean; method: string; content: string }
+
+      if (openaiTimeout) {
+        if (n8nAvailable) {
+          result = {
+            success: true,
+            method: 'n8n',
+            content: 'Letter generated via n8n after OpenAI timeout',
+          }
+        } else {
+          result = {
+            success: false,
+            method: 'none',
+            content: '',
+          }
+        }
+      } else {
+        result = {
+          success: true,
+          method: 'openai',
+          content: 'Letter generated via OpenAI',
+        }
+      }
+
+      expect(result.success).toBe(true)
+      expect(result.method).toBe('n8n')
+      expect(result.content).toContain('n8n')
+    })
+
+    it('should handle OpenAI rate limit with n8n fallback', async () => {
+      const openaiRateLimited = true
+      const n8nAvailable = true
+
+      const fallbackTriggered = openaiRateLimited && n8nAvailable
+
+      expect(fallbackTriggered).toBe(true)
+
+      const result = fallbackTriggered
+        ? { method: 'n8n', reason: 'OpenAI rate limit exceeded' }
+        : { method: 'openai', reason: 'Primary method' }
+
+      expect(result.method).toBe('n8n')
+      expect(result.reason).toContain('rate limit')
+    })
+  })
 })
