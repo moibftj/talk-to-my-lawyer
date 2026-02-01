@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       full_name: fullName.trim(),
     }
 
-    const { data: profileData, error: profileError } = await serviceClient
+    const { data: profileData, error: profileError } = await (serviceClient as any)
       .from("profiles")
       .upsert(profileInsert, {
         onConflict: "id",
