@@ -190,7 +190,7 @@ describe('Authentication Flows', () => {
         error: null,
       })
 
-      mockCreateClient.mockResolvedValue({
+      mockDb.server.mockResolvedValue({
         auth: {
           getUser: vi.fn().mockResolvedValue({
             data: { user: { id: 'user-123' } },
@@ -219,7 +219,7 @@ describe('Authentication Flows', () => {
     })
 
     it('should require authentication', async () => {
-      mockCreateClient.mockResolvedValue({
+      mockDb.server.mockResolvedValue({
         auth: {
           getUser: vi.fn().mockResolvedValue({
             data: { user: null },

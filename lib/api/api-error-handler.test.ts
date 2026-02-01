@@ -292,7 +292,7 @@ describe("successResponse", () => {
 
     expect(response.status).toBe(200);
     const json = await response.json();
-    expect(json).toEqual(data);
+    expect(json).toEqual({ success: true, ...data });
   });
 
   it("returns custom status code", async () => {
@@ -301,12 +301,16 @@ describe("successResponse", () => {
     expect(response.status).toBe(201);
     const json = await response.json();
     expect(json.created).toBe(true);
+    expect(json.success).toBe(true);
   });
 
   it("defaults to 200 when status not provided", async () => {
     const response = successResponse({ data: "test" });
 
     expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.success).toBe(true);
+    expect(json.data).toBe("test");
   });
 });
 
