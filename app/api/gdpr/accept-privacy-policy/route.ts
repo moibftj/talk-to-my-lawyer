@@ -45,12 +45,12 @@ export async function POST(request: NextRequest) {
 
     // Get client IP and user agent
     const ipAddress = request.headers.get('x-forwarded-for') ||
-                     request.headers.get('x-real-ip') ||
-                     'unknown'
+      request.headers.get('x-real-ip') ||
+      'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Record the acceptance
-    const { data, error } = await supabase.rpc('record_privacy_acceptance', {
+    const { data, error } = await (supabase as any).rpc('record_privacy_acceptance', {
       p_user_id: user.id,
       p_policy_version: policyVersion,
       p_ip_address: ipAddress,
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     const requiredVersion = searchParams.get('version') || '1.0'
 
     // Check if user has accepted the policy
-    const { data: hasAccepted, error } = await supabase.rpc('has_accepted_privacy_policy', {
+    const { data: hasAccepted, error } = await (supabase as any).rpc('has_accepted_privacy_policy', {
       p_user_id: user.id,
       p_required_version: requiredVersion,
     })

@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (profileError || !profile || profile.role !== 'employee') {
+    if (profileError || !profile || (profile as any).role !== 'employee') {
       return errorResponses.forbidden('Only employees can access referral links')
     }
 
@@ -55,25 +55,25 @@ export async function GET(request: NextRequest) {
 
     // Generate referral link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://talk-to-my-lawyer.com'
-    const referralLink = `${baseUrl}?ref=${coupon.code}`
-    const signupLink = `${baseUrl}/auth/signup?coupon=${coupon.code}`
+    const referralLink = `${baseUrl}?ref=${(coupon as any).code}`
+    const signupLink = `${baseUrl}/auth/signup?coupon=${(coupon as any).code}`
 
     return successResponse({
       hasCoupon: true,
       coupon: {
-        code: coupon.code,
-        discountPercent: coupon.discount_percent,
-        usageCount: coupon.usage_count,
-        isActive: coupon.is_active
+        code: (coupon as any).code,
+        discountPercent: (coupon as any).discount_percent,
+        usageCount: (coupon as any).usage_count,
+        isActive: (coupon as any).is_active
       },
       links: {
         referral: referralLink,
         signup: signupLink,
         share: {
-          twitter: `https://twitter.com/intent/tweet?text=Get%20${coupon.discount_percent}%25%20off%20professional%20legal%20letters%20with%20my%20code%20${coupon.code}!&url=${encodeURIComponent(referralLink)}`,
-          linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(referralLink)}&title=Get%20${coupon.discount_percent}%25%20off%20legal%20letters`,
-          whatsapp: `https://wa.me/?text=Get%20${coupon.discount_percent}%25%20off%20professional%20legal%20letters%20with%20code%20${coupon.code}%20${encodeURIComponent(referralLink)}`,
-          email: `mailto:?subject=Get%20${coupon.discount_percent}%25%20off%20legal%20letters&body=Use%20my%20referral%20code%20${coupon.code}%20to%20get%20${coupon.discount_percent}%25%20off%20at%20${encodeURIComponent(referralLink)}`
+          twitter: `https://twitter.com/intent/tweet?text=Get%20${(coupon as any).discount_percent}%25%20off%20professional%20legal%20letters%20with%20my%20code%20${(coupon as any).code}!&url=${encodeURIComponent(referralLink)}`,
+          linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(referralLink)}&title=Get%20${(coupon as any).discount_percent}%25%20off%20legal%20letters`,
+          whatsapp: `https://wa.me/?text=Get%20${(coupon as any).discount_percent}%25%20off%20professional%20legal%20letters%20with%20code%20${(coupon as any).code}%20${encodeURIComponent(referralLink)}`,
+          email: `mailto:?subject=Get%20${(coupon as any).discount_percent}%25%20off%20legal%20letters&body=Use%20my%20referral%20code%20${(coupon as any).code}%20to%20get%20${(coupon as any).discount_percent}%25%20off%20at%20${encodeURIComponent(referralLink)}`
         }
       }
     })

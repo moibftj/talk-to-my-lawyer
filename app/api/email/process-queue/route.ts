@@ -211,7 +211,7 @@ export async function GET(request: NextRequest) {
   const supabase = getServiceRoleClient();
 
   // Get queue stats
-  const { data: stats } = await supabase.rpc("get_email_queue_stats");
+  const { data: stats } = await (supabase as any).rpc("get_email_queue_stats");
 
   return NextResponse.json({
     status: "ok",

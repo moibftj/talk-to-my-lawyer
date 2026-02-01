@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     // Verify email confirmation
-    if (!confirmEmail || confirmEmail.toLowerCase() !== profile?.email?.toLowerCase()) {
+    if (!confirmEmail || confirmEmail.toLowerCase() !== (profile as any)?.email?.toLowerCase()) {
       return errorResponses.validation('Email confirmation does not match your account email', [
         { field: 'confirmEmail', message: 'Please type your email address exactly as it appears on your account' }
       ])
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
 
     // Get client IP and user agent
     const ipAddress = request.headers.get('x-forwarded-for') ||
-                     request.headers.get('x-real-ip') ||
-                     'unknown'
+      request.headers.get('x-real-ip') ||
+      'unknown'
     const userAgent = request.headers.get('user-agent') || 'unknown'
 
     // Check for existing pending deletion request
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create deletion request
-    const { data: deletionRequest, error: insertError } = await supabase
+    const { data: deletionRequest, error: insertError } = await (supabase as any)
       .from('data_deletion_requests')
       .insert({
         user_id: user.id,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the deletion request
-    await supabase.rpc('log_data_access', {
+    await (supabase as any).rpc('log_data_access', {
       p_user_id: user.id,
       p_accessed_by: user.id,
       p_access_type: 'delete',
@@ -100,11 +100,11 @@ export async function POST(request: NextRequest) {
       p_resource_id: user.id,
       p_ip_address: ipAddress,
       p_user_agent: userAgent,
-      p_details: JSON.stringify({ deletion_request_id: deletionRequest.id }),
+      p_details: JSON.stringify({ deletion_request_id: (deletionRequest as any).id }),
     })
 
     return successResponse({
-      requestId: deletionRequest.id,
+      requestId: (deletionRequest as any).id,
       status: 'pending',
       message: 'Your account deletion request has been submitted. An administrator will review it within 30 days. You will receive an email confirmation.',
     })
@@ -182,7 +182,7 @@ export async function DELETE(request: NextRequest) {
     const supabase = db.serviceRole()
 
     // Update deletion request to approved and completed
-    await supabase
+    await (supabase as any)
       .from('data_deletion_requests')
       .update({
         status: 'completed',
