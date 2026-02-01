@@ -42,7 +42,7 @@ export async function POST(
 
     if (updateError) throw updateError
 
-    await supabase.rpc('log_letter_audit', {
+    await (supabase as any).rpc('log_letter_audit', {
       p_letter_id: id,
       p_action: 'review_started',
       p_old_status: letter.status,
