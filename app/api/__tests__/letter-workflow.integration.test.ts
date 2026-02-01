@@ -310,7 +310,8 @@ describe('Letter Workflow - Integration', () => {
       expect(renewedSubscription.credits_remaining).toBe(
         subscription.monthly_allowance
       )
-      expect(new Date(renewedSubscription.period_start).getMonth()).toBe(1)
+      // February is month 1 in JavaScript (0-indexed)
+      expect(new Date(renewedSubscription.period_start).getUTCMonth()).toBe(1)
     })
 
     it('should handle allowance refund on letter rejection', async () => {

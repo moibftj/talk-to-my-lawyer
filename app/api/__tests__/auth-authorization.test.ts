@@ -9,9 +9,9 @@ import { describe, it, expect, beforeEach } from 'vitest'
 describe('Authentication & Authorization', () => {
   describe('User Roles & Access Control', () => {
     it('should have distinct user roles', () => {
-      const userRoles = ['subscriber', 'employee', 'system_admin', 'attorney_admin']
+      const userRoles = ['subscriber', 'employee', 'super_admin', 'attorney_admin']
       expect(userRoles).toContain('subscriber')
-      expect(userRoles).toContain('system_admin')
+      expect(userRoles).toContain('super_admin')
       expect(userRoles).toContain('attorney_admin')
     })
 
@@ -71,7 +71,7 @@ describe('Authentication & Authorization', () => {
       }
 
       // Attorney should NOT see financial data
-      const hasAccessToFinancials = attorney.role === 'system_admin'
+      const hasAccessToFinancials = attorney.role === 'super_admin'
 
       expect(hasAccessToFinancials).toBe(false)
     })
@@ -84,52 +84,52 @@ describe('Authentication & Authorization', () => {
         status: 'pending_payout',
       }
 
-      // Attorney should NOT see commission data - only system_admin can access
-      const hasAccessToCommissions = attorney.role === 'system_admin'
+      // Attorney should NOT see commission data - only super_admin can access
+      const hasAccessToCommissions = attorney.role === 'super_admin'
 
       expect(hasAccessToCommissions).toBe(false)
     })
   })
 
-  describe('System Admin Permissions', () => {
-    it('should allow system admin to view all letters', async () => {
-      const admin = { id: 'admin-1', role: 'system_admin' }
+  describe('Super Admin Permissions', () => {
+    it('should allow super admin to view all letters', async () => {
+      const admin = { id: 'admin-1', role: 'super_admin' }
       const allLetters = [
         { id: 'letter-1', user_id: 'user-1' },
         { id: 'letter-2', user_id: 'user-2' },
         { id: 'letter-3', user_id: 'user-3' },
       ]
 
-      const visibleLetters = admin.role === 'system_admin' ? allLetters : []
+      const visibleLetters = admin.role === 'super_admin' ? allLetters : []
       expect(visibleLetters).toHaveLength(3)
     })
 
-    it('should allow system admin to view user financial data', async () => {
-      const admin = { id: 'admin-1', role: 'system_admin' }
+    it('should allow super admin to view user financial data', async () => {
+      const admin = { id: 'admin-1', role: 'super_admin' }
       const subscription = {
         user_id: 'user-123',
         total_spent: 500,
         monthly_allowance: 5,
       }
 
-      const canView = admin.role === 'system_admin'
+      const canView = admin.role === 'super_admin'
       expect(canView).toBe(true)
     })
 
-    it('should allow system admin to manage coupons', async () => {
-      const admin = { id: 'admin-1', role: 'system_admin' }
+    it('should allow super admin to manage coupons', async () => {
+      const admin = { id: 'admin-1', role: 'super_admin' }
       const actions = ['create', 'edit', 'delete', 'view_usage']
 
-      const allowedActions = admin.role === 'system_admin' ? actions : []
+      const allowedActions = admin.role === 'super_admin' ? actions : []
       expect(allowedActions).toContain('create')
       expect(allowedActions).toContain('view_usage')
     })
 
-    it('should allow system admin to manage employees/commissions', async () => {
-      const admin = { id: 'admin-1', role: 'system_admin' }
+    it('should allow super admin to manage employees/commissions', async () => {
+      const admin = { id: 'admin-1', role: 'super_admin' }
       const actions = ['view_commissions', 'approve_payouts', 'view_analytics']
 
-      const allowedActions = admin.role === 'system_admin' ? actions : []
+      const allowedActions = admin.role === 'super_admin' ? actions : []
       expect(allowedActions).toContain('view_commissions')
       expect(allowedActions).toContain('approve_payouts')
     })
@@ -170,7 +170,7 @@ describe('Authentication & Authorization', () => {
       }
 
       const canView =
-        otherEmployeeCommission.employee_id === employee.id || employee.role === 'system_admin'
+        otherEmployeeCommission.employee_id === employee.id || employee.role === 'super_admin'
       expect(canView).toBe(false)
     })
 

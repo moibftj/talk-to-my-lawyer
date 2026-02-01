@@ -76,7 +76,7 @@ export async function validateLetterStatusTransition(
     return NextResponse.json(
       {
         error: `Cannot ${action} a letter that is ${letter.status}`,
-        message: 'This letter has already been finalized. Only a system administrator can modify it.'
+        message: 'This letter has already been finalized. Only a Super Admin can modify it.'
       },
       { status: 403 }
     )

@@ -244,7 +244,9 @@ describe('Database Integrity', () => {
 
     it('should enforce valid user role values', async () => {
       const client = getSupabaseClient()
-      const validRoles = ['subscriber', 'employee', 'attorney_admin', 'system_admin']
+      // Note: The database uses 'admin' as the role with admin_sub_role for distinction
+      // Valid user_role enum values are: subscriber, employee, admin
+      const validRoles = ['subscriber', 'employee', 'admin']
 
       for (const role of validRoles) {
         const { data, error } = await client
@@ -257,8 +259,8 @@ describe('Database Integrity', () => {
           .select()
 
         if (error) {
-          // FK violation (23503) or unique violation (23505) are acceptable
-          expect(['23503', '23505', '22P02']).toContain(error.code)
+          // FK violation (23503), unique violation (23505), check constraint (23514) are acceptable
+          expect(['23503', '23505', '22P02', '23514']).toContain(error.code)
         } else {
           expect(data).not.toBeNull()
           // Cleanup

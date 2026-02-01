@@ -156,7 +156,7 @@ export function SuperAdminReviewModal({ letter }: SuperAdminReviewModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-        {/* Header - System Admin themed */}
+        {/* Header - Super Admin themed */}
         <div className="sticky top-0 bg-slate-800 text-white border-b px-6 py-4 rounded-t-lg">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export function SuperAdminReviewModal({ letter }: SuperAdminReviewModalProps) {
                 <Settings className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">System Admin Review</h2>
+                <h2 className="text-xl font-bold">Super Admin Review</h2>
                 <p className="text-xs text-slate-300">Letter ID: {letter.id}</p>
               </div>
             </div>

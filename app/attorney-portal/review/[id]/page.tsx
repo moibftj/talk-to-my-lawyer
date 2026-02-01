@@ -144,7 +144,7 @@ export default async function AttorneyReviewLetterDetailPage({ params }: { param
 
             <div className="md:col-span-2">
               <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded border border-amber-200">
-                <strong>Note:</strong> Subscriber contact details are masked. System administrators can view full subscriber information.
+                <strong>Note:</strong> Subscriber contact details are masked. Super Admins can view full subscriber information.
               </p>
             </div>
           </div>

@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         password: 'TestPass123!',
         role: 'admin' as const,
         adminSubRole: 'super_admin' as const,
-        fullName: 'Test System Admin'
+        fullName: 'Test Super Admin'
       },
       {
         email: 'test-attorney@ttml-test.com',
