@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
           discount_percent: 20,
           is_active: true,
         }
-        const { error: couponInsertError } = await serviceClient
+        const { error: couponInsertError } = await (serviceClient as any)
           .from("employee_coupons")
           .insert(couponInsert)
 
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       } else {
         console.log(
           "[CreateProfile] Employee coupon verified:",
-          couponData.code,
+          (couponData as any).code,
         )
       }
     }
