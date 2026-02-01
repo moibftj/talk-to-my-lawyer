@@ -1,0 +1,186 @@
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │ TALK-TO-MY-LAWYER - ENVIRONMENT VARIABLES CONFIGURATION                    │
+# │                                                                             │
+# │ IMPORTANT: Copy this file to .env.local and fill in your actual values     │
+# │ NEVER commit .env.local or any file containing actual secrets!            │
+# └─────────────────────────────────────────────────────────────────────────────┘
+
+# ============================================================================
+# CRITICAL VARIABLES (Required for all environments)
+# ============================================================================
+
+# Supabase Configuration
+# Get these from your Supabase project settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+
+# Supabase hostname (for image optimization, extracted from URL if not provided)
+# Format: db-project-ref.supabase.co
+SUPABASE_HOSTNAME=db-your-project-ref.supabase.co
+
+# OpenAI Configuration
+# Get your API key from https://platform.openai.com/api-keys
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# ============================================================================
+# PRODUCTION VARIABLES (Required for production deployment)
+# ============================================================================
+
+# Supabase Service Role Key (server-only, never expose to client)
+# Get from Supabase project settings > API > service_role (secret)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# Stripe Configuration
+# Get keys from https://dashboard.stripe.com/apikeys
+STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+# Webhook secret from Stripe > Developers > Webhooks > your endpoint
+STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret
+
+# Admin Configuration
+ADMIN_EMAIL=admin@yourdomain.com
+# Admin password for scripts like scripts/create-admin-user.ts
+ADMIN_PASSWORD=your-strong-admin-password
+# Random string for admin portal authentication (min 32 chars recommended)
+ADMIN_PORTAL_KEY=your-random-admin-portal-key-min-32-chars
+
+# Cron Job Security
+# Random string for cron job authentication
+CRON_SECRET=your-random-cron-secret-key
+
+# Production Site URL
+# Used for email links, callbacks, and redirects
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+
+# ============================================================================
+# EMAIL CONFIGURATION (At least one provider required for production)
+# ============================================================================
+
+# Resend (Recommended - https://resend.com)
+# Get API key from https://resend.com/api-keys
+RESEND_API_KEY=re_your-resend-api-key
+
+# Email From Address
+# Must be a verified domain in your email provider
+EMAIL_FROM=noreply@yourdomain.com
+
+# Email From Name (optional)
+EMAIL_FROM_NAME=Talk-To-My-Lawyer
+
+# Reply-To Address (optional, strongly recommended for deliverability)
+# Use a real, monitored email address to improve inbox placement
+EMAIL_REPLY_TO=support@yourdomain.com
+
+# ============================================================================
+# RATE LIMITING CONFIGURATION (Strongly recommended for production)
+# ============================================================================
+
+# Upstash Redis (https://upstash.com)
+# Create a Redis database and get the REST API credentials
+KV_REST_API_URL=https://your-redis-instance.upstash.io
+KV_REST_API_TOKEN=your-upstash-redis-token
+
+# ============================================================================
+# OPTIONAL VARIABLES
+# ============================================================================
+
+# Application URL (Legacy - use NEXT_PUBLIC_SITE_URL instead)
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Test Mode
+# WARNING: MUST be set to "false" in production!
+# When true, bypasses payment verification and other checks
+ENABLE_TEST_MODE=false
+
+# Test Account Utilities (scripts/create-test-accounts*.js/ts)
+TEST_ACCOUNT_PASSWORD=your-strong-test-password
+
+# ============================================================================
+# DEPLOYMENT SPECIFIC NOTES
+# ============================================================================
+
+# Vercel Deployment:
+# 1. Go to Project Settings > Environment Variables
+# 2. Add all variables marked as "server-only" to Vercel secrets
+# 3. Public variables (NEXT_PUBLIC_*) can be added as regular env vars
+# 4. Set ENABLE_TEST_MODE to "false" for Production environment
+# 5. Configure different values for Preview/Production/Development branches
+
+# Docker Deployment:
+# 1. Use docker-compose.yml or Dockerfile for building
+# 2. Pass environment variables via docker run -e or --env-file
+# 3. Never mount .env.local as a volume in production containers
+
+# Security Best Practices:
+# 1. Rotate secrets regularly (quarterly for production)
+# 2. Use different keys for development/staging/production
+# 3. Never log environment variable values in error messages
+# 4. Restrict access to secrets to minimum required team members
+# 5. Use Vercel's "Secret" type for sensitive variables
+# 6. Enable audit logging for secrets access
+
+# ============================================================================
+# VALIDATION
+# ============================================================================
+# Run `pnpm validate-env` to check your configuration before deployment
+
+# ============================================================================
+# LEGAL RESEARCH API (Optional - for enhanced letter generation)
+# ============================================================================
+
+# Tavily API (Recommended - optimized for AI/research)
+# Get your key from https://tavily.com
+TAVILY_API_KEY=tvly-your-tavily-api-key
+
+# Alternative: Bing Web Search API
+# Get from Azure Cognitive Services
+BING_SEARCH_API_KEY=your-bing-search-api-key
+
+# Feature flag: Enable enhanced letter generation with research
+# Set to "true" to use multi-step generation with legal research
+ENABLE_ENHANCED_LETTER_GENERATION=true
+
+# ============================================================================
+# OPENTELEMETRY TRACING (Optional)
+# ============================================================================
+
+# OTLP Exporter Endpoint for distributed tracing
+# Default: http://localhost:4318/v1/traces (OTLP/HTTP)
+# Use http://localhost:4317 for OTLP/gRPC
+# OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318/v1/traces
+
+# Optional: OTLP Headers (JSON format for authentication)
+# OTEL_EXPORTER_OTLP_HEADERS='{"authorization":"Bearer YOUR_TOKEN"}'
+
+# Optional: Service identification
+# OTEL_SERVICE_NAME=talk-to-my-lawyer
+# OTEL_SERVICE_VERSION=1.0.0
+
+# Optional: Disable tracing completely
+# OTEL_SDK_DISABLED=false
+# Email configuration updated via Resend
+
+# ============================================================================
+# MCP SERVER CONFIGURATION (For AI/CLI integration only)
+# ============================================================================
+
+# GitHub Integration
+# Get token from https://github.com/settings/tokens
+# Requires repo + read:user scopes minimum
+GITHUB_TOKEN=ghp_your-github-personal-access-token
+
+# Vercel Integration
+# Get token from https://vercel.com/account/tokens
+VERCEL_TOKEN=your-vercel-token
+VERCEL_TEAM_ID=your-vercel-team-id
+
+# Database URL (for direct MCP Postgres access)
+# Format: postgresql://user:password@host:port/database
+DATABASE_URL=postgresql://user:password@host:5432/postgres
+
+# Optional: Supabase DB connection (deploy-migrations.sh)
+SUPABASE_DB_HOST=aws-1-us-east-2.pooler.supabase.com
+SUPABASE_DB_USER=postgres.your-project-ref
+SUPABASE_DB_NAME=postgres
+SUPABASE_DB_PORT=6543
+SUPABASE_DB_PASSWORD=your-db-password

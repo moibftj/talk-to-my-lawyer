@@ -1,4 +1,6 @@
-# Dependencies
+# =============================================================================
+# DEPENDENCIES
+# =============================================================================
 node_modules/
 .pnpm-store/
 .npm/
@@ -6,7 +8,9 @@ node_modules/
 package-lock.json
 yarn.lock
 
-# Environment variables - NEVER commit these
+# =============================================================================
+# ENVIRONMENT VARIABLES - NEVER COMMIT THESE
+# =============================================================================
 .env
 .env.local
 .env*.local
@@ -21,8 +25,9 @@ yarn.lock
 .env.staging
 *.env
 
-# Sensitive documentation - NEVER commit files with actual secrets
-VERCEL_ENV_SETUP.md
+# =============================================================================
+# SENSITIVE FILES - NEVER COMMIT FILES WITH ACTUAL SECRETS
+# =============================================================================
 *_SECRETS.md
 *_CREDENTIALS.md
 *_SECRETS*
@@ -36,15 +41,23 @@ credentials.json
 *.key
 *.token
 api-keys.json
+# VERCEL_ENV_SETUP.md
+vercel-add-env.sh
+vercel-env.json
 
-# Next.js
+# =============================================================================
+# NEXT.JS
+# =============================================================================
 .next/
 out/
 build/
 dist/
 .swc/
+next-env.d.ts
 
-# Debug
+# =============================================================================
+# DEBUG LOGS
+# =============================================================================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -53,8 +66,11 @@ pnpm-debug.log*
 *.bak
 *.tmp
 debug.log
+lerna-debug.log*
 
-# Local development
+# =============================================================================
+# LOCAL DEVELOPMENT
+# =============================================================================
 .DS_Store
 Thumbs.db
 *.pem
@@ -62,67 +78,106 @@ Thumbs.db
 *..local.*
 .cache/
 
-# IDE / Editor settings
+# =============================================================================
+# IDE / EDITOR SETTINGS
+# =============================================================================
 .vscode/settings.json
+.vscode/tasks.json
 .vscode/launch.json
+.vscode/extensions.json
 .idea/
 *.sublime-*
 *.swp
 *.swo
 *~
+.project
+.classpath
+.settings/
 
-# Vercel
-.vercel
+# =============================================================================
+# VERSION CONTROL
+# =============================================================================
+.git/
+.gitignore
+.gitattributes
 
-# Supabase CLI local metadata
+# =============================================================================
+# DEPLOYMENT
+# =============================================================================
+.vercel/
+.serverless/
+.firebase/
+.turbo/
+
+# =============================================================================
+# SUPABASE
+# =============================================================================
 supabase/.temp/*
 supabase/.branches/
 
-# TypeScript
+# =============================================================================
+# TYPESCRIPT
+# =============================================================================
 *.tsbuildinfo
-next-env.d.ts
 
-# Claude Code
+# =============================================================================
+# TESTING & COVERAGE
+# =============================================================================
+coverage/
+.nyc_output/
+junit.xml
+test_reports/
+.vitest/
+
+# =============================================================================
+# AI TOOLS
+# =============================================================================
 .claude/
-
-# MCP configurations (contain sensitive credentials)
 .mcp.json
-
-# AI Toolkit
 .aitk/
+.emergent/
 
-# Shell scripts with secrets
+# =============================================================================
+# SHELL SCRIPTS WITH SECRETS
+# =============================================================================
 claude_code_zai_env.sh
 vercel-add-env.sh
 vercel-env.json
 *.sh.local
 
-# Emergent AI
-.emergent/
+# =============================================================================
+# DATABASE
+# =============================================================================
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
 
-# Misc
+# =============================================================================
+# CERTIFICATES & KEYS
+# =============================================================================
+*.crt
+*.p12
+*.pfx
+*.key
+*.token
+
+# =============================================================================
+# MISC
+# =============================================================================
 *.pid
 *.seed
 *.pid.lock
 .eslintcache
 .stylelintcache
 *.tgz
-.turbo/
 
-# Database
-*.sqlite
-*.sqlite3
-*.db
-
-# Certificates
-*.crt
-*.p12
-*.pfx
-
-# User requested ignores
-*.md
-!docs/SUPABASE_EMAIL_SETUP.md
-test_reports/
-coverage/
-.nyc_output/
-junit.xml
+# =============================================================================
+# NOTE TAKING APPS (Obsidian, Notes, etc.)
+# =============================================================================
+.note/
+.obsidian/
+.notes/
+*.note
+notes/
+.note_modules/
