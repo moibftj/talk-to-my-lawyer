@@ -23,13 +23,6 @@ import { logLetterStatusChange } from '@/lib/services/audit-service'
 import { generateLetterContent } from '@/lib/services/letter-generation-service'
 import { notifyAdminsNewLetter } from '@/lib/services/notification-service'
 import {
-  isN8nConfigured,
-  generateLetterViaN8n,
-  transformIntakeToN8nFormat,
-  notifyN8nLetterCompleted,
-  notifyN8nLetterFailed,
-} from '@/lib/services/n8n-webhook-service'
-import {
   isZapierConfigured,
   generateLetterViaZapier,
   transformIntakeToZapierFormat,
@@ -164,16 +157,59 @@ export async function POST(request: NextRequest) {
           })
           recordSpanEvent('n8n_fallback_started')
 
-          const n8nFormData = transformIntakeToN8nFormat(
+          try {
+            const n8nFormData = transformIntakeToN8nFormat(
+              newLetter.id,
+              user.id,
+              sanitizedLetterType,
+              sanitizedIntakeData as Record<string, unknown>
+            )
+
+            generatedContent = await generateLetterViaN8n(n8nFormData)
+            recordSpanEvent('n8n_fallback_succeeded')
+            generationMethod = 'n8n'
+          } catch (n8nError) {
+            // n8n also failed, try Zapier if available
+            if (zapierAvailable) {
+              console.warn("[GenerateLetter] n8n fallback also failed, trying Zapier:", n8nError)
+              recordSpanEvent('n8n_failed', {
+                error: n8nError instanceof Error ? n8nError.message : 'Unknown error'
+              })
+              recordSpanEvent('zapier_fallback_started')
+
+              const zapierFormData = transformIntakeToZapierFormat(
+                newLetter.id,
+                user.id,
+                sanitizedLetterType,
+                sanitizedIntakeData as Record<string, unknown>
+              )
+
+              generatedContent = await generateLetterViaZapier(zapierFormData)
+              recordSpanEvent('zapier_fallback_succeeded')
+              generationMethod = 'zapier'
+            } else {
+              // No Zapier fallback available, re-throw the n8n error
+              throw n8nError
+            }
+          }
+        } else if (zapierAvailable) {
+          // n8n not available, try Zapier fallback directly
+          console.warn("[GenerateLetter] OpenAI generation failed, falling back to Zapier:", openaiError)
+          recordSpanEvent('openai_failed', {
+            error: openaiError instanceof Error ? openaiError.message : 'Unknown error'
+          })
+          recordSpanEvent('zapier_fallback_started')
+
+          const zapierFormData = transformIntakeToZapierFormat(
             newLetter.id,
             user.id,
             sanitizedLetterType,
             sanitizedIntakeData as Record<string, unknown>
           )
 
-          generatedContent = await generateLetterViaN8n(n8nFormData)
-          recordSpanEvent('n8n_fallback_succeeded')
-          generationMethod = 'n8n'
+          generatedContent = await generateLetterViaZapier(zapierFormData)
+          recordSpanEvent('zapier_fallback_succeeded')
+          generationMethod = 'zapier'
         } else {
           // No fallback available, re-throw the OpenAI error
           throw openaiError
@@ -195,13 +231,16 @@ export async function POST(request: NextRequest) {
       }
 
       // 9. Log audit trail
+      const methodDescription = generationMethod === 'n8n' ? 'n8n (fallback 1)' :
+                                generationMethod === 'zapier' ? 'Zapier (fallback 2)' :
+                                'OpenAI (primary)'
       await logLetterStatusChange(
         supabase,
         newLetter.id,
         'generating',
         'pending_review',
         'created',
-        `Letter generated successfully via ${generationMethod === 'n8n' ? 'n8n (fallback)' : 'OpenAI (primary)'}`
+        `Letter generated successfully via ${methodDescription}`
       )
 
       // 10. Notify admins (non-blocking for the response)
@@ -211,6 +250,15 @@ export async function POST(request: NextRequest) {
 
       // 10b. Send completion event to n8n monitoring (non-blocking, optional)
       notifyN8nLetterCompleted(
+        newLetter.id,
+        sanitizedLetterType,
+        newLetter.title,
+        user.id,
+        isFreeTrial
+      )
+
+      // 10c. Send completion event to Zapier monitoring (non-blocking, optional)
+      notifyZapierLetterCompleted(
         newLetter.id,
         sanitizedLetterType,
         newLetter.title,
@@ -246,17 +294,23 @@ export async function POST(request: NextRequest) {
 
       // Log audit trail
       const errorMessage = generationError instanceof Error ? generationError.message : "Unknown error"
+      const failedMethod = generationMethod === 'n8n' ? 'n8n (fallback 1)' :
+                          generationMethod === 'zapier' ? 'Zapier (fallback 2)' :
+                          'OpenAI (primary)'
       await logLetterStatusChange(
         supabase,
         newLetter.id,
         'generating',
         'failed',
         'generation_failed',
-        `Generation failed (${generationMethod === 'n8n' ? 'n8n fallback' : 'OpenAI primary'}): ${errorMessage}`
+        `Generation failed (${failedMethod}): ${errorMessage}`
       )
 
       // Notify n8n about the failure (non-blocking, for alerting)
       notifyN8nLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
+
+      // Notify Zapier about the failure (non-blocking, for alerting)
+      notifyZapierLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
 
       return errorResponses.serverError(errorMessage || "AI generation failed")
     }
