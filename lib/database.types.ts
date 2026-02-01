@@ -668,9 +668,18 @@ export interface Database {
       // Email queue functions
       get_pending_emails: {
         Args: {
-          p_limit?: number;
+          p_limit: number;
         };
-        Returns: Json;
+        Returns: {
+          id: string;
+          to: string;
+          subject: string;
+          html: string;
+          text: string;
+          attempts: number;
+          max_retries: number;
+          created_at: string;
+        }[];
       };
       claim_pending_emails: {
         Args: {
