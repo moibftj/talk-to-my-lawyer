@@ -1,8 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
+/**
+ * Employee Referral Link API
+ *
+ * Returns the employee's coupon code and referral links.
+ * Restricted to employees only.
+ */
+import { NextRequest } from 'next/server'
 import { authRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { getRateLimitTuple } from '@/lib/config'
+import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { db } from '@/lib/db/client-factory'
 
 export const runtime = 'nodejs'
 
@@ -15,11 +21,11 @@ export async function GET(request: NextRequest) {
       return rateLimitResponse
     }
 
-    const supabase = await createClient()
+    const supabase = await db.server()
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return errorResponses.unauthorized()
     }
 
     // Verify user is an employee
@@ -30,55 +36,48 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (profileError || !profile || profile.role !== 'employee') {
-      return NextResponse.json({ error: 'Only employees can access referral links' }, { status: 403 })
+      return errorResponses.forbidden('Only employees can access referral links')
     }
 
     // Get existing coupon for this employee
-    const { data: coupon, error: couponError } = await supabase
+    const { data: coupon } = await supabase
       .from('employee_coupons')
       .select('*')
       .eq('employee_id', user.id)
       .single()
 
     if (!coupon) {
-      return NextResponse.json({
-        success: true,
-        data: {
-          hasCoupon: false,
-          message: 'No coupon code assigned yet. Please contact admin.'
-        }
+      return successResponse({
+        hasCoupon: false,
+        message: 'No coupon code assigned yet. Please contact admin.'
       })
     }
 
     // Generate referral link
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://talk-to-my-lawyer.com'
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://talk-to-my-lawyer.com'
     const referralLink = `${baseUrl}?ref=${coupon.code}`
     const signupLink = `${baseUrl}/auth/signup?coupon=${coupon.code}`
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        hasCoupon: true,
-        coupon: {
-          code: coupon.code,
-          discountPercent: coupon.discount_percent,
-          usageCount: coupon.usage_count,
-          isActive: coupon.is_active
-        },
-        links: {
-          referral: referralLink,
-          signup: signupLink,
-          share: {
-            twitter: `https://twitter.com/intent/tweet?text=Get%20${coupon.discount_percent}%25%20off%20professional%20legal%20letters%20with%20my%20code%20${coupon.code}!&url=${encodeURIComponent(referralLink)}`,
-            linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(referralLink)}&title=Get%20${coupon.discount_percent}%25%20off%20legal%20letters`,
-            whatsapp: `https://wa.me/?text=Get%20${coupon.discount_percent}%25%20off%20professional%20legal%20letters%20with%20code%20${coupon.code}%20${encodeURIComponent(referralLink)}`,
-            email: `mailto:?subject=Get%20${coupon.discount_percent}%25%20off%20legal%20letters&body=Use%20my%20referral%20code%20${coupon.code}%20to%20get%20${coupon.discount_percent}%25%20off%20at%20${encodeURIComponent(referralLink)}`
-          }
+    return successResponse({
+      hasCoupon: true,
+      coupon: {
+        code: coupon.code,
+        discountPercent: coupon.discount_percent,
+        usageCount: coupon.usage_count,
+        isActive: coupon.is_active
+      },
+      links: {
+        referral: referralLink,
+        signup: signupLink,
+        share: {
+          twitter: `https://twitter.com/intent/tweet?text=Get%20${coupon.discount_percent}%25%20off%20professional%20legal%20letters%20with%20my%20code%20${coupon.code}!&url=${encodeURIComponent(referralLink)}`,
+          linkedin: `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(referralLink)}&title=Get%20${coupon.discount_percent}%25%20off%20legal%20letters`,
+          whatsapp: `https://wa.me/?text=Get%20${coupon.discount_percent}%25%20off%20professional%20legal%20letters%20with%20code%20${coupon.code}%20${encodeURIComponent(referralLink)}`,
+          email: `mailto:?subject=Get%20${coupon.discount_percent}%25%20off%20legal%20letters&body=Use%20my%20referral%20code%20${coupon.code}%20to%20get%20${coupon.discount_percent}%25%20off%20at%20${encodeURIComponent(referralLink)}`
         }
       }
     })
-  } catch (error: any) {
-    console.error('[ReferralLink] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    return handleApiError(error, 'ReferralLink')
   }
 }

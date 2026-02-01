@@ -37,6 +37,16 @@ vi.mock('@/lib/supabase/admin', () => ({
   getServiceRoleClient: vi.fn(),
 }))
 
+// Mock db client factory (used by refactored routes)
+vi.mock('@/lib/db/client-factory', () => ({
+  db: {
+    server: vi.fn(),
+    serviceRole: vi.fn(() => ({
+      from: vi.fn(),
+    })),
+  },
+}))
+
 // Mock email service
 vi.mock('@/lib/email', () => ({
   sendTemplateEmail: vi.fn(() => Promise.resolve({ success: true, messageId: 'msg-123' })),
@@ -45,10 +55,12 @@ vi.mock('@/lib/email', () => ({
 import { createClient } from '@/lib/supabase/server'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
 import { sendTemplateEmail } from '@/lib/email'
+import { db } from '@/lib/db/client-factory'
 
 const mockCreateClient = createClient as any
 const mockGetServiceRoleClient = getServiceRoleClient as any
 const mockSendTemplateEmail = sendTemplateEmail as any
+const mockDb = db as any
 
 describe('Authentication Flows', () => {
   beforeEach(() => {
@@ -277,8 +289,19 @@ describe('Authentication Flows', () => {
         }),
       })
 
+      const mockCouponSelect = vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: { code: 'PGRST116' }, // Not found error
+        }),
+      })
+
+      const mockCouponInsert = vi.fn().mockResolvedValue({
+        error: null,
+      })
+
       // Mock server client for auth
-      mockCreateClient.mockResolvedValue({
+      mockDb.server = vi.fn().mockResolvedValue({
         auth: {
           getUser: vi.fn().mockResolvedValue({
             data: {
@@ -293,11 +316,23 @@ describe('Authentication Flows', () => {
       } as any)
 
       // Mock service role client for profile creation
-      mockGetServiceRoleClient.mockReturnValue({
-        from: vi.fn(() => ({
-          upsert: mockUpsert,
-        })),
-      })
+      const mockServiceClient = {
+        from: vi.fn((table: string) => {
+          if (table === 'profiles') {
+            return {
+              upsert: mockUpsert,
+            }
+          }
+          if (table === 'employee_coupons') {
+            return {
+              select: mockCouponSelect,
+              insert: mockCouponInsert,
+            }
+          }
+          return {}
+        }),
+      }
+      mockDb.serviceRole = vi.fn(() => mockServiceClient)
 
       const request = new Request('http://localhost:3000/api/create-profile', {
         method: 'POST',
