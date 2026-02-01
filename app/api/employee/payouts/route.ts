@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'employee') {
+    if (!profile || (profile as any).role !== 'employee') {
       return errorResponses.forbidden('Only employees can access payouts')
     }
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'employee') {
+    if (!profile || (profile as any).role !== 'employee') {
       return errorResponses.forbidden('Only employees can request payouts')
     }
 
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create payout request
-    const { data: payoutRequest, error: insertError } = await supabase
+    const { data: payoutRequest, error: insertError } = await (supabase as any)
       .from('payout_requests')
       .insert({
         employee_id: user.id,
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
       adminEmail,
       {
         alertType: 'New Payout Request',
-        message: `Employee ${profile.full_name} (${profile.email}) has requested a payout of $${amount}.`,
+        message: `Employee ${(profile as any).full_name} (${(profile as any).email}) has requested a payout of $${amount}.`,
         actionUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/secure-admin-gateway/commissions`
       }
     ).catch(error => {
