@@ -99,15 +99,15 @@ export async function POST(request: NextRequest) {
     // Use service role client for profile creation (elevated permissions)
     const serviceClient = db.serviceRole()
 
-    // Note: The service client is untyped to handle all database tables
+    // Profile insert data matching the database schema
     const profileInsert = {
       id: user.id,
       email: email.toLowerCase().trim(),
-      role: requestedRole,
+      role: requestedRole as any,
       full_name: fullName.trim(),
     }
 
-    const { data: profileData, error: profileError } = await serviceClient
+    const { data: profileData, error: profileError } = await (serviceClient as any)
       .from("profiles")
       .upsert(profileInsert, {
         onConflict: "id",
