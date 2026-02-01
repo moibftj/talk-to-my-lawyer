@@ -53,9 +53,9 @@ AI-powered legal letter drafting with **mandatory attorney review**. This Next.j
 
 ## Deployment
 - Primary target: Vercel. Ensure all env vars are set in the Vercel dashboard and migrations are applied to the Supabase project before deploy.
-- Production readiness checklist lives in [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md) and the implementation plan (`Talk-to-My-Lawyer_Implementation_Plan.md`).
+- Production readiness checklist lives in [`docs/DEPLOYMENT_GUIDE.md`](docs/DEPLOYMENT_GUIDE.md) and the implementation plan (`docs/Talk-to-My-Lawyer_Implementation_Plan.md`).
 
 ## Troubleshooting
 - Email issues: follow the playbook in `lib/email/AGENTS.md` and `docs/EMAIL_*` (SMTP vs. app emails). Run `node check-email-config.js` and `node test-email-send.js` as needed.
-- Database/allowance/checkout races: see the P0 fixes in `Talk-to-My-Lawyer_Implementation_Plan.md`.
+- Database/allowance/checkout races: see the P0 fixes in [`docs/Talk-to-My-Lawyer_Implementation_Plan.md`](docs/Talk-to-My-Lawyer_Implementation_Plan.md).
 - For more docs, start at [`docs/README.md`](docs/README.md).
