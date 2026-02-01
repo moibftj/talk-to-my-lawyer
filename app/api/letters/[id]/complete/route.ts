@@ -47,7 +47,7 @@ export async function POST(
     if (updateError) throw updateError
 
     // Log the completion
-    await supabase.rpc('log_letter_audit', {
+    await (supabase as any).rpc('log_letter_audit', {
       p_letter_id: id,
       p_action: 'completed',
       p_old_status: 'approved',
