@@ -52,8 +52,9 @@ export async function POST(request: NextRequest) {
     'http.route': '/api/generate-letter',
   })
 
-  // Track which generation method is used (OpenAI primary, n8n fallback)
+  // Track which generation method is used (OpenAI primary, n8n fallback 1, Zapier fallback 2)
   const n8nAvailable = isN8nConfigured()
+  const zapierAvailable = isZapierConfigured()
 
   try {
     recordSpanEvent('letter_generation_started')
