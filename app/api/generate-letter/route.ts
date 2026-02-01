@@ -5,7 +5,7 @@
  * Handles intelligent letter generation with:
  * - User authentication and authorization
  * - Allowance checking (free trial, paid, super user)
- * - AI generation via n8n workflow (primary) or local OpenAI (fallback)
+ * - AI generation via OpenAI (primary), n8n workflow (fallback 1), or Zapier (fallback 2)
  * - Audit trail logging
  * - Admin notifications
  */
