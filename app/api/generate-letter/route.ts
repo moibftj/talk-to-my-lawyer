@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
   try {
     recordSpanEvent('letter_generation_started')
-    addSpanAttributes({ 'generation.method': 'openai_primary', 'n8n_available': n8nAvailable })
+    addSpanAttributes({ 'generation.method': 'openai_primary', 'n8n_available': n8nAvailable, 'zapier_available': zapierAvailable })
 
     // 1. Apply rate limiting
     const rateLimitResponse = await safeApplyRateLimit(request, letterGenerationRateLimit, ...getRateLimitTuple('LETTER_GENERATE'))
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     const sanitizedLetterType = letterType
     const sanitizedIntakeData = validation.data!
 
-    // 4. Check API configuration (OpenAI is primary, n8n is optional fallback)
+    // 4. Check API configuration (OpenAI is primary, n8n and Zapier are optional fallbacks)
     if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
       console.error("[GenerateLetter] OpenAI is not configured.")
       return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
