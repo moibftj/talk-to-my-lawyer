@@ -187,8 +187,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 9. Log audit trail
-      const methodDescription = generationMethod === 'n8n' ? 'n8n (fallback 1)' :
-                                generationMethod === 'zapier' ? 'Zapier (fallback 2)' :
+      const methodDescription = generationMethod === 'zapier' ? 'Zapier (fallback)' :
                                 'OpenAI (primary)'
       await logLetterStatusChange(
         supabase,
@@ -204,16 +203,7 @@ export async function POST(request: NextRequest) {
         console.error('[GenerateLetter] Admin notification failed:', err)
       })
 
-      // 10b. Send completion event to n8n monitoring (non-blocking, optional)
-      notifyN8nLetterCompleted(
-        newLetter.id,
-        sanitizedLetterType,
-        newLetter.title,
-        user.id,
-        isFreeTrial
-      )
-
-      // 10c. Send completion event to Zapier monitoring (non-blocking, optional)
+      // 10b. Send completion event to Zapier monitoring (non-blocking, optional)
       notifyZapierLetterCompleted(
         newLetter.id,
         sanitizedLetterType,
