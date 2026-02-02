@@ -2,7 +2,9 @@
  * Zapier Webhook Service
  *
  * Integrates with Zapier workflows for letter generation using bidirectional webhooks.
- * 
+ *
+ * **SETUP GUIDE**: See docs/ZAPIER_SETUP.md for complete configuration instructions
+ *
  * ## WEBHOOK ENDPOINTS:
  * 
  * ### 1. OUTBOUND: App → Zapier (Letter Generation Request)

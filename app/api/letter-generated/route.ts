@@ -9,6 +9,8 @@
  * - Requires ZAPIER_WEBHOOK_SECRET environment variable in production
  * - Zapier should send signature in X-Zapier-Signature header
  *
+ * SETUP GUIDE: See docs/ZAPIER_SETUP.md for complete configuration and troubleshooting
+ *
  * ZAPIER INTEGRATION:
  * - Outbound: App sends form data to https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
  * - Inbound: Zapier posts generated content back to this endpoint
