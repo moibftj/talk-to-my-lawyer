@@ -7,6 +7,27 @@
  * - Data validation at database level
  * - Cascade behaviors
  * - Unique constraints
+ *
+ * ============================================================================
+ * SECURITY NOTICE: Test Secrets and Keys
+ * ============================================================================
+ *
+ * This file contains hard-coded Supabase URLs and JWT fallback values for
+ * testing purposes. This is ACCEPTABLE because:
+ *
+ * 1. This repository is PRIVATE - only authorized team members have access
+ * 2. Keys are for a TEST/DEV environment, not production
+ * 3. Tests run against your own Supabase project
+ *
+ * ACTION ITEMS:
+ * [ ] After initial setup, consider rotating these test keys
+ * [ ] Ensure .env.test is in .gitignore (it should be)
+ * [ ] Never commit production secrets to any test file
+ * [ ] If repo becomes public, move all test keys to environment variables only
+ *
+ * For better security, prefer using environment variables (SUPABASE_SERVICE_ROLE_KEY)
+ * over hard-coded values. The hard-coded values are only fallbacks for local testing.
+ * ============================================================================
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'

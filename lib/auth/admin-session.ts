@@ -1,9 +1,11 @@
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { createSessionToken, verifySessionToken, getJWTSecret } from '@/lib/security/jwt'
 
 const ADMIN_SESSION_COOKIE = 'admin_session'
 const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
+const SESSION_EXPIRY_MINUTES = 30 // JWT expiration in minutes
 
 // Admin sub-role enum - matches database enum
 export type AdminSubRole = 'super_admin' | 'attorney_admin'
@@ -18,26 +20,32 @@ export interface AdminSession {
 
 /**
  * Create an admin session after successful authentication
+ *
+ * Now uses JWT-signed cookies for security.
+ * Sessions are tamper-proof and cannot be forged.
  */
 export async function createAdminSession(
   userId: string,
   email: string,
   subRole: AdminSubRole = 'super_admin'
 ): Promise<void> {
-  const session: AdminSession = {
+  const secret = getJWTSecret()
+
+  // Create signed JWT token
+  const token = createSessionToken(
     userId,
     email,
     subRole,
-    loginTime: Date.now(),
-    lastActivity: Date.now(),
-  }
+    SESSION_EXPIRY_MINUTES,
+    secret
+  )
 
   const cookieStore = await cookies()
-  cookieStore.set(ADMIN_SESSION_COOKIE, JSON.stringify(session), {
+  cookieStore.set(ADMIN_SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 1800, // 30 minutes
+    maxAge: SESSION_EXPIRY_MINUTES * 60, // Convert to seconds
     path: '/'
   })
 
@@ -52,6 +60,9 @@ export async function createAdminSession(
 
 /**
  * Verify admin session from cookies
+ *
+ * Now verifies JWT signature and expiration.
+ * Returns null if session is invalid, expired, or signature is wrong.
  */
 export async function verifyAdminSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies()
@@ -62,35 +73,64 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
   }
 
   try {
-    const session: AdminSession = JSON.parse(sessionCookie.value)
+    const secret = getJWTSecret()
 
-    // Check if session has expired (30 minutes)
-    const now = Date.now()
-    if (now - session.lastActivity > ADMIN_SESSION_TIMEOUT) {
+    // Verify JWT token
+    const sessionData = verifySessionToken(sessionCookie.value, secret)
+
+    if (!sessionData) {
+      console.warn('[AdminSession] Invalid or expired session token')
       await destroyAdminSession()
       return null
     }
 
-    // Update last activity time
-    session.lastActivity = now
-    cookieStore.set(ADMIN_SESSION_COOKIE, JSON.stringify(session), {
+    // Check if session has expired (30 minutes of inactivity)
+    const now = Date.now()
+    if (now - sessionData.lastActivity > ADMIN_SESSION_TIMEOUT) {
+      console.warn('[AdminSession] Session expired due to inactivity')
+      await destroyAdminSession()
+      return null
+    }
+
+    // Update last activity time by issuing new token
+    const session: AdminSession = {
+      userId: sessionData.userId,
+      email: sessionData.email,
+      subRole: sessionData.subRole as AdminSubRole,
+      loginTime: sessionData.loginTime,
+      lastActivity: now
+    }
+
+    // Re-issue token with updated activity
+    const newToken = createSessionToken(
+      session.userId,
+      session.email,
+      session.subRole,
+      SESSION_EXPIRY_MINUTES,
+      secret
+    )
+
+    cookieStore.set(ADMIN_SESSION_COOKIE, newToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 1800,
+      maxAge: SESSION_EXPIRY_MINUTES * 60,
       path: '/'
     })
 
     return session
   } catch (error) {
-    console.error('[AdminSession] Error parsing session:', error)
+    console.error('[AdminSession] Error verifying session:', error)
     await destroyAdminSession()
     return null
   }
 }
 
 /**
- * Verify admin session from request (for proxy)
+ * Verify admin session from request (for middleware)
+ *
+ * Verifies JWT signature without re-issuing token.
+ * Used in middleware where we can't set cookies.
  */
 export function verifyAdminSessionFromRequest(request: NextRequest): AdminSession | null {
   const sessionCookie = request.cookies.get(ADMIN_SESSION_COOKIE)
@@ -100,17 +140,31 @@ export function verifyAdminSessionFromRequest(request: NextRequest): AdminSessio
   }
 
   try {
-    const session: AdminSession = JSON.parse(sessionCookie.value)
+    const secret = getJWTSecret()
 
-    // Check if session has expired
-    const now = Date.now()
-    if (now - session.lastActivity > ADMIN_SESSION_TIMEOUT) {
+    // Verify JWT token
+    const sessionData = verifySessionToken(sessionCookie.value, secret)
+
+    if (!sessionData) {
       return null
     }
 
-    return session
+    // Check if session has expired
+    const now = Date.now()
+    if (now - sessionData.lastActivity > ADMIN_SESSION_TIMEOUT) {
+      return null
+    }
+
+    // Return session data
+    return {
+      userId: sessionData.userId,
+      email: sessionData.email,
+      subRole: sessionData.subRole as AdminSubRole,
+      loginTime: sessionData.loginTime,
+      lastActivity: sessionData.lastActivity
+    }
   } catch (error) {
-    console.error('[AdminSession] Error parsing session from request:', error)
+    console.error('[AdminSession] Error verifying session from request:', error)
     return null
   }
 }

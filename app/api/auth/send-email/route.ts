@@ -20,9 +20,17 @@ import crypto from 'crypto'
 async function verifyWebhookSignature(request: NextRequest): Promise<boolean> {
   // In production, verify the signature using SUPABASE_AUTH_HOOK_SECRET
   const hookSecret = process.env.SUPABASE_AUTH_HOOK_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
+
   if (!hookSecret) {
-    // If no secret is configured, allow requests (for development)
-    console.warn('[SendEmail] No SUPABASE_AUTH_HOOK_SECRET configured - skipping signature verification')
+    if (isProduction) {
+      // In production, reject unsigned requests for security
+      console.error('[SendEmail] CRITICAL: SUPABASE_AUTH_HOOK_SECRET not configured in production - rejecting webhook request')
+      console.error('[SendEmail] This endpoint is vulnerable without signature verification!')
+      return false
+    }
+    // In development, allow requests with a warning
+    console.warn('[SendEmail] No SUPABASE_AUTH_HOOK_SECRET configured - skipping signature verification (development mode)')
     return true
   }
   

@@ -1,25 +1,31 @@
 /**
  * Letter Generation Completion Webhook & Documentation
- * 
+ *
  * POST /api/letter-generated - Receives generated letter content from Zapier
  * GET /api/letter-generated  - Health check and endpoint documentation
+ *
+ * SECURITY:
+ * - Webhook is protected by HMAC signature verification
+ * - Requires ZAPIER_WEBHOOK_SECRET environment variable in production
+ * - Zapier should send signature in X-Zapier-Signature header
  *
  * ZAPIER INTEGRATION:
  * - Outbound: App sends form data to https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
  * - Inbound: Zapier posts generated content back to this endpoint
- * 
+ *
  * WORKFLOW:
  * 1. Letter created with status 'generating'
  * 2. Form data sent to Zapier catch hook
  * 3. Zapier processes with ChatGPT
- * 4. Zapier posts result back here
- * 5. Letter status updated to 'pending_review'
+ * 4. Zapier posts result back here with HMAC signature
+ * 5. Signature verified, then letter status updated to 'pending_review'
  * 6. Letter enters attorney review queue
  */
 import { type NextRequest } from "next/server"
 import { db } from '@/lib/db/client-factory'
 import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
 import { createBusinessSpan, addSpanAttributes } from '@/lib/monitoring/tracing'
+import { verifyZapierWebhookSignature } from '@/lib/security/webhook-signature'
 
 interface ZapierLetterCompletionPayload {
     letterId: string
@@ -45,6 +51,26 @@ export async function POST(request: NextRequest) {
     })
 
     try {
+        // Verify webhook signature
+        const signatureResult = await verifyZapierWebhookSignature(request)
+
+        if (signatureResult && !signatureResult.valid) {
+            console.error('[LetterGenerated] Invalid webhook signature:', signatureResult.error)
+            addSpanAttributes({
+                'webhook.signature_valid': false,
+                'webhook.signature_error': signatureResult.error || 'Unknown error'
+            })
+            return errorResponses.unauthorized('Invalid webhook signature')
+        }
+
+        // Log signature verification (null = dev mode without secret)
+        if (signatureResult === null) {
+            console.warn('[LetterGenerated] Proceeding without signature verification (development mode)')
+            addSpanAttributes({ 'webhook.signature_verified': false })
+        } else {
+            addSpanAttributes({ 'webhook.signature_verified': true })
+        }
+
         // Parse request body
         const body = await request.json() as ZapierLetterCompletionPayload
 
@@ -200,6 +226,13 @@ export async function GET() {
                 url: '/api/letter-generated',
                 method: 'POST',
                 purpose: 'Receive generated letter content from Zapier',
+                security: {
+                    type: 'HMAC Signature',
+                    header: 'X-Zapier-Signature',
+                    secretEnvVar: 'ZAPIER_WEBHOOK_SECRET',
+                    required: 'production',
+                    notes: 'Zapier must send HMAC signature of payload using shared secret'
+                },
                 expectedPayload: {
                     letterId: 'string (required) - UUID from original request',
                     generatedContent: 'string (required) - The generated letter text',
@@ -224,9 +257,10 @@ export async function GET() {
             '1. User submits letter form → Letter created with status "generating"',
             '2. App sends form data to Zapier catch hook',
             '3. Zapier processes with ChatGPT using professional prompt',
-            '4. Zapier posts generated letter back to /api/letter-generated',
-            '5. Letter status updated to "pending_review" for attorney approval',
+            '4. Zapier posts generated letter back to /api/letter-generated with HMAC signature',
+            '5. Signature verified, then letter status updated to "pending_review" for attorney approval',
             '6. Letter appears in review center for attorneys/admins'
-        ]
+        ],
+        securityNote: 'This endpoint requires ZAPIER_WEBHOOK_SECRET to be set in production. In development, unsigned requests are allowed with a warning.'
     })
 }

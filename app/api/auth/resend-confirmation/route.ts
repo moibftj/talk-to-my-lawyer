@@ -35,18 +35,39 @@ export async function POST(request: NextRequest) {
     // Create Supabase admin client
     const supabase = getServiceRoleClient()
 
-    // Get user by email
-    const { data: users, error: listError } = await supabase.auth.admin.listUsers()
-    
-    if (listError) {
-      console.error('[ResendConfirmation] Error listing users:', listError)
-      return NextResponse.json(
-        { error: 'Failed to find user' },
-        { status: 500 }
-      )
+    // Get user by email with pagination support
+    // Supabase admin.listUsers() returns up to 1000 users per page by default
+    // We need to paginate through all users to find the target email
+    let page = 1
+    const maxPages = 10 // Safety limit: up to 10,000 users
+    let foundUser = null
+
+    while (page <= maxPages && !foundUser) {
+      const { data: usersData, error: listError } = await supabase.auth.admin.listUsers({
+        page: page,
+        perPage: 1000
+      })
+
+      if (listError) {
+        console.error('[ResendConfirmation] Error listing users:', listError)
+        return NextResponse.json(
+          { error: 'Failed to find user' },
+          { status: 500 }
+        )
+      }
+
+      // Search for user by email in this page
+      foundUser = usersData.users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+
+      // If user not found and there might be more pages, continue
+      if (!foundUser && usersData.users.length === 1000) {
+        page++
+      } else {
+        break
+      }
     }
 
-    const user = users.users.find(u => u.email?.toLowerCase() === email.toLowerCase())
+    const user = foundUser
 
     if (!user) {
       // Don't reveal if user exists or not for security
