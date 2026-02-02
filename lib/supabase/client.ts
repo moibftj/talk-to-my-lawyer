@@ -3,9 +3,7 @@ import type { DatabaseWithRelationships } from '@/lib/supabase/types'
 
 export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   // During build time, return a mock client if environment variables are missing
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -29,7 +27,7 @@ export function createClient() {
     }
 
     throw new Error(
-      'Missing Supabase environment variables. Create a .env.local (cp .env.example .env.local), set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY), then restart the dev server.'
+      'Missing Supabase environment variables. Create a .env.local (cp .env.example .env.local), set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY, then restart the dev server.'
     )
   }
 
