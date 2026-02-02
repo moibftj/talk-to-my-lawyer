@@ -108,7 +108,12 @@ describe('Letter Generation Workflow & Review Center', () => {
             }
 
             mockDb.serviceRole.mockReturnValue(mockServiceClient)
-            mockCheckAndDeductAllowance.mockResolvedValue({ allowed: true, remaining: 4 })
+            mockCheckAndDeductAllowance.mockResolvedValue({
+              success: true,
+              isFreeTrial: false,
+              isSuperAdmin: false,
+              remaining: 4
+            })
             mockTransformIntakeToZapierFormat.mockReturnValue({
                 letterId: 'letter-123',
                 letterType: 'demand_letter',
