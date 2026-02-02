@@ -136,102 +136,113 @@ export async function POST(request: NextRequest) {
       return errorResponses.serverError("Failed to create letter record")
     }
 
-    // 7. Generate letter using AI (Zapier primary, OpenAI fallback)
-    let generationMethod: 'zapier' | 'openai' = 'zapier'
-    try {
-      let generatedContent: string
+    // 7. Send to Zapier webhook for async generation (primary)
+    // Zapier will send the generated content back to /api/letter-generated
+    const generationMethod: 'zapier' | 'openai' = 'zapier'
 
-      // Try Zapier first (primary)
-      try {
-        if (zapierAvailable) {
-          console.log("[GenerateLetter] Using Zapier webhook for generation (primary)")
-          recordSpanEvent('zapier_generation_started')
+    if (zapierAvailable) {
+      console.log("[GenerateLetter] Sending form data to Zapier webhook (async generation)")
+      recordSpanEvent('zapier_webhook_sent')
 
-          const zapierFormData = transformIntakeToZapierFormat(
-            newLetter.id,
-            user.id,
-            sanitizedLetterType,
-            sanitizedIntakeData as Record<string, unknown>
-          )
-
-          generatedContent = await generateLetterViaZapier(zapierFormData)
-          recordSpanEvent('zapier_generation_completed')
-          generationMethod = 'zapier'
-        } else {
-          throw new Error('Zapier not configured, skipping to fallback')
-        }
-
-      } catch (zapierError) {
-        // Zapier failed, try OpenAI fallback
-        if (openaiConfig.apiKey && openaiConfig.isConfigured) {
-          console.warn("[GenerateLetter] Zapier generation failed, falling back to OpenAI:", zapierError)
-          recordSpanEvent('zapier_failed', {
-            error: zapierError instanceof Error ? zapierError.message : 'Unknown error'
-          })
-          recordSpanEvent('openai_fallback_started')
-
-          generatedContent = await generateLetterContent(
-            sanitizedLetterType,
-            sanitizedIntakeData
-          )
-          recordSpanEvent('openai_fallback_succeeded')
-          generationMethod = 'openai'
-        } else {
-          // No fallback available, re-throw the Zapier error
-          throw zapierError
-        }
-      }
-
-      // 8. Update letter with generated content
-      const { error: updateError } = await supabase
-        .from("letters")
-        .update({
-          ai_draft_content: generatedContent,
-          status: "pending_review",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", newLetter.id)
-
-      if (updateError) {
-        throw updateError
-      }
-
-      // 9. Log audit trail
-      const methodDescription = generationMethod === 'zapier' ? 'Zapier (primary)' :
-                                'OpenAI (fallback)'
-      await logLetterStatusChange(
-        supabase,
+      const zapierFormData = transformIntakeToZapierFormat(
         newLetter.id,
-        'generating',
-        'pending_review',
-        'created',
-        `Letter generated successfully via ${methodDescription}`
+        user.id,
+        sanitizedLetterType,
+        sanitizedIntakeData as Record<string, unknown>
       )
 
-      // 10. Notify admins (non-blocking for the response)
+      // Fire and forget - Zapier will send webhook back to /api/letter-generated
+      generateLetterViaZapier(zapierFormData).catch(err => {
+        console.error('[GenerateLetter] Zapier webhook failed (will retry via fallback):', err)
+        // If Zapier fails, we'll handle it when the webhook doesn't arrive
+        // For now, the letter stays in 'generating' status
+        recordSpanEvent('zapier_webhook_failed', {
+          error: err instanceof Error ? err.message : 'Unknown error'
+        })
+      })
+    } else {
+      // Zapier not configured, try OpenAI as fallback
+      console.warn("[GenerateLetter] Zapier not configured, using OpenAI fallback")
+      recordSpanEvent('openai_fallback_started')
+
+      try {
+        const generatedContent = await generateLetterContent(
+          sanitizedLetterType,
+          sanitizedIntakeData
+        )
+
+        // Update letter with generated content
+        const { error: updateError } = await supabase
+          .from("letters")
+          .update({
+            ai_draft: generatedContent,
+            status: "pending_review",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", newLetter.id)
+
+        if (updateError) {
+          throw updateError
+        }
+
+        // Log audit trail
+        await logLetterStatusChange(
+          supabase,
+          newLetter.id,
+          'generating',
+          'pending_review',
+          'created',
+          `Letter generated successfully via OpenAI (fallback - Zapier not configured)`
+        )
+
+        recordSpanEvent('openai_generation_succeeded')
+      } catch (openaiError) {
+        // OpenAI also failed, mark letter as failed and refund
+        await supabase
+          .from("letters")
+          .update({
+            status: "failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", newLetter.id)
+
+        if (!isFreeTrial && !isSuperAdmin) {
+          await refundLetterAllowance(user.id, 1)
+        }
+
+        throw openaiError
+      }
+    }
+
+    // 8. Notify admins (non-blocking for the response)
+    // Only notify if we generated synchronously (OpenAI fallback)
+    // For Zapier, notification happens when webhook returns
+    if (!zapierAvailable) {
       notifyAdminsNewLetter(newLetter.id, newLetter.title, sanitizedLetterType).catch(err => {
         console.error('[GenerateLetter] Admin notification failed:', err)
       })
+    }
 
-      // 10b. Send completion event to Zapier monitoring (non-blocking, optional)
-      notifyZapierLetterCompleted(
-        newLetter.id,
-        sanitizedLetterType,
-        newLetter.title,
-        user.id,
-        isFreeTrial
-      )
+    // 9. Return success response
+    // For Zapier (async): status is 'generating'
+    // For OpenAI (sync): status is 'pending_review'
+    const responseStatus = zapierAvailable ? 'generating' : 'pending_review'
+    const responseDraft = zapierAvailable ? undefined : await supabase
+      .from("letters")
+      .select("ai_draft")
+      .eq("id", newLetter.id)
+      .single()
+      .then(res => res.data?.ai_draft)
 
-      // 11. Return success response
-      return successResponse<LetterGenerationResponse>({
-        success: true,
-        letterId: newLetter.id,
-        status: "pending_review",
-        isFreeTrial: isFreeTrial,
-        aiDraft: generatedContent,
-      })
+    return successResponse<LetterGenerationResponse>({
+      success: true,
+      letterId: newLetter.id,
+      status: responseStatus,
+      isFreeTrial: isFreeTrial,
+      aiDraft: await responseDraft,
+    })
 
-    } catch (generationError: unknown) {
+  } catch (generationError: unknown) {
       console.error("[GenerateLetter] Generation failed:", generationError)
 
       // Update letter status to failed

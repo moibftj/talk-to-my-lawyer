@@ -62,7 +62,11 @@ vi.mock('@/lib/validation/letter-schema', () => ({
 }))
 
 vi.mock('@/lib/monitoring/tracing', () => ({
-    createBusinessSpan: vi.fn(() => ({})),
+    createBusinessSpan: vi.fn(() => ({
+        end: vi.fn(),
+        recordException: vi.fn(),
+        setStatus: vi.fn(),
+    })),
     addSpanAttributes: vi.fn(),
     recordSpanEvent: vi.fn(),
 }))
@@ -241,7 +245,9 @@ describe('Letter Generation Workflow & Review Center', () => {
                             }))
                         }))
                     })),
-                    update: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                    update: vi.fn(() => ({
+                        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                    }))
                 })),
                 rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
             }
