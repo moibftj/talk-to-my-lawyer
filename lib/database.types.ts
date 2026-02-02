@@ -23,7 +23,6 @@ export type SubscriptionStatus =
   | "active"
   | "canceled"
   | "past_due"
-  | "payment_failed"
   | "trialing";
 export type CommissionStatus = "pending" | "paid";
 

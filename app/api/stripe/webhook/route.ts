@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
               updated_at: new Date().toISOString()
             })
             .eq('user_id', metadata.user_id)
-            .eq('status', 'pending')
+            .eq('status', 'trialing')
 
           console.log('[StripeWebhook] Checkout expired for user:', metadata.user_id)
         }
@@ -181,11 +181,11 @@ export async function POST(request: NextRequest) {
           await (supabase as any)
             .from('subscriptions')
             .update({
-              status: 'payment_failed',
+              status: 'canceled',
               updated_at: new Date().toISOString()
             })
             .eq('user_id', paymentIntent.metadata.user_id)
-            .eq('status', 'pending')
+            .eq('status', 'trialing')
         }
         break
       }

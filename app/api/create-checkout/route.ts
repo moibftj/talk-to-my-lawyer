@@ -193,14 +193,14 @@ export async function POST(request: NextRequest) {
       throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.')
     }
 
-    // Create subscription record as 'pending' before payment
+    // Create subscription record as 'trialing' before payment confirmation
     const { data: pendingSubscription, error: subError } = await supabase
       .from('subscriptions')
       .insert({
         user_id: user.id,
         plan: planType,
         plan_type: planType,
-        status: 'pending',
+        status: 'trialing',
         price: finalPrice,
         discount: discountAmount,
         coupon_code: couponCode || null,
