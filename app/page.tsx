@@ -119,7 +119,8 @@ export default function HomePage() {
     if (profile?.role === "subscriber") {
       router.push("/dashboard/letters");
     } else if (profile?.role === "admin") {
-      router.push("/dashboard/admin/letters");
+      // Admins should use the dedicated admin portal
+      router.push("/secure-admin-gateway/dashboard");
     } else if (profile?.role === "employee") {
       router.push("/dashboard/commissions");
     }

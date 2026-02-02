@@ -220,18 +220,22 @@ export class HealthChecker {
 
   /**
    * Check email service health
+   *
+   * NOTE: This system uses Resend as the email provider.
+   * RESEND_API_KEY is the only required configuration.
+   * EMAIL_PROVIDER is optional (defaults to 'resend' if not set).
    */
   private async checkEmailServiceHealth(): Promise<ServiceHealth> {
     const startTime = Date.now()
 
     try {
       // Check email configuration
-      const emailProvider = process.env.EMAIL_PROVIDER
-      const hasConfig = {
-        resend: !!process.env.RESEND_API_KEY
-      }
+      // Default to 'resend' if EMAIL_PROVIDER is not set (Resend-only system)
+      const emailProvider = process.env.EMAIL_PROVIDER || 'resend'
+      const hasResendKey = !!process.env.RESEND_API_KEY
 
-      const isConfigured = emailProvider && hasConfig[emailProvider as keyof typeof hasConfig]
+      // For Resend-only system, just check for RESEND_API_KEY
+      const isConfigured = hasResendKey && (emailProvider === 'resend' || emailProvider === 'console')
 
       const responseTime = Date.now() - startTime
 
@@ -239,12 +243,16 @@ export class HealthChecker {
         return {
           status: 'degraded',
           responseTime,
-          error: 'Email service not configured',
-          details: { provider: emailProvider, config: hasConfig }
+          error: 'Email service not configured: RESEND_API_KEY is required',
+          details: {
+            provider: emailProvider,
+            hasResendKey,
+            note: 'This is a Resend-only system. Set RESEND_API_KEY to enable emails.'
+          }
         }
       }
 
-      // For console provider, it's always healthy
+      // For console provider, it's always healthy (development mode)
       if (emailProvider === 'console') {
         return {
           status: 'healthy',
@@ -256,7 +264,7 @@ export class HealthChecker {
       return {
         status: 'healthy',
         responseTime,
-        details: { provider: emailProvider, configured: true }
+        details: { provider: 'resend', configured: true }
       }
 
     } catch (error: any) {

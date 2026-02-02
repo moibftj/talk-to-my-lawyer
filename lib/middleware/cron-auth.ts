@@ -13,9 +13,21 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export function verifyCronAuth(request: NextRequest): NextResponse | null {
   const cronSecret = process.env.CRON_SECRET
+  const isProduction = process.env.NODE_ENV === 'production'
 
-  // If no CRON_SECRET is configured, allow access (for development)
+  // If no CRON_SECRET is configured, behavior depends on environment
   if (!cronSecret) {
+    if (isProduction) {
+      // In production, require CRON_SECRET for security
+      console.error('[CronAuth] CRITICAL: CRON_SECRET not configured in production!')
+      console.error('[CronAuth] Cron endpoints are exposed without authentication!')
+      return NextResponse.json(
+        { error: 'Server configuration error: CRON_SECRET not set' },
+        { status: 500 }
+      )
+    }
+    // In development, allow access with a warning
+    console.warn('[CronAuth] No CRON_SECRET configured - allowing access (development mode)')
     return null
   }
 
