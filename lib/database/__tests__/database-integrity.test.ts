@@ -19,7 +19,7 @@ let supabaseClient: SupabaseClient<any> | null = null
 function getSupabaseClient(): SupabaseClient<any> {
   if (!supabaseClient) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
     if (!supabaseKey) {
       throw new Error('Supabase key is required for database integrity tests')
