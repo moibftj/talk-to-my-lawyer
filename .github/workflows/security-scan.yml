@@ -12,6 +12,8 @@ jobs:
   secrets-scan:
     name: Secrets Scan
     runs-on: ubuntu-latest
+    # Only run on pull requests where there's a diff to scan
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
