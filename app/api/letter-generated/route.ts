@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
             console.error(`[LetterGenerated] Failed to log audit for letter ${letterId}:`, auditError)
         }
 
-return successResponse({
-      message: 'Letter generation completed and queued for review',
+        return successResponse({
+            message: 'Letter generation completed and queued for review',
             letterId,
             status: 'pending_review',
             contentLength: generatedContent.length,
@@ -181,7 +181,8 @@ async function handleGenerationFailure(letterId: string, errorMessage: string) {
  * Health check endpoint
  */
 export async function GET() {
-    return successResponse('Letter generation webhook endpoint is ready', {
+    return successResponse({
+        message: 'Letter generation webhook endpoint is ready',
         endpoint: '/api/letter-generated',
         method: 'POST',
         expectedPayload: {

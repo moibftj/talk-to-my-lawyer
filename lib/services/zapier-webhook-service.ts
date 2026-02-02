@@ -1,8 +1,23 @@
 /**
  * Zapier Webhook Service
  *
- * Integrates with Zapier workflows for letter generation notifications.
- * Sends generated letter data to Zapier, which can trigger custom workflows.
+ * Integrates with Zapier workflows for letter generation in two modes:
+ * 
+ * 1. SYNCHRONOUS MODE: generateLetterViaZapier() - Waits for immediate response
+ * 2. ASYNCHRONOUS MODE: Zapier posts back to /api/letter-generated webhook
+ *
+ * For async mode, configure your Zapier workflow to:
+ * - Receive the webhook at your Zapier catch hook URL
+ * - Process with ChatGPT
+ * - POST the result back to: [YOUR_APP_URL]/api/letter-generated
+ *   
+ * Async webhook payload should include:
+ * {
+ *   "letterId": "uuid-from-original-request",
+ *   "generatedContent": "the generated letter text",
+ *   "success": true,
+ *   "metadata": { optional tracking data }
+ * }
  */
 
 /**
