@@ -1,23 +1,43 @@
 /**
  * Zapier Webhook Service
  *
- * Integrates with Zapier workflows for letter generation in two modes:
+ * Integrates with Zapier workflows for letter generation using bidirectional webhooks.
  * 
- * 1. SYNCHRONOUS MODE: generateLetterViaZapier() - Waits for immediate response
- * 2. ASYNCHRONOUS MODE: Zapier posts back to /api/letter-generated webhook
- *
- * For async mode, configure your Zapier workflow to:
- * - Receive the webhook at your Zapier catch hook URL
- * - Process with ChatGPT
- * - POST the result back to: [YOUR_APP_URL]/api/letter-generated
- *   
- * Async webhook payload should include:
- * {
- *   "letterId": "uuid-from-original-request",
- *   "generatedContent": "the generated letter text",
- *   "success": true,
- *   "metadata": { optional tracking data }
- * }
+ * ## WEBHOOK ENDPOINTS:
+ * 
+ * ### 1. OUTBOUND: App → Zapier (Letter Generation Request)
+ * - **URL**: https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ * - **Method**: POST
+ * - **Purpose**: Send form data to Zapier for ChatGPT processing
+ * - **Payload**: ZapierLetterFormData (see interface below)
+ * 
+ * ### 2. INBOUND: Zapier → App (Generated Letter Response)
+ * - **URL**: [YOUR_APP_URL]/api/letter-generated
+ * - **Method**: POST
+ * - **Purpose**: Receive generated letter content and update database
+ * - **Payload**: 
+ *   ```json
+ *   {
+ *     "letterId": "uuid-from-original-request",
+ *     "generatedContent": "the generated letter text",
+ *     "success": true,
+ *     "metadata": { "optional": "tracking data" }
+ *   }
+ *   ```
+ * 
+ * ### 3. HEALTH CHECK: App Status Endpoint
+ * - **URL**: [YOUR_APP_URL]/api/letter-generated
+ * - **Method**: GET
+ * - **Purpose**: Verify webhook endpoint is ready
+ * - **Response**: Endpoint documentation and expected payload format
+ * 
+ * ## WORKFLOW:
+ * 1. User submits letter form → Letter created with status 'generating'
+ * 2. App sends form data to Zapier catch hook
+ * 3. Zapier processes with ChatGPT using professional prompt
+ * 4. Zapier posts generated letter back to /api/letter-generated
+ * 5. Letter status updated to 'pending_review' for attorney approval
+ * 6. Letter appears in review center for attorneys/admins
  */
 
 /**
@@ -77,13 +97,16 @@ interface ZapierConfig {
 
 /**
  * Zapier configuration
+ * 
+ * Environment Variables:
+ * - ZAPIER_WEBHOOK_URL: https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
  */
 export const zapierConfig: ZapierConfig = {
   get webhookUrl() {
-    return process.env.ZAPIER_WEBHOOK_URL
+    return process.env.ZAPIER_WEBHOOK_URL || 'https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/'
   },
   get isConfigured() {
-    return Boolean(process.env.ZAPIER_WEBHOOK_URL)
+    return Boolean(process.env.ZAPIER_WEBHOOK_URL || 'https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/')
   },
   timeout: 30000, // 30 seconds - Zapier is typically faster than n8n
   maxRetries: 2,

@@ -1,9 +1,20 @@
 /**
- * Letter Generation Completion Webhook
- * POST /api/letter-generated
+ * Letter Generation Completion Webhook & Documentation
+ * 
+ * POST /api/letter-generated - Receives generated letter content from Zapier
+ * GET /api/letter-generated  - Health check and endpoint documentation
  *
- * Receives generated letter content from Zapier and updates the database.
- * Sets letter status to 'pending_review' for admin/attorney review.
+ * ZAPIER INTEGRATION:
+ * - Outbound: App sends form data to https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ * - Inbound: Zapier posts generated content back to this endpoint
+ * 
+ * WORKFLOW:
+ * 1. Letter created with status 'generating'
+ * 2. Form data sent to Zapier catch hook
+ * 3. Zapier processes with ChatGPT
+ * 4. Zapier posts result back here
+ * 5. Letter status updated to 'pending_review'
+ * 6. Letter enters attorney review queue
  */
 import { type NextRequest } from "next/server"
 import { db } from '@/lib/db/client-factory'
@@ -178,19 +189,44 @@ async function handleGenerationFailure(letterId: string, errorMessage: string) {
 }
 
 /**
- * Health check endpoint
+ * Health check and documentation endpoint
+ * GET /api/letter-generated
  */
 export async function GET() {
     return successResponse({
         message: 'Letter generation webhook endpoint is ready',
-        endpoint: '/api/letter-generated',
-        method: 'POST',
-        expectedPayload: {
-            letterId: 'string (required)',
-            generatedContent: 'string (required)',
-            success: 'boolean (optional, defaults to true)',
-            error: 'string (optional)',
-            metadata: 'object (optional)'
-        }
+        endpoints: {
+            incoming: {
+                url: '/api/letter-generated',
+                method: 'POST',
+                purpose: 'Receive generated letter content from Zapier',
+                expectedPayload: {
+                    letterId: 'string (required) - UUID from original request',
+                    generatedContent: 'string (required) - The generated letter text',
+                    success: 'boolean (optional, defaults to true)',
+                    error: 'string (optional) - Error message if generation failed',
+                    metadata: 'object (optional) - Tracking data from ChatGPT/Zapier'
+                }
+            },
+            outbound: {
+                url: 'https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/',
+                method: 'POST',
+                purpose: 'Send letter form data to Zapier for ChatGPT processing',
+                payload: 'ZapierLetterFormData (see service documentation)'
+            },
+            health: {
+                url: '/api/letter-generated',
+                method: 'GET',
+                purpose: 'Check webhook endpoint status and get documentation'
+            }
+        },
+        workflow: [
+            '1. User submits letter form → Letter created with status "generating"',
+            '2. App sends form data to Zapier catch hook',
+            '3. Zapier processes with ChatGPT using professional prompt',
+            '4. Zapier posts generated letter back to /api/letter-generated',
+            '5. Letter status updated to "pending_review" for attorney approval',
+            '6. Letter appears in review center for attorneys/admins'
+        ]
     })
 }
