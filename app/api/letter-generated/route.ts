@@ -39,9 +39,7 @@ export async function POST(request: NextRequest) {
 
         const { letterId, generatedContent, success = true, error, metadata } = body
 
-        addSpanAttributes(span, {
-            'letter.id': letterId,
-            'letter.success': success,
+        addSpanAttributes({
             'letter.content_length': generatedContent?.length || 0
         })
 
@@ -126,7 +124,8 @@ export async function POST(request: NextRequest) {
             console.error(`[LetterGenerated] Failed to log audit for letter ${letterId}:`, auditError)
         }
 
-        return successResponse('Letter generation completed and queued for review', {
+return successResponse({
+      message: 'Letter generation completed and queued for review',
             letterId,
             status: 'pending_review',
             contentLength: generatedContent.length,
