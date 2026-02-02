@@ -92,10 +92,6 @@ export async function POST(request: NextRequest) {
       console.error("[GenerateLetter] No generation method configured. Set ZAPIER_WEBHOOK_URL or OPENAI_API_KEY.")
       return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
     }
-    if (!openaiConfig.apiKey || !openaiConfig.isConfigured) {
-      console.error("[GenerateLetter] OpenAI is not configured.")
-      return errorResponses.serverError("Letter generation is temporarily unavailable. Please contact support.")
-    }
 
     // 5. Atomically check eligibility AND deduct allowance
     const deductionResult = await checkAndDeductAllowance(user.id)
@@ -242,8 +238,19 @@ export async function POST(request: NextRequest) {
       aiDraft: await responseDraft,
     })
 
-  } catch (generationError: unknown) {
-      console.error("[GenerateLetter] Generation failed:", generationError)
+  } catch (error: unknown) {
+    span.recordException(error as Error)
+    span.setStatus({
+      code: 2, // ERROR
+      message: error instanceof Error ? error.message : 'Unknown error'
+    })
+    recordSpanEvent('letter_generation_failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+
+    // Handle generation-specific errors (mark letter as failed, refund)
+    if (error instanceof Error) {
+      console.error("[GenerateLetter] Generation failed:", error)
 
       // Update letter status to failed
       await supabase
@@ -260,33 +267,20 @@ export async function POST(request: NextRequest) {
       }
 
       // Log audit trail
-      const errorMessage = generationError instanceof Error ? generationError.message : "Unknown error"
-      const failedMethod = generationMethod === 'zapier' ? 'Zapier (primary)' :
-                          'OpenAI (fallback)'
+      const failedMethod = zapierAvailable ? 'Zapier (primary)' : 'OpenAI (fallback)'
       await logLetterStatusChange(
         supabase,
         newLetter.id,
         'generating',
         'failed',
         'generation_failed',
-        `Generation failed (${failedMethod}): ${errorMessage}`
+        `Generation failed (${failedMethod}): ${error.message}`
       )
 
       // Notify Zapier about the failure (non-blocking, for alerting)
-      notifyZapierLetterFailed(newLetter.id, sanitizedLetterType, user.id, errorMessage)
-
-      return errorResponses.serverError(errorMessage || "AI generation failed")
+      notifyZapierLetterFailed(newLetter.id, sanitizedLetterType, user.id, error.message)
     }
 
-  } catch (error: unknown) {
-    span.recordException(error as Error)
-    span.setStatus({
-      code: 2, // ERROR
-      message: error instanceof Error ? error.message : 'Unknown error'
-    })
-    recordSpanEvent('letter_generation_failed', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    })
     return handleApiError(error, 'GenerateLetter')
   } finally {
     span.end()
