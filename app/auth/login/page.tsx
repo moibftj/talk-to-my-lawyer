@@ -103,7 +103,9 @@ export default function LoginPage() {
       const roleRedirects: Record<string, string> = {
         'subscriber': '/dashboard/letters',
         'employee': '/dashboard/commissions',
-        'admin': '/dashboard/admin/letters'
+        // Admins should use the dedicated admin portal, not the Supabase auth login
+        // If they somehow get here, redirect to the correct admin portal
+        'admin': '/secure-admin-gateway/dashboard'
       }
 
       const redirectPath = roleRedirects[profile?.role || 'subscriber']
