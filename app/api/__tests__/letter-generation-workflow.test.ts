@@ -22,8 +22,33 @@ vi.mock('@/lib/rate-limit-redis', () => ({
 vi.mock('@/lib/auth/authenticate-user', () => ({
     requireSubscriber: vi.fn(() => Promise.resolve({
         user: { id: 'user-123', email: 'user@test.com' },
-        profile: { id: 'user-123', role: 'subscriber', email: 'user@test.com' }
-    })),
+        supabase: {
+            from: vi.fn(() => ({
+                insert: vi.fn(() => ({
+                    select: vi.fn(() => ({
+                        single: vi.fn(() => Promise.resolve({
+                            data: {
+                                id: 'letter-123',
+                                status: 'generating',
+                                user_id: 'user-123',
+                                letter_type: 'demand_letter'
+                            },
+                            error: null
+                        }))
+                    }))
+                })),
+                select: vi.fn(() => ({
+                    eq: vi.fn(() => ({
+                        single: vi.fn(() => Promise.resolve({
+                            data: { ai_draft: 'Generated letter content' },
+                            error: null
+                        }))
+                    }))
+                })),
+                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
+            }))
+        }
+    }))
 }))
 
 vi.mock('@/lib/db/client-factory', () => ({
@@ -158,7 +183,7 @@ describe('Letter Generation Workflow & Review Center', () => {
             expect(response.status).toBe(200)
             expect(json.letterId).toBe('letter-123')
             expect(json.status).toBe('generating')
-            expect(mockServiceClient.from).toHaveBeenCalledWith('letters')
+            expect(json.aiDraft).toBeUndefined() // No draft for async Zapier flow
             expect(mockTransformIntakeToZapierFormat).toHaveBeenCalled()
         })
 

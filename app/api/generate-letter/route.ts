@@ -248,39 +248,6 @@ export async function POST(request: NextRequest) {
       error: error instanceof Error ? error.message : 'Unknown error',
     })
 
-    // Handle generation-specific errors (mark letter as failed, refund)
-    if (error instanceof Error) {
-      console.error("[GenerateLetter] Generation failed:", error)
-
-      // Update letter status to failed
-      await supabase
-        .from("letters")
-        .update({
-          status: "failed",
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", newLetter.id)
-
-      // Refund if we deducted (not free trial or super admin)
-      if (!isFreeTrial && !isSuperAdmin) {
-        await refundLetterAllowance(user.id, 1)
-      }
-
-      // Log audit trail
-      const failedMethod = zapierAvailable ? 'Zapier (primary)' : 'OpenAI (fallback)'
-      await logLetterStatusChange(
-        supabase,
-        newLetter.id,
-        'generating',
-        'failed',
-        'generation_failed',
-        `Generation failed (${failedMethod}): ${error.message}`
-      )
-
-      // Notify Zapier about the failure (non-blocking, for alerting)
-      notifyZapierLetterFailed(newLetter.id, sanitizedLetterType, user.id, error.message)
-    }
-
     return handleApiError(error, 'GenerateLetter')
   } finally {
     span.end()
