@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         const { error: updateError } = await supabase
           .from("letters")
           .update({
-            ai_draft: generatedContent,
+            ai_draft_content: generatedContent,
             status: "pending_review",
             updated_at: new Date().toISOString(),
           })
@@ -225,10 +225,10 @@ export async function POST(request: NextRequest) {
     const responseStatus = zapierAvailable ? 'generating' : 'pending_review'
     const responseDraft = zapierAvailable ? undefined : await supabase
       .from("letters")
-      .select("ai_draft")
+      .select("ai_draft_content")
       .eq("id", newLetter.id)
       .single()
-      .then(res => res.data?.ai_draft)
+      .then(res => res.data?.ai_draft_content)
 
     return successResponse<LetterGenerationResponse>({
       success: true,

@@ -123,11 +123,11 @@ export async function POST(request: NextRequest) {
 
         // Update letter with generated content and set to pending review
         const updateData = {
-            ai_draft: generatedContent,
+            ai_draft_content: generatedContent,
             status: 'pending_review',
             updated_at: new Date().toISOString(),
             generated_at: new Date().toISOString(),
-            generation_metadata: metadata ? JSON.stringify(metadata) : null
+            generation_metadata: metadata || null
         }
 
         const { data: updatedLetter, error: updateError } = await (serviceClient as any)
