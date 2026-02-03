@@ -388,20 +388,14 @@ The ChatGPT action will return a field called "Message" or "Response" containing
 
    **Data:**
 
-   Instead of using the form fields, we'll send the pre-formatted JSON:
-   - In the "Data" field, click "Show Editor"
-   - Delete any pre-filled content
-   - Click the "+" button and select **"Custom Value"**
-   - Paste: `{{3. payloadString}}` (from Step 3 - Code by Zapier)
+   We need to send the pre-formatted JSON payload from Step 3:
 
-   **Actually, better approach - use raw body:**
+   1. In the "Data" section, look for "Switch to Code Mode" or "Raw" option
+   2. If available, click it to enable raw JSON input
+   3. Otherwise, click "Show Editor" and remove any default fields
+   4. Enter: `{{3. payloadString}}` (this is the complete JSON from Step 3)
 
-   Zapier's POST webhook has a "Payload Type" option. Make sure it's set to "json" and:
-
-   - Click "Data" section
-   - Remove any default fields
-   - Click "Switch to Code Mode" or "Raw"
-   - Paste: `{{3. payloadString}}`
+   **Important:** We're sending the entire payload as raw JSON, not as form fields. The `payloadString` from Step 3 already contains the properly formatted JSON with all required fields.
 
    **Headers:**
 
