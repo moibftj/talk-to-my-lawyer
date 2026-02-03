@@ -101,14 +101,17 @@ interface ZapierConfig {
  * Zapier configuration
  * 
  * Environment Variables:
- * - ZAPIER_WEBHOOK_URL: https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ * - ZAPIER_WEBHOOK_URL: Required. The Zapier catch hook URL for your account.
+ * 
+ * **SECURITY**: No fallback URL is provided. If ZAPIER_WEBHOOK_URL is not set,
+ * the integration is treated as "not configured" and no user data is sent to Zapier.
  */
 export const zapierConfig: ZapierConfig = {
   get webhookUrl() {
-    return process.env.ZAPIER_WEBHOOK_URL || 'https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/'
+    return process.env.ZAPIER_WEBHOOK_URL || ''
   },
   get isConfigured() {
-    return Boolean(process.env.ZAPIER_WEBHOOK_URL || 'https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/')
+    return Boolean(process.env.ZAPIER_WEBHOOK_URL)
   },
   timeout: 30000, // 30 seconds - Zapier is typically faster than n8n
   maxRetries: 2,

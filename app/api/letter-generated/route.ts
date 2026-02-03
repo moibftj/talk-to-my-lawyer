@@ -12,7 +12,7 @@
  * SETUP GUIDE: See docs/ZAPIER_SETUP.md for complete configuration and troubleshooting
  *
  * ZAPIER INTEGRATION:
- * - Outbound: App sends form data to https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ * - Outbound: App sends form data to configured ZAPIER_WEBHOOK_URL
  * - Inbound: Zapier posts generated content back to this endpoint
  *
  * WORKFLOW:
@@ -244,7 +244,7 @@ export async function GET() {
                 }
             },
             outbound: {
-                url: 'https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/',
+                url: process.env.ZAPIER_WEBHOOK_URL || 'NOT_CONFIGURED',
                 method: 'POST',
                 purpose: 'Send letter form data to Zapier for ChatGPT processing',
                 payload: 'ZapierLetterFormData (see service documentation)'

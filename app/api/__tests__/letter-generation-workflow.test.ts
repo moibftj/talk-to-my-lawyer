@@ -134,10 +134,10 @@ describe('Letter Generation Workflow & Review Center', () => {
 
             mockDb.serviceRole.mockReturnValue(mockServiceClient)
             mockCheckAndDeductAllowance.mockResolvedValue({
-              success: true,
-              isFreeTrial: false,
-              isSuperAdmin: false,
-              remaining: 4
+                success: true,
+                isFreeTrial: false,
+                isSuperAdmin: false,
+                remaining: 4
             })
             mockTransformIntakeToZapierFormat.mockReturnValue({
                 letterId: 'letter-123',
@@ -513,7 +513,8 @@ describe('Letter Generation Workflow & Review Center', () => {
             expect(json.endpoints).toBeDefined()
             expect(json.endpoints.incoming).toBeDefined()
             expect(json.endpoints.outbound).toBeDefined()
-            expect(json.endpoints.outbound.url).toBe('https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/')
+            // URL should be from env var or NOT_CONFIGURED
+            expect(json.endpoints.outbound.url).toBeDefined()
             expect(json.workflow).toBeInstanceOf(Array)
             expect(json.workflow.length).toBeGreaterThan(0)
         })
