@@ -9,6 +9,8 @@
  * - Requires ZAPIER_WEBHOOK_SECRET environment variable in production
  * - Zapier should send signature in X-Zapier-Signature header
  *
+ * SETUP GUIDE: See docs/ZAPIER_SETUP.md for complete configuration and troubleshooting
+ *
  * ZAPIER INTEGRATION:
  * - Outbound: App sends form data to https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
  * - Inbound: Zapier posts generated content back to this endpoint
@@ -121,11 +123,11 @@ export async function POST(request: NextRequest) {
 
         // Update letter with generated content and set to pending review
         const updateData = {
-            ai_draft: generatedContent,
+            ai_draft_content: generatedContent,
             status: 'pending_review',
             updated_at: new Date().toISOString(),
             generated_at: new Date().toISOString(),
-            generation_metadata: metadata ? JSON.stringify(metadata) : null
+            generation_metadata: metadata || null
         }
 
         const { data: updatedLetter, error: updateError } = await (serviceClient as any)

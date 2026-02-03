@@ -95,6 +95,9 @@ export interface Letter {
   claimed_by: string | null;
   claimed_at: string | null;
   is_attorney_reviewed: boolean;
+  generated_at: string | null;
+  generation_metadata: Record<string, unknown> | null;
+  generation_error: string | null;
   claimer?: {
     id: string;
     full_name: string | null;
