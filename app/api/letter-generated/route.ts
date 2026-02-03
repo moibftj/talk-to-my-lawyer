@@ -28,6 +28,7 @@ import { db } from '@/lib/db/client-factory'
 import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
 import { createBusinessSpan, addSpanAttributes } from '@/lib/monitoring/tracing'
 import { verifyZapierWebhookSignature } from '@/lib/security/webhook-signature'
+import { notifyUserLetterGenerated, notifyAdminsNewLetter } from '@/lib/services/notification-service'
 
 interface ZapierLetterCompletionPayload {
     letterId: string
@@ -105,9 +106,21 @@ export async function POST(request: NextRequest) {
         const serviceClient = db.serviceRole()
 
         // First, verify the letter exists and is in generating status
+        // Also fetch user profile for notifications
         const { data: existingLetter, error: fetchError } = await (serviceClient as any)
             .from('letters')
-            .select('id, status, user_id, letter_type')
+            .select(`
+                id,
+                status,
+                user_id,
+                letter_type,
+                title,
+                profiles (
+                    id,
+                    email,
+                    full_name
+                )
+            `)
             .eq('id', letterId)
             .single()
 
@@ -143,6 +156,24 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`[LetterGenerated] Successfully updated letter ${letterId} to pending_review status`)
+
+        // Send email notification to user (non-blocking)
+        const userEmail = existingLetter.profiles?.email
+        const userName = existingLetter.profiles?.full_name || 'there'
+        const letterTitle = existingLetter.title || `${existingLetter.letter_type}`
+
+        if (userEmail) {
+            // Fire and forget - don't wait for email to send
+            notifyUserLetterGenerated(userEmail, userName, letterTitle, letterId).catch(err => {
+                console.error(`[LetterGenerated] Failed to send user notification:`, err)
+            })
+            console.log(`[LetterGenerated] Queued notification email to user: ${userEmail}`)
+        }
+
+        // Notify admins about new letter (non-blocking)
+        notifyAdminsNewLetter(letterId, letterTitle, existingLetter.letter_type).catch(err => {
+            console.error(`[LetterGenerated] Failed to send admin notification:`, err)
+        })
 
         // Log audit trail
         try {
