@@ -8,7 +8,7 @@
  * ## WEBHOOK ENDPOINTS:
  * 
  * ### 1. OUTBOUND: App → Zapier (Letter Generation Request)
- * - **URL**: https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ * - **URL**: Configured via `ZAPIER_WEBHOOK_URL` (required)
  * - **Method**: POST
  * - **Purpose**: Send form data to Zapier for ChatGPT processing
  * - **Payload**: ZapierLetterFormData (see interface below)
