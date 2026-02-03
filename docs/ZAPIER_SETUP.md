@@ -546,7 +546,8 @@ export function verifyWebhookSignature(
 
       const hmac = createHmac(algorithm, secret)
       hmac.update(payload, 'utf8')
-      const digestBytes = Buffer.from(hmac.digest('hex'), 'hex')
+      const digest = hmac.digest('hex')
+      const digestBytes = Buffer.from(digest, 'hex')
 
       if (signatureBytes.length !== digestBytes.length) {
          return { valid: false, error: 'Invalid signature length' }
