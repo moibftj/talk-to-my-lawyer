@@ -77,12 +77,12 @@ The Zapier catch hook URL where the app sends letter generation requests.
 **Example:**
 
 ```bash
-ZAPIER_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ZAPIER_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/YOUR_ACCOUNT/YOUR_HOOK/
 ```
 
-**Location in codebase:** `lib/services/zapier-webhook-service.ts:106`
+**Location in codebase:** `lib/services/zapier-webhook-service.ts`
 
-**Note:** The app has this URL hardcoded as a fallback. Setting the environment variable overrides the fallback.
+**Note:** There is no hardcoded fallback. If `ZAPIER_WEBHOOK_URL` is not set, the Zapier integration is treated as **not configured** and no data is sent.
 
 ---
 
@@ -178,7 +178,7 @@ This section provides detailed instructions for creating your Zapier Zap.
 3. **Configure Trigger:**
    - Zapier will display a unique webhook URL
    - **Copy this URL** - you'll need it for `ZAPIER_WEBHOOK_URL`
-   - Example: `https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/`
+   - Example: `https://hooks.zapier.com/hooks/catch/YOUR_ACCOUNT/YOUR_HOOK/`
 
 4. **Test Trigger:**
    - Set `ZAPIER_WEBHOOK_URL` in your `.env.local` with the URL from step 3
@@ -523,32 +523,48 @@ const signature = 'sha256=' + hmac.digest('hex');
 
 **Signature Verification (App - TypeScript):**
 
-Location: `lib/security/webhook-signature.ts` (lines 30-73)
+Location: `lib/security/webhook-signature.ts` (see `verifyWebhookSignature`)
 
 ```typescript
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto'
 
 export function verifyWebhookSignature(
   signature: string | null,
   payload: string,
-  secret: string
+   secret: string,
+   algorithm: 'sha256' | 'sha512' | 'sha1' = 'sha256'
 ): WebhookSignatureVerificationResult {
   if (!signature) {
-    return { valid: false, error: 'Missing signature header' };
+      return { valid: false, error: 'Missing signature header' }
   }
 
-  // Remove "sha256=" prefix
-  const signatureBytes = Buffer.from(signature.split('=')[1], 'hex');
+   try {
+      const signatureBytes = Buffer.from(
+         signature.includes('=') ? signature.split('=')[1] : signature,
+         'hex'
+      )
 
-  // Compute HMAC of payload
-  const hmac = createHmac('sha256', secret);
-  hmac.update(payload, 'utf8');
-  const digestBytes = Buffer.from(hmac.digest('hex'), 'hex');
+      const hmac = createHmac(algorithm, secret)
+      hmac.update(payload, 'utf8')
+      const digestBytes = Buffer.from(hmac.digest('hex'), 'hex')
 
-  // Constant-time comparison prevents timing attacks
-  const isValid = timingSafeEqual(signatureBytes, digestBytes);
+      if (signatureBytes.length !== digestBytes.length) {
+         return { valid: false, error: 'Invalid signature length' }
+      }
 
-  return { valid: isValid };
+      const isValid = timingSafeEqual(signatureBytes, digestBytes)
+
+      if (!isValid) {
+         return { valid: false, error: 'Signature verification failed' }
+      }
+
+      return { valid: true }
+   } catch (error) {
+      return {
+         valid: false,
+         error: `Signature verification error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }
+   }
 }
 ```
 
@@ -596,7 +612,7 @@ Create or update `.env.local`:
 
 ```bash
 # Required for testing
-ZAPIER_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/
+ZAPIER_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/YOUR_ACCOUNT/YOUR_HOOK/
 ZAPIER_WEBHOOK_SECRET=your-test-secret-here
 
 # Other required vars (see .env.example)
@@ -945,7 +961,7 @@ Before deploying to production, verify:
    - Verify Zap is turned ON
    - Test webhook URL with curl:
      ```bash
-     curl -X POST https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/ \
+       curl -X POST "$ZAPIER_WEBHOOK_URL" \
        -H "Content-Type: application/json" \
        -d '{"test": "connection"}'
      ```
@@ -1021,7 +1037,7 @@ Before deploying to production, verify:
 
 2. **Test webhook directly:**
    ```bash
-   curl -X POST https://hooks.zapier.com/hooks/catch/14299645/ulilhsl/ \
+    curl -X POST "$ZAPIER_WEBHOOK_URL" \
      -H "Content-Type: application/json" \
      -d '{
        "letterType": "test",
@@ -1262,7 +1278,7 @@ You can create a monitoring Zap to detect and alert on stuck letters.
 
 | Variable | Purpose | Required | Default |
 |----------|---------|----------|---------|
-| `ZAPIER_WEBHOOK_URL` | Outbound catch hook URL | Recommended | Hardcoded fallback |
+| `ZAPIER_WEBHOOK_URL` | Outbound catch hook URL | Recommended | None |
 | `ZAPIER_WEBHOOK_SECRET` | HMAC signature secret | **Production** | None (dev mode) |
 | `ZAPIER_EVENTS_WEBHOOK_URL` | Event notifications | Optional | None |
 
