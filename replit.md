@@ -11,7 +11,7 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 - **Auth**: Supabase Auth
 - **Database**: Supabase (PostgreSQL)
 - **Payments**: Stripe
-- **AI**: OpenAI (letter generation)
+- **AI**: OpenAI via Replit AI Integrations (letter generation, gpt-4o model)
 - **Email**: Resend
 - **Rate Limiting**: Upstash Redis
 
@@ -31,7 +31,9 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 - `STRIPE_SECRET_KEY` - Stripe secret key
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
 - `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
-- `OPENAI_API_KEY` - OpenAI API key
+- `AI_INTEGRATIONS_OPENAI_API_KEY` - OpenAI API key (auto-set by Replit AI Integrations)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` - OpenAI base URL (auto-set by Replit AI Integrations)
+- `OPENAI_API_KEY` - OpenAI API key (fallback, optional if AI Integrations configured)
 - `RESEND_API_KEY` - Resend email API key
 - `ADMIN_EMAIL` - Admin email
 - `ADMIN_PORTAL_KEY` - Admin portal access key
@@ -49,4 +51,8 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 - `public/` - Static assets
 
 ## Recent Changes
+- 2026-02-06: Integrated Replit AI Integrations for OpenAI (auto-managed API key, gpt-4o model)
+- 2026-02-06: Updated OpenAI client with AI integrations priority + backward compat fallback
+- 2026-02-06: Fixed TypeScript type errors in letter generation endpoint
+- 2026-02-06: Verified notification flow: generation → admin notify → review → approve/reject → user notify
 - 2026-02-06: Configured for Replit environment (port 5000, proxy support, iframe embedding)
