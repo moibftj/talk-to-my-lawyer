@@ -8,6 +8,11 @@
  * - Security headers and CSP configured
  * - Extended timeouts for AI generation endpoints
  */
+const replitDomains = [
+  ...(process.env.REPLIT_DEV_DOMAIN ? [process.env.REPLIT_DEV_DOMAIN] : []),
+  ...(process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : []),
+].filter(Boolean);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Standalone output for optimized Docker/container deployments
@@ -68,7 +73,7 @@ const nextConfig = {
     ],
   },
 
-  allowedDevOrigins: ["localhost", "127.0.0.1"],
+  allowedDevOrigins: ["localhost", "127.0.0.1", ...replitDomains],
   async headers() {
     const headers = [];
 
@@ -83,10 +88,6 @@ const nextConfig = {
         {
           key: "X-XSS-Protection",
           value: "1; mode=block",
-        },
-        {
-          key: "X-Frame-Options",
-          value: "SAMEORIGIN",
         },
         {
           key: "X-Content-Type-Options",
@@ -121,7 +122,7 @@ const nextConfig = {
         {
           key: "Content-Security-Policy",
           value:
-            "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none';",
+            "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors *;",
         },
       ],
     });
@@ -144,7 +145,7 @@ const nextConfig = {
                   "img-src 'self' data: https: blob:;",
                   "connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://vercel.live https://resend.com;",
                   "frame-src 'self' https://js.stripe.com https://vercel.live;",
-                  "frame-ancestors 'none';",
+                  "frame-ancestors *;",
                   "base-uri 'self';",
                   "form-action 'self';",
                 ].join(" ")
@@ -156,7 +157,7 @@ const nextConfig = {
                   "img-src 'self' data: https: blob:;",
                   "connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://vercel.live https://resend.com ws://localhost:* ws://127.0.0.1:*;",
                   "frame-src 'self' https://js.stripe.com https://vercel.live;",
-                  "frame-ancestors 'none';",
+                  "frame-ancestors *;",
                   "base-uri 'self';",
                   "form-action 'self';",
                 ].join(" "),
