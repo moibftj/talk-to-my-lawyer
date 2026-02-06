@@ -69,7 +69,7 @@ export async function generateLetterContent(
       system: "You are a professional legal attorney drafting formal legal letters. Always produce professional, legally sound content with proper formatting.",
       temperature: 0.7,
       maxOutputTokens: 2048,
-      model: "gpt-4-turbo"
+      model: "gpt-4o"
     })
 
     const generationTime = Date.now() - generationStartTime
@@ -276,7 +276,7 @@ export async function generateProfessionalLetter(
       system: systemPrompt,
       temperature: options.temperature ?? 0.7,
       maxOutputTokens: options.maxTokens ?? 2500,
-      model: options.model ?? "gpt-4-turbo",
+      model: options.model ?? "gpt-4o",
     })
 
     if (!generatedContent) {
@@ -290,7 +290,7 @@ export async function generateProfessionalLetter(
 
     // Build metadata
     const metadata: GenerationMetadata = {
-      model: options.model ?? "gpt-4-turbo",
+      model: options.model ?? "gpt-4o",
       attempts,
       duration: totalDuration,
       researchUsed: !!research,
@@ -479,7 +479,7 @@ You are now improving an existing letter. Your task is to:
       system: systemPrompt,
       temperature: 0.7,
       maxOutputTokens: 2048,
-      model: "gpt-4-turbo"
+      model: "gpt-4o"
     })
 
     if (!improvedContent) {

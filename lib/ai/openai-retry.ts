@@ -163,7 +163,7 @@ export class OpenAIRetryClient {
     model?: string
   }): Promise<RetryResult<string>> {
     const span = createAISpan('generateTextWithRetry', {
-      'ai.model': params.model || 'gpt-4-turbo',
+      'ai.model': params.model || 'gpt-4o',
       'ai.temperature': params.temperature || 0.7,
       'ai.max_output_tokens': params.maxOutputTokens || 2048,
       'ai.prompt_length': params.prompt.length,
@@ -206,7 +206,7 @@ export class OpenAIRetryClient {
           })
 
           const { text } = await generateText({
-            model: getOpenAIModel(params.model || "gpt-4-turbo"),
+            model: getOpenAIModel(params.model || "gpt-4o"),
             system: params.system || "You are a professional legal assistant.",
             prompt: params.prompt,
             temperature: params.temperature || 0.7,
@@ -411,7 +411,7 @@ export async function generateTextWithRetry(params: {
   model?: string
 }): Promise<{ text: string; attempts: number; duration: number }> {
   const span = createAISpan('generateTextWithRetryWrapper', {
-    'ai.model': params.model || 'gpt-4-turbo',
+    'ai.model': params.model || 'gpt-4o',
     'ai.prompt_length': params.prompt.length,
   })
 

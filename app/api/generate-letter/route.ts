@@ -140,8 +140,8 @@ export async function POST(request: NextRequest) {
 
     addSpanAttributes({
       'letter.type': sanitizedLetterType,
-      'letter.sender_state': sanitizedIntakeData.senderState || 'unknown',
-      'letter.recipient_state': sanitizedIntakeData.recipientState || 'unknown',
+      'letter.sender_state': String(sanitizedIntakeData.senderState || 'unknown'),
+      'letter.recipient_state': String(sanitizedIntakeData.recipientState || 'unknown'),
     })
 
     // =========================================================================
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
 
     letterId = newLetter.id
     console.log(`[GenerateLetter] Created letter record: ${letterId}`)
-    recordSpanEvent('letter_record_created', { letter_id: letterId })
+    recordSpanEvent('letter_record_created', { letter_id: letterId! })
 
     // =========================================================================
     // STEP 7: Generate Letter via OpenAI
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
     // =========================================================================
     await logLetterStatusChange(
       supabase,
-      letterId,
+      letterId!,
       'generating',
       'pending_review',
       'created',
@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
     // =========================================================================
     // STEP 10: Notify Admins (Fire-and-forget)
     // =========================================================================
-    notifyAdminsNewLetter(letterId, letterTitle, sanitizedLetterType).catch(err => {
+    notifyAdminsNewLetter(letterId!, letterTitle, sanitizedLetterType).catch(err => {
       console.warn("[GenerateLetter] Admin notification failed (non-critical):", err)
     })
 
@@ -338,7 +338,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse<LetterGenerationResponse>({
       success: true,
-      letterId: letterId,
+      letterId: letterId!,
       status: 'pending_review',
       isFreeTrial: isFreeTrial,
       aiDraft: generatedContent,

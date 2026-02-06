@@ -28,7 +28,12 @@ function isEmergentKey(apiKey: string | undefined): boolean {
 }
 
 /**
- * Get an OpenAI provider configured for either Emergent or direct OpenAI
+ * Get an OpenAI provider configured for AI Integrations, Emergent, or direct OpenAI
+ *
+ * Priority:
+ * 1. Replit AI Integrations (AI_INTEGRATIONS_OPENAI_API_KEY + AI_INTEGRATIONS_OPENAI_BASE_URL)
+ * 2. Emergent Universal Key (sk-emergent-* via proxy)
+ * 3. Direct OpenAI API (OPENAI_API_KEY)
  *
  * @returns OpenAI provider function (call with model name to get a model)
  */
@@ -37,13 +42,24 @@ export function getOpenAIProvider() {
     return openAIProviderInstance
   }
 
+  const aiIntegrationsKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY
+  const aiIntegrationsBaseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
+
+  if (aiIntegrationsKey) {
+    console.log('[OpenAI] Using Replit AI Integrations')
+    openAIProviderInstance = createOpenAI({
+      apiKey: aiIntegrationsKey,
+      baseURL: aiIntegrationsBaseURL,
+    })
+    return openAIProviderInstance
+  }
+
   const apiKey = process.env.OPENAI_API_KEY || process.env.EMERGENT_LLM_KEY
 
   if (!apiKey) {
-    console.warn('[OpenAI] No API key configured. Set OPENAI_API_KEY or EMERGENT_LLM_KEY environment variable.')
+    console.warn('[OpenAI] No API key configured. Set AI_INTEGRATIONS_OPENAI_API_KEY, OPENAI_API_KEY, or EMERGENT_LLM_KEY environment variable.')
   }
 
-  // Use Emergent proxy for universal key, otherwise direct OpenAI
   if (isEmergentKey(apiKey)) {
     console.log('[OpenAI] Using Emergent Universal Key with proxy endpoint')
     openAIProviderInstance = createOpenAI({
@@ -63,9 +79,9 @@ export function getOpenAIProvider() {
 /**
  * Get an OpenAI model instance
  *
- * @param model - Model name (default: "gpt-4-turbo")
+ * @param model - Model name (default: "gpt-4o")
  * @returns OpenAI model instance
  */
-export function getOpenAIModel(model: string = "gpt-4-turbo") {
+export function getOpenAIModel(model: string = "gpt-4o") {
   return getOpenAIProvider()(model)
 }
