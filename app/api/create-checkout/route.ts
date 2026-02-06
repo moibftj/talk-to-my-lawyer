@@ -188,10 +188,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ===== PRODUCTION MODE: Use Stripe for real payments =====
-    const stripe = getStripeClient()
-    if (!stripe) {
-      throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.')
-    }
+    const stripe = await getStripeClient()
 
     // Create subscription record as 'trialing' before payment confirmation
     const { data: pendingSubscription, error: subError } = await supabase

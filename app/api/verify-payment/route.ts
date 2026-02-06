@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
       return errorResponses.badRequest('Session ID required')
     }
 
-    const stripe = getStripeClient()
-    if (!stripe) {
-      return errorResponses.internal('Stripe not configured')
-    }
+    const stripe = await getStripeClient()
     const supabase = getServiceRoleClient()
 
     // Retrieve the session from Stripe

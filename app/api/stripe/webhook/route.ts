@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { queueTemplateEmail } from '@/lib/email/service'
-import { getStripeClient } from '@/lib/stripe/client'
+import { getStripeClient, getStripeSync } from '@/lib/stripe/client'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
 export async function POST(request: NextRequest) {
-  const stripe = getStripeClient()
-
-  if (!stripe || !webhookSecret) {
-    console.error('[StripeWebhook] Stripe not configured')
-    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 })
-  }
-
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')
 
@@ -24,13 +14,28 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Verify webhook signature
-    const event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+    try {
+      const stripeSync = await getStripeSync()
+      await stripeSync.processWebhook(Buffer.from(body), sig)
+      console.log('[StripeWebhook] stripe-replit-sync processWebhook completed')
+    } catch (syncError) {
+      console.error('[StripeWebhook] stripe-replit-sync processWebhook error (non-blocking):', syncError)
+    }
+
+    let event: Stripe.Event
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+    if (webhookSecret) {
+      const stripe = await getStripeClient()
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
+    } else {
+      event = JSON.parse(body) as Stripe.Event
+    }
+
     console.log('[StripeWebhook] Event received:', event.type)
 
     const supabase = getServiceRoleClient()
 
-    // Check idempotency - prevent duplicate processing on webhook retry
     const { data: idempotencyCheck, error: idempotencyError } = await (supabase as any).rpc('check_and_record_webhook', {
       p_stripe_event_id: event.id,
       p_event_type: event.type,
@@ -42,12 +47,10 @@ export async function POST(request: NextRequest) {
 
     if (idempotencyError) {
       console.error('[StripeWebhook] Idempotency check failed:', idempotencyError)
-      // Continue processing if check fails - better to process twice than miss an event
     } else {
       const checkResult = idempotencyCheck?.[0]
       if (checkResult && checkResult.already_processed === true) {
         console.log('[StripeWebhook] Event already processed, skipping:', event.id)
-        // Return success to acknowledge receipt without re-processing
         return NextResponse.json({ received: true, already_processed: true })
       }
     }
@@ -56,7 +59,6 @@ export async function POST(request: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
 
-        // Verify session is paid
         if (session.payment_status !== 'paid') {
           console.log('[StripeWebhook] Payment not completed, skipping')
           return NextResponse.json({ received: true })
@@ -68,7 +70,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'No metadata' }, { status: 400 })
         }
 
-        // Use improved atomic RPC that handles all race conditions internally
         const letters = parseInt(metadata.letters || '0')
         const finalPrice = parseFloat(metadata.final_price || '0')
         const basePrice = parseFloat(metadata.base_price || '0')
@@ -93,15 +94,12 @@ export async function POST(request: NextRequest) {
 
         if (atomicError || !atomicResult || !atomicResult[0]?.success) {
           console.error('[StripeWebhook] Atomic subscription completion failed:', atomicError)
-          // Don't fail the webhook entirely - log but return success to avoid retries
-          // The subscription can be recovered manually
         } else {
           const result = atomicResult[0]
           const alreadyCompleted = result.already_completed || false
           console.log('[StripeWebhook] Subscription completed atomically:', result.subscription_id,
             alreadyCompleted ? '(already completed by verify-payment)' : '')
 
-          // Send commission earned email if commission was created
           if (result.commission_id && employeeId && !alreadyCompleted) {
             const { data: employeeProfile } = await supabase
               .from('profiles')
@@ -124,7 +122,6 @@ export async function POST(request: NextRequest) {
 
         console.log('[StripeWebhook] Payment completed for user:', metadata.user_id)
 
-        // Send subscription confirmation email (non-blocking)
         const { data: userProfile } = await supabase
           .from('profiles')
           .select('email, full_name')
@@ -150,7 +147,6 @@ export async function POST(request: NextRequest) {
         const metadata = session.metadata
 
         if (metadata) {
-          // Update subscription status to canceled
           await (supabase as any)
             .from('subscriptions')
             .update({
@@ -168,7 +164,6 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         console.log('[StripeWebhook] Payment succeeded:', paymentIntent.id)
-        // Additional payment success handling if needed
         break
       }
 
@@ -176,7 +171,6 @@ export async function POST(request: NextRequest) {
         const paymentIntent = event.data.object as Stripe.PaymentIntent
         console.log('[StripeWebhook] Payment failed:', paymentIntent.id)
 
-        // Update any pending subscription to failed
         if (paymentIntent.metadata?.user_id) {
           await (supabase as any)
             .from('subscriptions')

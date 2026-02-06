@@ -8,31 +8,25 @@
  */
 
 export async function register() {
-  // Only run instrumentation in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    // Initialize OpenTelemetry tracing first
     await initializeTracing()
     
     console.log('[Instrumentation] Initializing server instrumentation...')
 
-    // Initialize graceful shutdown handler
     const { getShutdownManager } = await import('./lib/server/graceful-shutdown')
     const shutdownManager = getShutdownManager()
 
     console.log('[Instrumentation] Graceful shutdown handler registered')
 
-    // Register cleanup handlers for resources
     shutdownManager.register('database', async () => {
       console.log('[Shutdown] Closing database connections...')
-      // Supabase client handles connection pooling automatically
-      // No explicit cleanup needed for Supabase
     })
 
     shutdownManager.register('redis', async () => {
       console.log('[Shutdown] Closing Redis connections...')
-      // Redis connections are handled by @upstash/redis (HTTP-based)
-      // No explicit cleanup needed
     })
+
+    await initStripe()
 
     console.log('[Instrumentation] Server instrumentation complete')
   }
@@ -45,6 +39,39 @@ async function initializeTracing() {
     console.log('[Instrumentation] OpenTelemetry tracing initialized')
   } catch (error) {
     console.error('[Instrumentation] Failed to initialize tracing:', error)
-    // Don't throw - allow app to continue without tracing
+  }
+}
+
+async function initStripe() {
+  try {
+    const databaseUrl = process.env.DATABASE_URL
+    if (!databaseUrl) {
+      console.warn('[Instrumentation] DATABASE_URL not set, skipping Stripe sync initialization')
+      return
+    }
+
+    const { runMigrations } = await import('stripe-replit-sync')
+    await runMigrations({ databaseUrl })
+    console.log('[Instrumentation] Stripe sync migrations completed')
+
+    const { getStripeSync } = await import('./lib/stripe/client')
+    const stripeSync = await getStripeSync()
+
+    const domain = process.env.REPLIT_DOMAINS?.split(',')[0]
+    if (domain) {
+      const webhookUrl = `https://${domain}/api/stripe/webhook`
+      await stripeSync.findOrCreateManagedWebhook(webhookUrl)
+      console.log('[Instrumentation] Stripe managed webhook configured:', webhookUrl)
+    } else {
+      console.warn('[Instrumentation] REPLIT_DOMAINS not set, skipping managed webhook setup')
+    }
+
+    stripeSync.syncBackfill().then(() => {
+      console.log('[Instrumentation] Stripe backfill sync completed')
+    }).catch((error: unknown) => {
+      console.error('[Instrumentation] Stripe backfill sync failed:', error)
+    })
+  } catch (error) {
+    console.error('[Instrumentation] Failed to initialize Stripe sync:', error)
   }
 }
