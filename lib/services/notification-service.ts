@@ -186,3 +186,24 @@ export async function notifyUserLetterUnderReview(
     console.error('[NotificationService] Failed to queue review notification:', error)
   }
 }
+
+export async function notifyAttorneyLetterAssigned(
+  attorneyEmail: string,
+  attorneyName: string,
+  letterTitle: string,
+  letterId: string,
+  letterType: string
+): Promise<void> {
+  const siteUrl = getAppUrl()
+
+  try {
+    await queueTemplateEmail('admin-alert', attorneyEmail, {
+      alertMessage: `You have been assigned a new letter for review: "${letterTitle}" (${letterType}). Please review it at your earliest convenience.`,
+      actionUrl: `${siteUrl}/attorney-portal/review/${letterId}`,
+      pendingReviews: 1,
+    })
+    console.log('[NotificationService] Assignment notification queued for attorney:', attorneyEmail)
+  } catch (error) {
+    console.error('[NotificationService] Failed to queue assignment notification:', error)
+  }
+}

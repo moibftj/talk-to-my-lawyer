@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
         status,
         created_at,
         approved_at,
+        assigned_to,
+        assigned_at,
         profiles:user_id (
           full_name,
           email

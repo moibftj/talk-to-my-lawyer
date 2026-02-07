@@ -3,11 +3,11 @@ import { isAdminAuthenticated } from '@/lib/auth/admin-session'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, UserCheck, Briefcase, Shield, Mail, Calendar, FileText } from 'lucide-react'
+import { Users, UserCheck, Briefcase, Shield, Mail, Calendar, FileText, Scale } from 'lucide-react'
 import { format } from 'date-fns'
+import { CreateAdminForm } from '@/components/admin/create-admin-form'
 
 export default async function UsersManagementPage() {
-  // Verify admin authentication
   const authenticated = await isAdminAuthenticated()
   if (!authenticated) {
     redirect('/secure-admin-gateway/login')
@@ -15,7 +15,6 @@ export default async function UsersManagementPage() {
 
   const supabase = await createClient()
 
-  // Fetch all users with their stats
   const { data: users, error: usersError } = await supabase
     .from('profiles')
     .select(`
@@ -23,6 +22,7 @@ export default async function UsersManagementPage() {
       email,
       full_name,
       role,
+      admin_sub_role,
       created_at,
       updated_at,
       phone,
@@ -34,30 +34,25 @@ export default async function UsersManagementPage() {
     console.error('[UsersPage] Error fetching users:', usersError)
   }
 
-  // Get letter counts per user
   const { data: letterCounts } = await supabase
     .from('letters')
     .select('user_id')
 
-  // Build letter count map
   const lettersByUser: Record<string, number> = {}
   letterCounts?.forEach((l: any) => {
     lettersByUser[l.user_id] = (lettersByUser[l.user_id] || 0) + 1
   })
 
-  // Get subscription status per user
   const { data: subscriptions } = await supabase
     .from('subscriptions')
     .select('user_id, status, plan_type, credits_remaining, remaining_letters')
     .eq('status', 'active')
 
-  // Build subscription map
   const subscriptionsByUser: Record<string, any> = {}
   subscriptions?.forEach((s: any) => {
     subscriptionsByUser[s.user_id] = s
   })
 
-  // Calculate role stats
   const totalUsers = users?.length || 0
   const subscribers = users?.filter((u: any) => u.role === 'subscriber').length || 0
   const employees = users?.filter((u: any) => u.role === 'employee').length || 0
@@ -77,15 +72,16 @@ export default async function UsersManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-        <p className="text-muted-foreground mt-2">
-          View and manage all users, subscribers, and employees
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+          <p className="text-muted-foreground mt-2">
+            View and manage all users, subscribers, and employees
+          </p>
+        </div>
+        <CreateAdminForm />
       </div>
 
-      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -132,7 +128,6 @@ export default async function UsersManagementPage() {
         </Card>
       </div>
 
-      {/* Users Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
@@ -147,6 +142,9 @@ export default async function UsersManagementPage() {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Role
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Admin Sub-Role
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Subscription
@@ -196,6 +194,32 @@ export default async function UsersManagementPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-4">
+                        {user.role === 'admin' && user.admin_sub_role ? (
+                          <Badge
+                            variant="outline"
+                            className={
+                              user.admin_sub_role === 'super_admin'
+                                ? 'bg-red-100 text-red-800 border-red-300'
+                                : 'bg-blue-100 text-blue-800 border-blue-300'
+                            }
+                          >
+                            {user.admin_sub_role === 'super_admin' ? (
+                              <span className="flex items-center gap-1">
+                                <Shield className="h-3 w-3" />
+                                Super Admin
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <Scale className="h-3 w-3" />
+                                Attorney
+                              </span>
+                            )}
+                          </Badge>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4">
                         {subscription ? (
                           <div>
                             <Badge variant="default" className="bg-green-100 text-green-800">
@@ -229,7 +253,7 @@ export default async function UsersManagementPage() {
                 })}
                 {(!users || users.length === 0) && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                       No users found
                     </td>
                   </tr>

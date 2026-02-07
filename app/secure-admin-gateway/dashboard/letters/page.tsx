@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { ReviewLetterModal } from '@/components/review-letter-modal'
+import { LetterAssignDropdown } from '@/components/admin/letter-assign-dropdown'
 import { format } from 'date-fns'
 
 export default async function AdminLettersPage() {
@@ -25,6 +26,23 @@ export default async function AdminLettersPage() {
     `)
     .in('status', ['pending_review', 'under_review'])
     .order('created_at', { ascending: true })
+
+  const assignedIds = letters?.map((l: any) => l.assigned_to).filter(Boolean) || []
+  let assignedAttorneys: Record<string, string> = {}
+  if (assignedIds.length > 0) {
+    try {
+      const { data: attorneys } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', assignedIds)
+      attorneys?.forEach((a: any) => {
+        assignedAttorneys[a.id] = a.full_name || a.email
+      })
+    } catch (error) {
+      console.error('[AdminLetters] Error fetching assigned attorneys:', error)
+      // Fall back to empty assignedAttorneys - attorney names won't display
+    }
+  }
 
   return (
     <DashboardLayout>
@@ -55,6 +73,13 @@ export default async function AdminLettersPage() {
                         {letter.status === 'under_review' ? 'Under Review' : 'Pending Review'}
                       </span>
                     </p>
+                  </div>
+                  <div className="mt-2">
+                    <LetterAssignDropdown
+                      letterId={letter.id}
+                      currentAssignedTo={letter.assigned_to}
+                      currentAssignedName={assignedAttorneys[letter.assigned_to]}
+                    />
                   </div>
                 </div>
                 <ReviewLetterModal letter={letter} />

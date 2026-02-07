@@ -156,7 +156,30 @@ Super admins can override status restrictions (e.g., reject an already-approved 
 - `scripts/` - Build/deploy/migration scripts
 - `public/` - Static assets
 
+### Letter Assignment Flow
+`pending_review` → (Super Admin assigns via dropdown) → `assigned_to` set → Attorney sees in "Assigned to You" section → Attorney starts review → `under_review` → approve/reject
+
+### Admin Account Management
+- Super admins create attorney/admin accounts via `/secure-admin-gateway/dashboard/users`
+- API: `POST /api/admin/users/create` (service role, creates Supabase Auth user + profile upsert)
+- API: `GET /api/admin/attorneys` (list all admins for assignment dropdowns)
+
+### Letter Assignment API
+- `POST /api/admin/letters/[id]/assign` - Assign/unassign letter to attorney (super admin only)
+- `GET /api/admin/check-schema` - Check if assignment columns exist in database
+- Migration: `scripts/add-assignment-columns.sql` (run manually in Supabase SQL Editor)
+
+### Components
+- `components/admin/create-admin-form.tsx` - Client form for creating admin accounts
+- `components/admin/letter-assign-dropdown.tsx` - Client dropdown for assigning letters to attorneys
+
 ## Recent Changes
+- 2026-02-07: Built admin account creation tool (API + UI) - super admins can create attorney accounts from dashboard
+- 2026-02-07: Built letter assignment system - super admins can assign letters to specific attorneys via dropdown
+- 2026-02-07: Improved attorney portal - shows assigned letters first, then unassigned, then others' letters
+- 2026-02-07: Added assignment notification service (`notifyAttorneyLetterAssigned`)
+- 2026-02-07: Added migration script for `assigned_to`/`assigned_at` columns on letters table
+- 2026-02-07: Added schema check endpoint and graceful fallback when assignment columns don't exist
 - 2026-02-07: UI touchup - added subtle animations: button press feedback, card hover lift, nav underline slide, input focus glow, scroll-reveal fade-ins, status badge shimmer, primary CTA glow pulse, pricing card hover highlight, auth card entrance animation, footer link hover effects. All with prefers-reduced-motion accessibility support.
 - 2026-02-07: Created ScrollReveal component (Intersection Observer-based fade-in-on-scroll)
 - 2026-02-07: Fixed admin notifications to send role-appropriate portal links (super admin vs attorney)

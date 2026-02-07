@@ -47,13 +47,15 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { getAdminCsrfToken } from "@/lib/admin/csrf-client";
 import Link from "next/link";
+import { LetterAssignDropdown } from "@/components/admin/letter-assign-dropdown";
 import type { Letter as BaseLetter, Profile } from "@/lib/database.types";
 
-// Extended Letter type with joined profile data for admin view
 interface LetterWithProfile extends Pick<
   BaseLetter,
   "id" | "title" | "letter_type" | "status" | "created_at" | "approved_at"
 > {
+  assigned_to?: string | null;
+  assigned_at?: string | null;
   profiles: Pick<Profile, "full_name" | "email"> | null;
 }
 
@@ -89,13 +91,34 @@ export default function AllLettersPage() {
   const [batchAction, setBatchAction] = useState<string>("");
   const [batchNotes, setBatchNotes] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [assignedAttorneys, setAssignedAttorneys] = useState<Record<string, string>>({});
 
   const fetchLetters = async () => {
     try {
       const response = await fetch("/api/admin/letters?limit=200");
       if (!response.ok) throw new Error("Failed to fetch");
       const result = await response.json();
-      setLetters(result.letters || []);
+      const fetchedLetters = result.letters || [];
+      setLetters(fetchedLetters);
+
+      const assignedIds = fetchedLetters
+        .map((l: any) => l.assigned_to)
+        .filter(Boolean);
+      if (assignedIds.length > 0) {
+        try {
+          const attRes = await fetch("/api/admin/attorneys", { credentials: "include" });
+          const attData = await attRes.json();
+          const attorneys = attData.attorneys || [];
+          const map: Record<string, string> = {};
+          attorneys.forEach((a: any) => {
+            if (assignedIds.includes(a.id)) {
+              map[a.id] = a.full_name || a.email;
+            }
+          });
+          setAssignedAttorneys(map);
+        } catch {
+        }
+      }
     } catch (error) {
       toast.error("Failed to load letters");
     } finally {
@@ -352,6 +375,9 @@ export default function AllLettersPage() {
                     Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                    Assigned
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                     Created
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
@@ -398,6 +424,13 @@ export default function AllLettersPage() {
                           <StatusIcon className="h-3 w-3 mr-1" />
                           {letter.status.replace(/_/g, " ")}
                         </Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <LetterAssignDropdown
+                          letterId={letter.id}
+                          currentAssignedTo={letter.assigned_to}
+                          currentAssignedName={letter.assigned_to ? assignedAttorneys[letter.assigned_to] : undefined}
+                        />
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {format(new Date(letter.created_at), "MMM d, yyyy")}
@@ -455,7 +488,7 @@ export default function AllLettersPage() {
                 {filteredLetters.length === 0 && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="px-4 py-12 text-center text-muted-foreground"
                     >
                       <FileText className="h-12 w-12 mx-auto mb-4 opacity-30" />
