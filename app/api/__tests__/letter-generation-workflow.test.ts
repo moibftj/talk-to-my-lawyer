@@ -1,18 +1,6 @@
-/**
- * Letter Generation Workflow & Review Center Tests
- *
- * Tests the complete Zapier-integrated letter workflow:
- * - Letter generation with Zapier webhook integration
- * - Review center functionality for admins/attorneys
- * - Status transitions and audit trails
- * - Error handling and edge cases
- */
-
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { POST as GenerateLetterPost } from '../generate-letter/route'
-import { POST as LetterGeneratedPost, GET as LetterGeneratedGet } from '../letter-generated/route'
 
-// Mock dependencies
 vi.mock('@/lib/rate-limit-redis', () => ({
     letterGenerationRateLimit: { requests: 10, window: '1 h' },
     safeApplyRateLimit: vi.fn(() => Promise.resolve(null)),
@@ -36,6 +24,9 @@ vi.mock('@/lib/auth/authenticate-user', () => ({
                             error: null
                         }))
                     }))
+                })),
+                update: vi.fn(() => ({
+                    eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
                 })),
                 select: vi.fn(() => ({
                     eq: vi.fn(() => ({
@@ -63,14 +54,6 @@ vi.mock('@/lib/services/allowance-service', () => ({
     refundLetterAllowance: vi.fn(),
 }))
 
-vi.mock('@/lib/services/zapier-webhook-service', () => ({
-    isZapierConfigured: vi.fn(() => true),
-    generateLetterViaZapier: vi.fn(),
-    transformIntakeToZapierFormat: vi.fn(),
-    notifyZapierLetterCompleted: vi.fn(),
-    notifyZapierLetterFailed: vi.fn(),
-}))
-
 vi.mock('@/lib/validation/letter-schema', () => ({
     validateLetterGenerationRequest: vi.fn(() => ({
         valid: true,
@@ -96,23 +79,32 @@ vi.mock('@/lib/monitoring/tracing', () => ({
     recordSpanEvent: vi.fn(),
 }))
 
+vi.mock('@/lib/services/notification-service', () => ({
+    notifyUserLetterGenerated: vi.fn(() => Promise.resolve()),
+    notifyAdminsNewLetter: vi.fn(() => Promise.resolve()),
+}))
+
+vi.mock('@/lib/services/letter-generation-service', () => ({
+    generateLetterContent: vi.fn(() => Promise.resolve('Generated letter content that is long enough to pass validation. This is a professionally drafted legal letter with sufficient detail and legal language to meet the minimum content requirements.')),
+}))
+
+vi.mock('@/lib/services/audit-service', () => ({
+    logLetterStatusChange: vi.fn(() => Promise.resolve()),
+}))
+
 import { db } from '@/lib/db/client-factory'
 import { checkAndDeductAllowance } from '@/lib/services/allowance-service'
-import { generateLetterViaZapier, transformIntakeToZapierFormat } from '@/lib/services/zapier-webhook-service'
 
 const mockDb = db as any
 const mockCheckAndDeductAllowance = checkAndDeductAllowance as any
-const mockGenerateLetterViaZapier = generateLetterViaZapier as any
-const mockTransformIntakeToZapierFormat = transformIntakeToZapierFormat as any
 
 describe('Letter Generation Workflow & Review Center', () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
 
-    describe('Complete Zapier Integration Workflow', () => {
-        it('should create letter with generating status and send to Zapier', async () => {
-            // Mock database operations
+    describe('OpenAI Direct Letter Generation', () => {
+        it('should create letter and generate via OpenAI', async () => {
             const mockServiceClient = {
                 from: vi.fn(() => ({
                     insert: vi.fn(() => ({
@@ -139,13 +131,6 @@ describe('Letter Generation Workflow & Review Center', () => {
                 isSuperAdmin: false,
                 remaining: 4
             })
-            mockTransformIntakeToZapierFormat.mockReturnValue({
-                letterId: 'letter-123',
-                letterType: 'demand_letter',
-                senderName: 'John Doe',
-                issueDetails: 'Test issue'
-            })
-            mockGenerateLetterViaZapier.mockResolvedValue('Generated letter content')
 
             const request = new Request('http://localhost:3000/api/generate-letter', {
                 method: 'POST',
@@ -182,200 +167,13 @@ describe('Letter Generation Workflow & Review Center', () => {
 
             expect(response.status).toBe(200)
             expect(json.letterId).toBe('letter-123')
-            expect(json.status).toBe('generating')
-            expect(json.aiDraft).toBeUndefined() // No draft for async Zapier flow
-            expect(mockTransformIntakeToZapierFormat).toHaveBeenCalled()
-        })
-
-        it('should handle Zapier webhook and update letter to pending_review', async () => {
-            // Mock database operations for webhook
-            const mockServiceClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
-                                data: {
-                                    id: 'letter-123',
-                                    status: 'generating',
-                                    user_id: 'user-123',
-                                    letter_type: 'demand_letter'
-                                },
-                                error: null
-                            }))
-                        }))
-                    })),
-                    update: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            select: vi.fn(() => ({
-                                single: vi.fn(() => Promise.resolve({
-                                    data: {
-                                        id: 'letter-123',
-                                        status: 'pending_review',
-                                        ai_draft: 'Generated professional letter content...',
-                                        updated_at: new Date().toISOString()
-                                    },
-                                    error: null
-                                }))
-                            }))
-                        }))
-                    }))
-                })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
-            }
-
-            mockDb.serviceRole.mockReturnValue(mockServiceClient)
-
-            const webhookPayload = {
-                letterId: 'letter-123',
-                generatedContent: 'Generated professional letter content...',
-                success: true,
-                metadata: {
-                    model: 'gpt-4',
-                    tokensUsed: 1500
-                }
-            }
-
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: JSON.stringify(webhookPayload),
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.resolve(webhookPayload),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-            const json = await response.json()
-
-            expect(response.status).toBe(200)
-            expect(json.success).toBe(true)
-            expect(json.letterId).toBe('letter-123')
             expect(json.status).toBe('pending_review')
-            expect(mockServiceClient.rpc).toHaveBeenCalledWith('log_letter_audit', expect.objectContaining({
-                p_letter_id: 'letter-123',
-                p_action: 'generated',
-                p_old_status: 'generating',
-                p_new_status: 'pending_review'
-            }))
-        })
-
-        it('should handle generation failure from Zapier', async () => {
-            const mockServiceClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
-                                data: {
-                                    id: 'letter-123',
-                                    status: 'generating',
-                                    user_id: 'user-123'
-                                },
-                                error: null
-                            }))
-                        }))
-                    })),
-                    update: vi.fn(() => ({
-                        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
-                    }))
-                })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
-            }
-
-            mockDb.serviceRole.mockReturnValue(mockServiceClient)
-
-            const failurePayload = {
-                letterId: 'letter-123',
-                success: false,
-                error: 'ChatGPT generation failed',
-                generatedContent: ''
-            }
-
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: JSON.stringify(failurePayload),
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.resolve(failurePayload),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-
-            expect(response.status).toBe(500)
-            expect(mockServiceClient.from).toHaveBeenCalledWith('letters')
-            expect(mockServiceClient.rpc).toHaveBeenCalledWith('log_letter_audit', expect.objectContaining({
-                p_action: 'generation_failed',
-                p_new_status: 'failed'
-            }))
-        })
-
-        it('should validate webhook payload and reject invalid requests', async () => {
-            const invalidPayload = {
-                // Missing letterId
-                generatedContent: 'Some content',
-                success: true
-            }
-
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: JSON.stringify(invalidPayload),
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.resolve(invalidPayload),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-            const json = await response.json()
-
-            expect(response.status).toBe(400)
-            expect(json.error).toContain('letterId')
-        })
-
-        it('should reject webhook for non-existent letter', async () => {
-            const mockServiceClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
-                                data: null,
-                                error: { message: 'Letter not found' }
-                            }))
-                        }))
-                    }))
-                }))
-            }
-
-            mockDb.serviceRole.mockReturnValue(mockServiceClient)
-
-            const payload = {
-                letterId: 'non-existent-letter',
-                generatedContent: 'Content',
-                success: true
-            }
-
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.resolve(payload),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-
-            expect(response.status).toBe(404)
+            expect(json.aiDraft).toBeDefined()
         })
     })
 
     describe('Review Center & Admin Operations', () => {
         it('should allow admin to approve pending letter', async () => {
-            // This would test the admin approval workflow
             const letter = {
                 id: 'letter-123',
                 status: 'pending_review',
@@ -389,10 +187,8 @@ describe('Letter Generation Workflow & Review Center', () => {
                 comments: 'Looks good, approved for delivery'
             }
 
-            // Mock the approval logic
             expect(letter.status).toBe('pending_review')
 
-            // After approval
             const approvedLetter = {
                 ...letter,
                 status: 'approved',
@@ -419,7 +215,6 @@ describe('Letter Generation Workflow & Review Center', () => {
                 reason: 'insufficient_detail'
             }
 
-            // After rejection
             const rejectedLetter = {
                 ...letter,
                 status: 'rejected',
@@ -441,11 +236,9 @@ describe('Letter Generation Workflow & Review Center', () => {
                 { id: 'letter-3', status: 'pending_review', priority: 'low', created_at: '2026-02-03' },
             ]
 
-            // Filter for pending review
             const pendingLetters = reviewQueue.filter(l => l.status === 'pending_review')
             expect(pendingLetters).toHaveLength(2)
 
-            // Sort by priority and date
             const sortedQueue = pendingLetters.sort((a, b) => {
                 const priorityOrder = { high: 3, medium: 2, low: 1 }
                 return priorityOrder[b.priority as keyof typeof priorityOrder] - priorityOrder[a.priority as keyof typeof priorityOrder]
@@ -464,7 +257,6 @@ describe('Letter Generation Workflow & Review Center', () => {
                 })
             }
 
-            // Simulate review workflow
             logAuditEvent({ action: 'generated', letterId: 'letter-123', status: 'pending_review' })
             logAuditEvent({ action: 'review_started', letterId: 'letter-123', adminId: 'admin-456' })
             logAuditEvent({ action: 'approved', letterId: 'letter-123', adminId: 'admin-456' })
@@ -499,120 +291,6 @@ describe('Letter Generation Workflow & Review Center', () => {
             expect(canReviewLetters('attorney-789')).toBe(true)
             expect(canApproveLetters('attorney-789')).toBe(true)
             expect(canApproveLetters('super-admin-001')).toBe(true)
-        })
-    })
-
-    describe('Webhook Documentation Endpoint', () => {
-        it('should return comprehensive documentation on GET request', async () => {
-            const response = await LetterGeneratedGet()
-            const json = await response.json()
-
-            expect(response.status).toBe(200)
-            expect(json.success).toBe(true)
-            expect(json.message).toContain('Letter generation webhook endpoint is ready')
-            expect(json.endpoints).toBeDefined()
-            expect(json.endpoints.incoming).toBeDefined()
-            expect(json.endpoints.outbound).toBeDefined()
-            // URL should be from env var or NOT_CONFIGURED
-            expect(json.endpoints.outbound.url).toBeDefined()
-            expect(json.workflow).toBeInstanceOf(Array)
-            expect(json.workflow.length).toBeGreaterThan(0)
-        })
-    })
-
-    describe('Error Handling & Edge Cases', () => {
-        it('should handle database connection failures gracefully', async () => {
-            const mockServiceClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
-                                data: null,
-                                error: { message: 'Database connection failed' }
-                            }))
-                        }))
-                    }))
-                }))
-            }
-
-            mockDb.serviceRole.mockReturnValue(mockServiceClient)
-
-            const payload = {
-                letterId: 'letter-123',
-                generatedContent: 'Content',
-                success: true
-            }
-
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.resolve(payload),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-
-            expect(response.status).toBe(404) // Letter not found due to DB error
-        })
-
-        it('should handle malformed JSON in webhook payload', async () => {
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: 'invalid-json',
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.reject(new Error('Invalid JSON')),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-
-            expect(response.status).toBe(500)
-        })
-
-        it('should prevent status transition from non-generating letters', async () => {
-            const mockServiceClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
-                                data: {
-                                    id: 'letter-123',
-                                    status: 'approved', // Already approved
-                                    user_id: 'user-123'
-                                },
-                                error: null
-                            }))
-                        }))
-                    }))
-                }))
-            }
-
-            mockDb.serviceRole.mockReturnValue(mockServiceClient)
-
-            const payload = {
-                letterId: 'letter-123',
-                generatedContent: 'New content',
-                success: true
-            }
-
-            const request = new Request('http://localhost:3000/api/letter-generated', {
-                method: 'POST',
-                body: JSON.stringify(payload),
-            })
-
-            const nextRequest = {
-                ...request,
-                json: () => Promise.resolve(payload),
-            } as unknown as any
-
-            const response = await LetterGeneratedPost(nextRequest)
-
-            expect(response.status).toBe(400) // Invalid status transition
         })
     })
 })

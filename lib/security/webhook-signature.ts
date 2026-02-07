@@ -113,38 +113,26 @@ export function verifyWebhookSignatureFromEnv(
 }
 
 /**
- * Zapier webhook signature verification
+ * Generic webhook signature verification for incoming requests
  *
- * Zapier doesn't natively sign webhooks, but you can add a "Secrets"
- * field in your Zap and send it as a custom header.
- *
- * Recommended approach:
- * 1. Add "Secret" field in Zapier action
- * 2. Set it to value from ZAPIER_WEBHOOK_SECRET
- * 3. Zap sends it in X-Zapier-Signature header
- *
- * @param request - Next.js request object
+ * @param request - The incoming request
+ * @param secretEnvVar - Environment variable name containing the shared secret
+ * @param headerNames - Header names to check for signature (in priority order)
  * @returns Verification result
  */
-export async function verifyZapierWebhookSignature(
-  request: Request
+export async function verifyIncomingWebhookSignature(
+  request: Request,
+  secretEnvVar: string,
+  headerNames: string[] = ['x-webhook-signature', 'x-hook-signature']
 ): Promise<WebhookSignatureVerificationResult | null> {
-  const signature = request.headers.get('x-zapier-signature') ||
-                   request.headers.get('x-webhook-signature') ||
-                   request.headers.get('x-hook-signature')
+  let signature: string | null = null
+  for (const header of headerNames) {
+    signature = request.headers.get(header)
+    if (signature) break
+  }
 
-  // Get raw body text
   const clonedRequest = request.clone()
   const payload = await clonedRequest.text()
 
-  return verifyWebhookSignatureFromEnv(signature, payload, 'ZAPIER_WEBHOOK_SECRET', true)
+  return verifyWebhookSignatureFromEnv(signature, payload, secretEnvVar, true)
 }
-
-/**
- * Stripe webhook signature verification (for reference)
- *
- * Stripe uses a more complex signature scheme with timestamp.
- * Use Stripe's official SDK for this:
- * https://github.com/stripe/stripe-node#webhook-signing
- *
- */

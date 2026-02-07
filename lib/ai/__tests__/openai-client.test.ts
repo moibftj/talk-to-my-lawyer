@@ -60,7 +60,9 @@ describe('OpenAI Client', () => {
       const { getOpenAIProvider } = await import('../openai-client')
       getOpenAIProvider()
 
-      expect(mockCreateOpenAI).toHaveBeenCalledWith()
+      expect(mockCreateOpenAI).toHaveBeenCalledWith(expect.objectContaining({
+        apiKey: expect.anything(),
+      }))
     })
   })
 
@@ -77,7 +79,7 @@ describe('OpenAI Client', () => {
       expect(mockProvider).toHaveBeenCalledWith('gpt-4-turbo')
     })
 
-    it('should use gpt-4-turbo as default model', async () => {
+    it('should use gpt-4o as default model', async () => {
       const mockModel = vi.fn()
       const mockProvider = vi.fn().mockReturnValue(mockModel)
       mockCreateOpenAI.mockReturnValue(mockProvider)
@@ -85,7 +87,7 @@ describe('OpenAI Client', () => {
       const { getOpenAIModel } = await import('../openai-client')
       const model = getOpenAIModel()
 
-      expect(mockProvider).toHaveBeenCalledWith('gpt-4-turbo')
+      expect(mockProvider).toHaveBeenCalledWith('gpt-4o')
       expect(model).toBe(mockModel)
     })
 

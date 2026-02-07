@@ -105,7 +105,7 @@ Sincerely,
           system: expect.stringContaining('professional legal attorney'),
           temperature: 0.7,
           maxOutputTokens: 2048,
-          model: 'gpt-4-turbo',
+          model: 'gpt-4o',
         })
       )
     })

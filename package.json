@@ -31,9 +31,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest watch",
-    "test:webhook": "tsx scripts/test-webhook-signature.ts",
-    "test:webhook:dev": "NODE_ENV=development tsx scripts/test-webhook-signature.ts"
+    "test:watch": "vitest watch"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
