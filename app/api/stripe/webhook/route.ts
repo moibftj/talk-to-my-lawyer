@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { queueTemplateEmail } from '@/lib/email/service'
-import { getStripeClient, getStripeSync } from '@/lib/stripe/client'
+import { getStripeClient } from '@/lib/stripe/client'
 import { getServiceRoleClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
@@ -14,19 +14,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    try {
-      const stripeSync = await getStripeSync()
-      await stripeSync.processWebhook(Buffer.from(body), sig)
-      console.log('[StripeWebhook] stripe-replit-sync processWebhook completed')
-    } catch (syncError) {
-      console.error('[StripeWebhook] stripe-replit-sync processWebhook error (non-blocking):', syncError)
-    }
-
     let event: Stripe.Event
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 
     if (webhookSecret) {
-      const stripe = await getStripeClient()
+      const stripe = getStripeClient()
       event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
     } else {
       event = JSON.parse(body) as Stripe.Event

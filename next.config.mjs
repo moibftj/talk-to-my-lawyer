@@ -2,22 +2,14 @@
  * Next.js Configuration for Talk-To-My-Lawyer
  *
  * Production deployment optimizations:
- * - Standalone output for containerized deployments
  * - Strict TypeScript checking enforced
  * - Image optimization enabled for Supabase storage
  * - Security headers and CSP configured
  * - Extended timeouts for AI generation endpoints
  */
-const replitDomains = [
-  ...(process.env.REPLIT_DEV_DOMAIN ? [process.env.REPLIT_DEV_DOMAIN] : []),
-  ...(process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : []),
-].filter(Boolean);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone output for optimized Docker/container deployments
-  output: "standalone",
-
   // TypeScript strict mode - DO NOT disable in production
   // If build errors occur, fix the underlying type issues
   typescript: {
@@ -73,7 +65,7 @@ const nextConfig = {
     ],
   },
 
-  allowedDevOrigins: ["localhost", "127.0.0.1", ...replitDomains],
+  allowedDevOrigins: ["localhost", "127.0.0.1"],
   async headers() {
     const headers = [];
 
