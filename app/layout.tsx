@@ -12,7 +12,7 @@ const APP_URL = (() => {
     return DEFAULT_APP_URL
   }
 })()
-const LOGO_URL = '/talk-to-my-lawyer-logo.jpg'
+const LOGO_URL = '/logo.png'
 
 export const metadata: Metadata = {
   title: "TalkToMyLawyer.com - Professional Legal Letters",
@@ -21,10 +21,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
   icons: {
     icon: [
-      { url: LOGO_URL, type: 'image/jpeg' },
+      { url: LOGO_URL, type: 'image/png' },
     ],
     apple: [
-      { url: LOGO_URL, type: 'image/jpeg' },
+      { url: LOGO_URL, type: 'image/png' },
     ],
   },
   openGraph: {
@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href={LOGO_URL} type="image/jpeg" />
+        <link rel="icon" href={LOGO_URL} type="image/png" />
         <link rel="apple-touch-icon" href={LOGO_URL} />
       </head>
       <body className="antialiased" suppressHydrationWarning>
