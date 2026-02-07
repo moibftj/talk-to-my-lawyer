@@ -1,6 +1,6 @@
 # Copilot Instructions for Talk-To-My-Lawyer
 
-AI legal letter drafting platform. **Every AI-generated letter must pass attorney/admin review before subscriber access.** See [AGENTS.md](../AGENTS.md) for full API routes list, types reference, and email debugging protocols.
+AI legal letter drafting platform. **Every AI-generated letter must pass attorney/admin review before subscriber access.** See [AGENTS.md](../AGENTS.md) for the API routes list (“API Routes (detailed)”), types reference (“Types (centralized)”), and email debugging protocols (“Email Debugging Protocol (All User Types)”).
 
 ## Architecture Overview
 
@@ -58,5 +58,5 @@ pnpm security:scan    # audit for vulnerabilities
 - **Never log secrets or PII** — prompts and model outputs are stored for audit, not logged to console
 - **Employees must never see letter content** — enforce in both API and UI layers
 - **Letter approval requires attorney/admin review** — no auto-approval paths
-- **Email**: confirmation emails come from Supabase Auth (SMTP config); app emails use Resend + queue. Debug with `lib/email/AGENTS.md`
+- **Email**: confirmation emails come from Supabase Auth (SMTP config); app emails use Resend + queue. Debug with [lib/email/AGENTS.md](../lib/email/AGENTS.md) (“Quick Diagnostic Checklist”).
 - **Cron jobs** are configured in `vercel.json` (5 jobs: email queue, session cleanup, health check, analytics, weekly cleanup)
