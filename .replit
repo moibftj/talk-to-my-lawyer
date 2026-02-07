@@ -12,7 +12,6 @@ channel = "stable-25_05"
 NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "placeholder-anon-key"
 NEXT_PUBLIC_SITE_URL = "http://localhost:5000"
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_placeholder"
 
 [workflows]
 runButton = "Project"

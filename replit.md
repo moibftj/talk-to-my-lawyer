@@ -10,7 +10,7 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 - **Styling**: Tailwind CSS 4.x with Radix UI components
 - **Auth**: Supabase Auth
 - **Database**: Supabase (PostgreSQL)
-- **Payments**: Stripe
+- **Payments**: Stripe via Replit Connector (stripe-replit-sync for managed webhooks)
 - **AI**: OpenAI via Replit AI Integrations (letter generation, gpt-4o model)
 - **Email**: Resend
 - **Rate Limiting**: Upstash Redis
@@ -28,9 +28,9 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 
 ### Production
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
-- `STRIPE_SECRET_KEY` - Stripe secret key
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
-- `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
+- Stripe keys are auto-managed by Replit Connector (no env vars needed)
+- `STRIPE_SECRET_KEY` - Stripe secret key (fallback, optional if Connector configured)
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret (optional, managed webhooks handle this)
 - `AI_INTEGRATIONS_OPENAI_API_KEY` - OpenAI API key (auto-set by Replit AI Integrations)
 - `AI_INTEGRATIONS_OPENAI_BASE_URL` - OpenAI base URL (auto-set by Replit AI Integrations)
 - `OPENAI_API_KEY` - OpenAI API key (fallback, optional if AI Integrations configured)
@@ -51,6 +51,9 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 - `public/` - Static assets
 
 ## Recent Changes
+- 2026-02-07: Integrated Stripe via Replit Connector (managed webhooks, auto credentials)
+- 2026-02-07: Added stripe-replit-sync for webhook management and Stripe data sync
+- 2026-02-07: Supabase credentials configured (URL, anon key, service role key)
 - 2026-02-06: Integrated Replit AI Integrations for OpenAI (auto-managed API key, gpt-4o model)
 - 2026-02-06: Updated OpenAI client with AI integrations priority + backward compat fallback
 - 2026-02-06: Fixed TypeScript type errors in letter generation endpoint
