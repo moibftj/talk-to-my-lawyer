@@ -2,7 +2,7 @@ import { getUser } from '@/lib/auth/get-user'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard-layout'
-import { ReviewLetterModal } from '@/components/review-letter-modal'
+import { ReviewLetterModal } from '@/components/review-modal'
 import { LetterAssignDropdown } from '@/components/admin/letter-assign-dropdown'
 import { format } from 'date-fns'
 

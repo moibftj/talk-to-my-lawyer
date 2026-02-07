@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import type { EmployeeCoupon } from '@/lib/database.types'
 
@@ -22,9 +22,11 @@ export function CouponInsightsCard({
   const [copiedCode, setCopiedCode] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
 
-  const referralUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/auth/signup?coupon=${coupon.code}`
-    : ''
+  const [origin, setOrigin] = useState('')
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
+  const referralUrl = origin ? `${origin}/auth/signup?coupon=${coupon.code}` : ''
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(coupon.code)

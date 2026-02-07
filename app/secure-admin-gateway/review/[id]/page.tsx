@@ -16,7 +16,7 @@ import {
   Clock,
 } from "lucide-react";
 import { format } from "date-fns";
-import { SuperAdminReviewModal } from "@/components/super-admin-review-modal";
+import { SuperAdminReviewModal } from "@/components/review-modal";
 
 export default async function ReviewLetterDetailPage({
   params,

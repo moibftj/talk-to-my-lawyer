@@ -18,7 +18,7 @@ import {
   Scale,
 } from "lucide-react";
 import { format } from "date-fns";
-import { AttorneyReviewModal } from "@/components/attorney-review-modal";
+import { AttorneyReviewModal } from "@/components/review-modal";
 
 export default async function AttorneyReviewLetterDetailPage({
   params,
