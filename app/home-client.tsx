@@ -153,7 +153,7 @@ export default function HomePage() {
           }`}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-center h-32 py-4 gap-8">
+            <div className="flex items-center justify-center h-16 py-1 gap-8">
               {/* Left Navigation */}
               <div className="hidden md:flex items-center space-x-4">
                 <Button
@@ -188,9 +188,10 @@ export default function HomePage() {
                 <Image
                   src={DEFAULT_LOGO_SRC}
                   alt={DEFAULT_LOGO_ALT}
-                  width={160}
-                  height={160}
-                  className="h-40 w-40 rounded-full logo-badge"
+                  width={56}
+                  height={56}
+                  className="rounded-full"
+                  style={{ width: '56px', height: '56px' }}
                   priority
                 />
               </Link>
