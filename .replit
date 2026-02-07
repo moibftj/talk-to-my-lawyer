@@ -10,6 +10,7 @@ channel = "stable-25_05"
 
 [userenv.shared]
 NEXT_PUBLIC_SITE_URL = "http://localhost:5000"
+N8N_WEBHOOK_URL = "https://designtec.app.n8n.cloud/webhook-test/generate-letter"
 
 [workflows]
 runButton = "Project"
