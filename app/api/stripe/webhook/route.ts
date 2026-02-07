@@ -14,12 +14,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    try {
-      const stripeSync = await getStripeSync()
-      await stripeSync.processWebhook(Buffer.from(body), sig)
-      console.log('[StripeWebhook] stripe-replit-sync processWebhook completed')
-    } catch (syncError) {
-      console.error('[StripeWebhook] stripe-replit-sync processWebhook error (non-blocking):', syncError)
+    const isReplit = Boolean(process.env.REPL_ID || process.env.REPLIT_CONNECTORS_HOSTNAME)
+
+    if (isReplit) {
+      try {
+        const stripeSync = await getStripeSync()
+        await stripeSync.processWebhook(Buffer.from(body), sig)
+        console.log('[StripeWebhook] stripe-replit-sync processWebhook completed')
+      } catch (syncError) {
+        console.error('[StripeWebhook] stripe-replit-sync processWebhook error (non-blocking):', syncError)
+      }
     }
 
     let event: Stripe.Event
@@ -28,8 +32,11 @@ export async function POST(request: NextRequest) {
     if (webhookSecret) {
       const stripe = await getStripeClient()
       event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
-    } else {
+    } else if (isReplit) {
       event = JSON.parse(body) as Stripe.Event
+    } else {
+      console.error('[StripeWebhook] STRIPE_WEBHOOK_SECRET not set and not on Replit - cannot verify webhook')
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
     }
 
     console.log('[StripeWebhook] Event received:', event.type)

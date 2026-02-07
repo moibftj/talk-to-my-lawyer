@@ -50,27 +50,33 @@ async function initStripe() {
       return
     }
 
-    const { runMigrations } = await import('stripe-replit-sync')
-    await runMigrations({ databaseUrl })
-    console.log('[Instrumentation] Stripe sync migrations completed')
+    const isReplit = Boolean(process.env.REPL_ID || process.env.REPLIT_CONNECTORS_HOSTNAME)
 
-    const { getStripeSync } = await import('./lib/stripe/client')
-    const stripeSync = await getStripeSync()
+    if (isReplit) {
+      const { runMigrations } = await import('stripe-replit-sync')
+      await runMigrations({ databaseUrl })
+      console.log('[Instrumentation] Stripe sync migrations completed')
 
-    const domain = process.env.REPLIT_DOMAINS?.split(',')[0]
-    if (domain) {
-      const webhookUrl = `https://${domain}/api/stripe/webhook`
-      await stripeSync.findOrCreateManagedWebhook(webhookUrl)
-      console.log('[Instrumentation] Stripe managed webhook configured:', webhookUrl)
+      const { getStripeSync } = await import('./lib/stripe/client')
+      const stripeSync = await getStripeSync()
+
+      const domain = process.env.REPLIT_DOMAINS?.split(',')[0]
+      if (domain) {
+        const webhookUrl = `https://${domain}/api/stripe/webhook`
+        await stripeSync.findOrCreateManagedWebhook(webhookUrl)
+        console.log('[Instrumentation] Stripe managed webhook configured:', webhookUrl)
+      } else {
+        console.warn('[Instrumentation] REPLIT_DOMAINS not set, skipping managed webhook setup')
+      }
+
+      stripeSync.syncBackfill().then(() => {
+        console.log('[Instrumentation] Stripe backfill sync completed')
+      }).catch((error: unknown) => {
+        console.error('[Instrumentation] Stripe backfill sync failed:', error)
+      })
     } else {
-      console.warn('[Instrumentation] REPLIT_DOMAINS not set, skipping managed webhook setup')
+      console.log('[Instrumentation] Non-Replit environment detected, using standard Stripe webhook (configure STRIPE_WEBHOOK_SECRET)')
     }
-
-    stripeSync.syncBackfill().then(() => {
-      console.log('[Instrumentation] Stripe backfill sync completed')
-    }).catch((error: unknown) => {
-      console.error('[Instrumentation] Stripe backfill sync failed:', error)
-    })
   } catch (error) {
     console.error('[Instrumentation] Failed to initialize Stripe sync:', error)
   }

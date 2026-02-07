@@ -1,9 +1,12 @@
 import Stripe from 'stripe'
-import { StripeSync, runMigrations } from 'stripe-replit-sync'
 
 const STRIPE_API_VERSION = '2025-08-27.basil' as any
 
-async function getCredentials(): Promise<{ publishableKey: string; secretKey: string }> {
+function isReplitEnvironment(): boolean {
+  return Boolean(process.env.REPLIT_CONNECTORS_HOSTNAME)
+}
+
+async function getCredentialsFromReplit(): Promise<{ publishableKey: string; secretKey: string }> {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
   if (!hostname) {
     throw new Error('REPLIT_CONNECTORS_HOSTNAME not available')
@@ -52,31 +55,42 @@ async function getCredentials(): Promise<{ publishableKey: string; secretKey: st
 }
 
 export async function getStripeSecretKey(): Promise<string> {
-  try {
-    const credentials = await getCredentials()
-    return credentials.secretKey
-  } catch (error) {
-    const fallback = process.env.STRIPE_SECRET_KEY?.trim()
-    if (fallback) {
-      console.warn('[Stripe] Connector API unavailable, using STRIPE_SECRET_KEY env var fallback')
-      return fallback
+  if (isReplitEnvironment()) {
+    try {
+      const credentials = await getCredentialsFromReplit()
+      return credentials.secretKey
+    } catch (error) {
+      console.warn('[Stripe] Replit Connector failed, trying env var fallback:', error)
     }
-    throw new Error(`[Stripe] Unable to get secret key: ${error}`)
   }
+
+  const fallback = process.env.STRIPE_SECRET_KEY?.trim()
+  if (fallback) {
+    if (!isReplitEnvironment()) {
+      console.log('[Stripe] Using STRIPE_SECRET_KEY env var (Vercel/standard deployment)')
+    } else {
+      console.warn('[Stripe] Connector unavailable, using STRIPE_SECRET_KEY env var fallback')
+    }
+    return fallback
+  }
+  throw new Error('[Stripe] No Stripe secret key available. Set STRIPE_SECRET_KEY or configure Replit Connector.')
 }
 
 export async function getStripePublishableKey(): Promise<string> {
-  try {
-    const credentials = await getCredentials()
-    return credentials.publishableKey
-  } catch (error) {
-    const fallback = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim()
-    if (fallback) {
-      console.warn('[Stripe] Connector API unavailable, using NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY env var fallback')
-      return fallback
+  if (isReplitEnvironment()) {
+    try {
+      const credentials = await getCredentialsFromReplit()
+      return credentials.publishableKey
+    } catch (error) {
+      console.warn('[Stripe] Replit Connector failed for publishable key, trying env var fallback:', error)
     }
-    throw new Error(`[Stripe] Unable to get publishable key: ${error}`)
   }
+
+  const fallback = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.trim()
+  if (fallback) {
+    return fallback
+  }
+  throw new Error('[Stripe] No Stripe publishable key available. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY or configure Replit Connector.')
 }
 
 export async function getStripeClient(): Promise<Stripe> {
@@ -86,12 +100,18 @@ export async function getStripeClient(): Promise<Stripe> {
   })
 }
 
-let stripeSyncInstance: StripeSync | null = null
+let stripeSyncInstance: any = null
 
-export async function getStripeSync(): Promise<StripeSync> {
+export async function getStripeSync(): Promise<any> {
   if (stripeSyncInstance) {
     return stripeSyncInstance
   }
+
+  if (!isReplitEnvironment()) {
+    throw new Error('[Stripe] StripeSync (stripe-replit-sync) is only available in Replit environments')
+  }
+
+  const { StripeSync } = await import('stripe-replit-sync')
 
   const secretKey = await getStripeSecretKey()
   const databaseUrl = process.env.DATABASE_URL

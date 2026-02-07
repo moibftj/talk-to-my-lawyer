@@ -74,8 +74,26 @@ export const cron = {
  * App configuration
  */
 export const app = {
-  get url() { return process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' },
+  get url() {
+    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+    if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+    return 'https://www.talk-to-my-lawyer.com'
+  },
   get nodeEnv() { return process.env.NODE_ENV || 'development' },
+} as const
+
+/**
+ * Platform detection
+ */
+export const platform = {
+  get isReplit() { return Boolean(process.env.REPL_ID || process.env.REPLIT_CONNECTORS_HOSTNAME) },
+  get isVercel() { return Boolean(process.env.VERCEL) },
+  get name() {
+    if (this.isReplit) return 'replit'
+    if (this.isVercel) return 'vercel'
+    return 'standard'
+  },
 } as const
 
 /**
@@ -117,7 +135,10 @@ export function isTest(): boolean {
  * Get the application URL
  */
 export function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com'
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return 'https://www.talk-to-my-lawyer.com'
 }
 
 /**
