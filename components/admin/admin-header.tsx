@@ -41,7 +41,7 @@ export function AdminHeader({ user }: AdminHeaderProps) {
           />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Admin Center</h1>
-            <p className="text-sm text-gray-500">Talk-To-My-Lawyer Administration</p>
+            <p className="text-sm text-gray-500">TalkToMyLawyer.com Administration</p>
           </div>
         </div>
 

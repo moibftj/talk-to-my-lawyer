@@ -9,7 +9,7 @@ interface WelcomeEmailProps {
 }
 
 const WelcomeEmail = ({ userName, actionUrl, unsubscribeUrl }: WelcomeEmailProps) => (
-  <EmailLayout title="Welcome to Talk-To-My-Lawyer!" unsubscribeUrl={unsubscribeUrl}>
+  <EmailLayout title="Welcome to TalkToMyLawyer.com!" unsubscribeUrl={unsubscribeUrl}>
     <Text>Hi {userName || 'there'},</Text>
     <Text>Thank you for signing up. You now have access to professional legal letter generation services with attorney review.</Text>
     <Section style={{ textAlign: 'center' }}>

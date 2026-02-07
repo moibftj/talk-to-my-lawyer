@@ -14,7 +14,7 @@ export const EmailLayout = ({ children, title, unsubscribeUrl }: EmailLayoutProp
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <Heading style={heading}>Talk-To-My-Lawyer</Heading>
+            <Heading style={heading}>TalkToMyLawyer.com</Heading>
           </Section>
           <Section style={content}>
             <Heading as="h2" style={titleStyle}>{title}</Heading>

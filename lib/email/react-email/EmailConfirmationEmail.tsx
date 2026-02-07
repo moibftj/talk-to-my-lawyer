@@ -11,7 +11,7 @@ interface EmailConfirmationEmailProps {
 const EmailConfirmationEmail = ({ userName, actionUrl, unsubscribeUrl }: EmailConfirmationEmailProps) => (
   <EmailLayout title="Confirm Your Email Address" unsubscribeUrl={unsubscribeUrl}>
     <Text>Hi {userName || 'there'},</Text>
-    <Text>Please confirm your email address to complete your registration with Talk-To-My-Lawyer.</Text>
+    <Text>Please confirm your email address to complete your registration with TalkToMyLawyer.com.</Text>
     <Section style={{ textAlign: 'center' }}>
       <Button style={button} href={actionUrl}>
         Confirm Email Address
