@@ -87,22 +87,14 @@ export const rateLimit = {
 } as const
 
 /**
- * OpenAI configuration with convenience properties
- * Supports both direct OpenAI keys and Emergent Universal Keys
+ * OpenAI configuration (direct API connection)
  */
 export const openaiConfig = {
   get apiKey() { 
-    return process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || process.env.EMERGENT_LLM_KEY 
+    return process.env.OPENAI_API_KEY 
   },
   get isConfigured() { 
-    return Boolean(process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || process.env.EMERGENT_LLM_KEY) 
-  },
-  get baseURL() {
-    return process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
-  },
-  get isEmergentKey() {
-    const key = process.env.OPENAI_API_KEY || process.env.EMERGENT_LLM_KEY
-    return key?.startsWith('sk-emergent-') || false
+    return Boolean(process.env.OPENAI_API_KEY) 
   },
 } as const
 
