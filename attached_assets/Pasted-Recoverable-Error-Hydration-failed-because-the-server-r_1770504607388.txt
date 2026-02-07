@@ -1,0 +1,104 @@
+Recoverable Error
+
+
+Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+See more info here: https://nextjs.org/docs/messages/react-hydration-error
+
+
+  ...
+    <ScrollAndFocusHandler segmentPath={[...]}>
+      <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+        <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+          <LoadingBoundary name="signup/" loading={null}>
+            <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/auth/signup" tree={[...]} params={{}} cacheNode={{rsc:<Fragment>, ...}} ...>
+                    <SegmentViewNode type="page" pagePath="auth/signu...">
+                      <SegmentTrieNode>
+                      <ClientPageRoot Component={function SignUpPage} serverProvidedParams={{...}}>
+                        <SignUpPage params={Promise} searchParams={Promise}>
+                          <div className="min-h-scre...">
+                            <Card className="w-full max...">
+                              <div
+                                data-slot="card"
++                               className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 sha..."
+-                               className="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 sha..."
+                              >
+                                <CardHeader className="space-y-1">
+                                  <div data-slot="card-header" className="@container...">
+                                    <div className="flex items...">
+                                      <img
++                                       alt="TalkToMyLawyer.com logo"
+-                                       alt="Talk-to-my-Lawyer logo"
+                                        fetchPriority={undefined}
+                                        loading={undefined}
+                                        width={150}
+                                        height={150}
+                                        decoding="async"
+                                        data-nimg="1"
+                                        className="h-38 w-38 rounded-full logo-badge"
+                                        style={{color:"transparent"}}
+                                        sizes={undefined}
+                                        srcSet={undefined}
+                                        src="/logo.png"
+                                        ref={function}
+                                        onLoad={function onLoad}
+                                        onError={function onError}
+                                      >
+                                      ...
+                                    <CardTitle>
+                                    <CardDescription>
+                                      <div data-slot="card-description" className="text-muted-foreground text-sm">
++                                       Join TalkToMyLawyer.com as a subscriber or employee
+-                                       Get professional, attorney-reviewed legal letters delivered to your inbox
+                                ...
+                    ...
+                  ...
+        ...
+app/auth/signup/page.tsx (133:11) @ SignUpPage
+
+  131 |           </div>
+  132 |           <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
+> 133 |           <CardDescription>
+      |           ^
+  134 |             Get professional, attorney-reviewed legal letters delivered to your inbox
+  135 |           </CardDescription>
+  136 |         </CardHeader>
+Call Stack
+13
+Hide 11 ignore-listed frame(s)
+throwOnHydrationMismatch
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (5530:11)
+prepareToHydrateHostInstance
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (5626:21)
+completeWork
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (12959:15)
+runWithFiberInDEV
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (989:13)
+completeUnitOfWork
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (19133:19)
+performUnitOfWork
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (19014:11)
+workLoopConcurrentByScheduler
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (18991:9)
+renderRootConcurrent
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (18973:15)
+performWorkOnRoot
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (17834:11)
+performWorkOnRootViaSchedulerTask
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/react-dom/cjs/react-dom-client.development.js (20384:7)
+performWorkUntilDeadline
+node_modules/.pnpm/next@16.1.4_@babel+core@7.28.6_@opentelemetry+api@1.9.0_react-dom@19.2.3_react@19.2.3__react@19.2.3/node_modules/next/dist/compiled/scheduler/cjs/scheduler.development.js (45:48)
+div
+unknown (0:0)
+SignUpPage
+app/auth/signup/page.tsx (133:11)
