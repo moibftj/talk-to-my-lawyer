@@ -162,7 +162,7 @@ export default function PricingSection() {
             style={{ animationDelay: `${0.3 + index * 0.1}s` }}
           >
             <Card
-              className={`relative border-neutral-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+              className={`relative border-neutral-200 pricing-highlight ${
                 plan.popular ? "ring-2 ring-[#199df4] bg-sky-50" : "bg-white "
               }`}
             >

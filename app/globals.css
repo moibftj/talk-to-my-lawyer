@@ -1359,3 +1359,307 @@ body {
 .h-150 {
   height: 600px;
 }
+
+/* ═══════════════════════════════════════════════════
+   SUBTLE UI TOUCHUP ANIMATIONS
+   Classy, refined micro-interactions
+   ═══════════════════════════════════════════════════ */
+
+/* Primary Action Subtle Glow Pulse */
+@keyframes subtle-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(25, 157, 244, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(25, 157, 244, 0.15);
+  }
+}
+
+.primary-pulse {
+  animation: subtle-glow-pulse 3s ease-in-out infinite;
+}
+
+/* Button Press Micro-Feedback */
+.btn-press {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+}
+
+.btn-press:active {
+  transform: scale(0.97) !important;
+}
+
+/* Card Hover Lift with Shadow Deepening */
+.card-hover-lift {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 12px 24px -8px rgba(0, 0, 0, 0.08),
+    0 4px 8px -4px rgba(25, 157, 244, 0.06);
+}
+
+/* Nav Link Elegant Sliding Underline */
+.nav-underline {
+  position: relative;
+}
+
+.nav-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #199df4, #00d4ff);
+  border-radius: 1px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-underline:hover::after {
+  width: 80%;
+  left: 10%;
+}
+
+/* Input Focus Glow */
+.input-focus-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.input-focus-glow:focus {
+  border-color: #199df4 !important;
+  box-shadow:
+    0 0 0 3px rgba(25, 157, 244, 0.1),
+    0 2px 8px rgba(25, 157, 244, 0.08) !important;
+}
+
+/* Status Badge Shimmer */
+@keyframes badge-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.badge-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: badge-shimmer 4s ease-in-out infinite;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Scroll Reveal (enhanced) */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reveal from left */
+.reveal-on-scroll.from-left {
+  transform: translateX(-24px);
+}
+
+.reveal-on-scroll.from-left.revealed {
+  transform: translateX(0);
+}
+
+/* Reveal from right */
+.reveal-on-scroll.from-right {
+  transform: translateX(24px);
+}
+
+.reveal-on-scroll.from-right.revealed {
+  transform: translateX(0);
+}
+
+/* Reveal scale */
+.reveal-on-scroll.from-scale {
+  transform: scale(0.95);
+}
+
+.reveal-on-scroll.from-scale.revealed {
+  transform: scale(1);
+}
+
+/* Icon Float on Card Hover */
+.icon-float-on-hover {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.group:hover .icon-float-on-hover {
+  transform: translateY(-3px) scale(1.08);
+}
+
+/* Service Tag Hover Effect */
+.tag-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tag-hover:hover {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 6px 16px -4px rgba(25, 157, 244, 0.25);
+}
+
+/* Feature Check Appear Animation */
+@keyframes check-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.check-appear {
+  animation: check-appear 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+/* Stat Counter Pulse */
+@keyframes stat-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.stat-highlight:hover {
+  animation: stat-pulse 1.5s ease-in-out;
+}
+
+/* CTA Section Entrance */
+@keyframes cta-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Footer Link Hover */
+.footer-link {
+  transition: color 0.2s ease, transform 0.2s ease;
+  display: inline-block;
+}
+
+.footer-link:hover {
+  color: #199df4;
+  transform: translateX(3px);
+}
+
+/* Auth Card Entrance */
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-card-enter {
+  animation: auth-card-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Dashboard Card Stagger */
+@keyframes dashCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dash-card-enter {
+  opacity: 0;
+  animation: dashCardEnter 0.5s ease-out forwards;
+}
+
+/* Pricing Card Hover Highlight */
+.pricing-highlight {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pricing-highlight:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 20px 40px -12px rgba(25, 157, 244, 0.2),
+    0 8px 16px -8px rgba(0, 0, 0, 0.06);
+}
+
+/* Accessibility: respect prefers-reduced-motion for new animations */
+@media (prefers-reduced-motion: reduce) {
+  .primary-pulse,
+  .badge-shimmer::after,
+  .reveal-on-scroll,
+  .auth-card-enter,
+  .dash-card-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .check-appear {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .card-hover-lift:hover,
+  .pricing-highlight:hover,
+  .tag-hover:hover,
+  .icon-float-on-hover {
+    transform: none !important;
+  }
+
+  .btn-press:active {
+    transform: none !important;
+  }
+
+  .nav-underline::after {
+    transition: none !important;
+  }
+
+  .reveal-on-scroll {
+    opacity: 1;
+    transform: none;
+  }
+}

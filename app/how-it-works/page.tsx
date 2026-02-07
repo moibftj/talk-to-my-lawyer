@@ -90,12 +90,12 @@ export default function HowItWorksPage() {
             return (
               <div
                 key={step.number}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow animate-slide-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden card-hover-lift animate-slide-up group"
+                style={{ animationDelay: `${index * 0.12}s` }}
               >
                 <div className="px-6 py-6 flex items-start gap-5">
                   {/* Step Number */}
-                  <div className="shrink-0 w-12 h-12 rounded-full bg-linear-to-r from-[#199df4] to-[#0d8ae0] flex items-center justify-center text-white font-bold text-xl shadow-md">
+                  <div className="shrink-0 w-12 h-12 rounded-full bg-linear-to-r from-[#199df4] to-[#0d8ae0] flex items-center justify-center text-white font-bold text-xl shadow-md icon-float-on-hover">
                     {step.number}
                   </div>
 
@@ -126,33 +126,22 @@ export default function HowItWorksPage() {
       {/* Benefits Summary */}
       <section className="pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 card-hover-lift">
             <h2 className="text-2xl font-bold text-center mb-8">What You Get</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
-                <span className="text-gray-700">Letter drafted by licensed attorney</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
-                <span className="text-gray-700">Attorney approved content</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
-                <span className="text-gray-700">Sent from lawyer&apos;s email address</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
-                <span className="text-gray-700">Official law firm letterhead</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
-                <span className="text-gray-700">PDF download for your records</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
-                <span className="text-gray-700">Up to 48 hours turnaround</span>
-              </div>
+              {[
+                "Letter drafted by licensed attorney",
+                "Attorney approved content",
+                "Sent from lawyer\u2019s email address",
+                "Official law firm letterhead",
+                "PDF download for your records",
+                "Up to 48 hours turnaround",
+              ].map((item, i) => (
+                <div key={item} className="flex items-center gap-3 check-appear" style={{ animationDelay: `${i * 0.1}s` }}>
+                  <CheckCircle className="w-5 h-5 text-[#199df4] shrink-0" />
+                  <span className="text-gray-700">{item}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -167,7 +156,7 @@ export default function HowItWorksPage() {
               Get your professional legal letter starting at $50 with membership.
             </p>
             <Link href="/auth/signup">
-              <button className="px-8 py-4 bg-white text-[#0a2540] rounded-xl font-semibold hover:bg-sky-50 transition-all inline-flex items-center group">
+              <button className="px-8 py-4 bg-white text-[#0a2540] rounded-xl font-semibold hover:bg-sky-50 transition-all inline-flex items-center group primary-pulse btn-press">
                 Get Started Now
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>

@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     switch (status) {
       case 'approved':
         return (
-          <Badge className="bg-success text-success-foreground hover:bg-success/90 flex items-center gap-1">
+          <Badge className="bg-success text-success-foreground hover:bg-success/90 flex items-center gap-1 badge-shimmer">
             <CheckCircle className="h-3 w-3" aria-hidden="true" />
             <span>Ready</span>
           </Badge>
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
       case 'pending_review':
       case 'under_review':
         return (
-          <Badge className="bg-warning text-warning-foreground hover:bg-warning/90 flex items-center gap-1">
+          <Badge className="bg-warning text-warning-foreground hover:bg-warning/90 flex items-center gap-1 badge-shimmer">
             <Clock className="h-3 w-3" aria-hidden="true" />
             <span>In Review</span>
           </Badge>
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
 
       {/* Subscription Status (if active) */}
       {subscription && (
-        <Card className="bg-primary/5 border-primary/20">
+        <Card className="bg-primary/5 border-primary/20 dash-card-enter" style={{ animationDelay: '0.1s' }}>
           <CardContent className="flex items-center justify-between p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-primary/10 rounded-full">
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
           <div className="grid gap-4">
             {recentLetters.map((letter: any) => (
               <Link key={letter.id} href={`/dashboard/letters/${letter.id}`}>
-                <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                <Card className="hover:bg-muted/50 transition-all cursor-pointer card-hover-lift">
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className={`p-2 rounded-full ${letter.status === 'approved' ? 'bg-success/10' :

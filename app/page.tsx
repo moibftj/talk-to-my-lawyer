@@ -62,11 +62,12 @@ export default function HomePage() {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("in-view");
+          entry.target.classList.add("revealed");
         }
       });
     }, observerOptions);
 
-    const revealElements = document.querySelectorAll(".scroll-reveal");
+    const revealElements = document.querySelectorAll(".scroll-reveal, .reveal-on-scroll");
     revealElements.forEach((el) => observer.observe(el));
 
     return () => observer.disconnect();
@@ -158,21 +159,21 @@ export default function HomePage() {
                 <Button
                   variant="ghost"
                   onClick={() => scrollToSection("features")}
-                  className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                  className="nav-underline text-gray-700 hover:text-[#199df4] transition-colors duration-200"
                 >
                   Features
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => scrollToSection("pricing")}
-                  className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                  className="nav-underline text-gray-700 hover:text-[#199df4] transition-colors duration-200"
                 >
                   Pricing
                 </Button>
                 <Link href="/how-it-works">
                   <Button
                     variant="ghost"
-                    className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                    className="nav-underline text-gray-700 hover:text-[#199df4] transition-colors duration-200"
                   >
                     How It Works
                   </Button>
@@ -199,7 +200,7 @@ export default function HomePage() {
                 <Link href="/membership">
                   <Button
                     variant="ghost"
-                    className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                    className="nav-underline text-gray-700 hover:text-[#199df4] transition-colors duration-200"
                   >
                     Membership
                   </Button>
@@ -207,7 +208,7 @@ export default function HomePage() {
                 <Link href="/contact">
                   <Button
                     variant="ghost"
-                    className="nav-item text-gray-700 hover:text-[#199df4] transition-colors duration-200"
+                    className="nav-underline text-gray-700 hover:text-[#199df4] transition-colors duration-200"
                   >
                     Contact
                   </Button>
@@ -291,7 +292,7 @@ export default function HomePage() {
                   "And more",
                 ].map((service) => (
                   <Link href="/auth/signup" key={service}>
-                    <span className="inline-flex items-center px-4 py-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm cursor-pointer hover:shadow-md hover:scale-105 transition-all">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm cursor-pointer tag-hover">
                       {service}
                     </span>
                   </Link>
@@ -316,7 +317,7 @@ export default function HomePage() {
               <Link href="/auth/signup">
                 <Button
                   variant="running_border"
-                  className="px-12 py-5 text-lg font-semibold rounded-xl glow-enhanced cta-aurora"
+                  className="px-12 py-5 text-lg font-semibold rounded-xl glow-enhanced cta-aurora primary-pulse"
                 >
                   <Play className="h-5 w-5 mr-3" />
                   Get Started Now
@@ -355,19 +356,19 @@ export default function HomePage() {
         <section className="py-16 bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              <div className="scroll-reveal">
+              <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: '0ms' }}>
                 <div className="text-4xl font-bold mb-2">10,000+</div>
                 <div className="text-blue-200">Letters Delivered</div>
               </div>
-              <div className="scroll-reveal">
+              <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: '100ms' }}>
                 <div className="text-4xl font-bold mb-2">95%</div>
                 <div className="text-blue-200">Success Rate</div>
               </div>
-              <div className="scroll-reveal">
+              <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: '200ms' }}>
                 <div className="text-4xl font-bold mb-2">50+</div>
                 <div className="text-blue-200">Licensed Attorneys</div>
               </div>
-              <div className="scroll-reveal">
+              <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: '300ms' }}>
                 <div className="text-4xl font-bold mb-2">Up to 48 Hours</div>
                 <div className="text-blue-200">Turnaround Time</div>
               </div>
@@ -429,37 +430,40 @@ export default function HomePage() {
                   desc: "Contact us for any other legal letter needs you may have",
                   gradient: "from-[#0d8ae0] to-[#0066cc]",
                 },
-              ].map((type) => (
-                <Card
+              ].map((type, index) => (
+                <div
                   key={type.title}
-                  className="h-full glass-card hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+                  className="reveal-on-scroll"
+                  style={{ transitionDelay: `${index * 80}ms` }}
                 >
-                  <CardHeader>
-                    <div
-                      className={`w-14 h-14 rounded-xl bg-linear-to-br ${type.gradient} flex items-center justify-center mb-4 shadow-lg`}
-                    >
-                      <type.icon className="h-7 w-7 text-white" />
-                    </div>
-                    <CardTitle className="text-xl font-semibold mb-2 text-gray-900 group-hover:text-[#199df4] transition-colors duration-300">
-                      {type.title}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600 leading-relaxed">
-                      {type.desc}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Link href="/auth/signup">
-                      <Button
-                        variant="running_border"
-                        size="lg"
-                        className="w-full cta-aurora"
+                  <Card className="h-full glass-card card-hover-lift group">
+                    <CardHeader>
+                      <div
+                        className={`w-14 h-14 rounded-xl bg-linear-to-br ${type.gradient} flex items-center justify-center mb-4 shadow-lg icon-float-on-hover`}
                       >
-                        Select This Type
-                        <ChevronRight className="h-5 w-5 ml-2" />
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
+                        <type.icon className="h-7 w-7 text-white" />
+                      </div>
+                      <CardTitle className="text-xl font-semibold mb-2 text-gray-900 group-hover:text-[#199df4] transition-colors duration-300">
+                        {type.title}
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 leading-relaxed">
+                        {type.desc}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Link href="/auth/signup">
+                        <Button
+                          variant="running_border"
+                          size="lg"
+                          className="w-full cta-aurora"
+                        >
+                          Select This Type
+                          <ChevronRight className="h-5 w-5 ml-2" />
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                </div>
               ))}
             </div>
           </div>
@@ -488,23 +492,26 @@ export default function HomePage() {
                   title: "Secure & Confidential",
                   desc: "Bank-level encryption protects your information",
                 },
-              ].map((feature) => (
-                <Card
+              ].map((feature, index) => (
+                <div
                   key={feature.title}
-                  className="glass-card hover:shadow-xl scroll-reveal transition-all duration-300"
+                  className="reveal-on-scroll"
+                  style={{ transitionDelay: `${index * 120}ms` }}
                 >
-                  <CardHeader>
-                    <div className="w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center mb-4">
-                      <feature.icon className="h-6 w-6 text-[#199df4]" />
-                    </div>
-                    <CardTitle className="text-xl font-semibold mb-2">
-                      {feature.title}
-                    </CardTitle>
-                    <CardDescription className="text-gray-600">
-                      {feature.desc}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                  <Card className="glass-card card-hover-lift group h-full">
+                    <CardHeader>
+                      <div className="w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center mb-4 icon-float-on-hover">
+                        <feature.icon className="h-6 w-6 text-[#199df4]" />
+                      </div>
+                      <CardTitle className="text-xl font-semibold mb-2 group-hover:text-[#199df4] transition-colors duration-300">
+                        {feature.title}
+                      </CardTitle>
+                      <CardDescription className="text-gray-600">
+                        {feature.desc}
+                      </CardDescription>
+                    </CardHeader>
+                  </Card>
+                </div>
               ))}
             </div>
           </div>
@@ -529,19 +536,19 @@ export default function HomePage() {
               <div>
                 <h3 className="font-semibold mb-4">Services</h3>
                 <ul className="space-y-2 text-blue-200">
-                  <li>Cease and Desist</li>
-                  <li>Breach of Contract</li>
-                  <li>Demand for Payment</li>
-                  <li>Debt Collection</li>
+                  <li className="footer-link cursor-pointer">Cease and Desist</li>
+                  <li className="footer-link cursor-pointer">Breach of Contract</li>
+                  <li className="footer-link cursor-pointer">Demand for Payment</li>
+                  <li className="footer-link cursor-pointer">Debt Collection</li>
                 </ul>
               </div>
 
               <div>
                 <h3 className="font-semibold mb-4">Company</h3>
                 <ul className="space-y-2 text-blue-200">
-                  <li>About Us</li>
-                  <li>Legal Blog</li>
-                  <li>Careers</li>
+                  <li className="footer-link cursor-pointer">About Us</li>
+                  <li className="footer-link cursor-pointer">Legal Blog</li>
+                  <li className="footer-link cursor-pointer">Careers</li>
                 </ul>
               </div>
 

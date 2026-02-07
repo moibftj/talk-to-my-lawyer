@@ -157,6 +157,8 @@ Super admins can override status restrictions (e.g., reject an already-approved 
 - `public/` - Static assets
 
 ## Recent Changes
+- 2026-02-07: UI touchup - added subtle animations: button press feedback, card hover lift, nav underline slide, input focus glow, scroll-reveal fade-ins, status badge shimmer, primary CTA glow pulse, pricing card hover highlight, auth card entrance animation, footer link hover effects. All with prefers-reduced-motion accessibility support.
+- 2026-02-07: Created ScrollReveal component (Intersection Observer-based fade-in-on-scroll)
 - 2026-02-07: Fixed admin notifications to send role-appropriate portal links (super admin vs attorney)
 - 2026-02-07: Added `getAdminEmailsWithRoles()` for role-based notification routing
 - 2026-02-07: Comprehensive documentation update (dual portal architecture, data flow, endpoints)
