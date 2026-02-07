@@ -168,7 +168,7 @@ export default function HowItWorksPage() {
       {/* Footer */}
       <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
+          <p>&copy; 2025 Talk-to-my-Lawyer. All rights reserved.</p>
         </div>
       </footer>
     </div>

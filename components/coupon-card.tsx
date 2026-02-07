@@ -18,8 +18,8 @@ export function CouponCard({ coupon }: { coupon: EmployeeCoupon }) {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'Get 20% off TalkToMyLawyer.com',
-        text: `Use my coupon code ${coupon.code} to get 20% off your subscription to TalkToMyLawyer.com!`,
+        title: 'Get 20% off Talk-to-my-Lawyer',
+        text: `Use my coupon code ${coupon.code} to get 20% off your subscription to Talk-to-my-Lawyer!`,
         url: shareUrl
       })
     } else {

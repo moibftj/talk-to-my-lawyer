@@ -526,7 +526,7 @@ export default function HomePage() {
                 <Link href="/" className="flex items-center space-x-3 mb-4">
                   <Scale className="h-10 w-10 text-[#199df4]" />
                   <span className="text-2xl font-bold text-white">
-                    TalkToMyLawyer.com
+                    Talk-to-my-Lawyer
                   </span>
                 </Link>
                 <p className="text-sky-200 mb-4">
@@ -569,7 +569,7 @@ export default function HomePage() {
             </div>
 
             <div className="border-t border-blue-700 mt-12 pt-8 text-center text-blue-200">
-              <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
+              <p>&copy; 2025 Talk-to-my-Lawyer. All rights reserved.</p>
             </div>
           </div>
         </footer>
