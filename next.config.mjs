@@ -11,6 +11,9 @@
 const replitDomains = [
   ...(process.env.REPLIT_DEV_DOMAIN ? [process.env.REPLIT_DEV_DOMAIN] : []),
   ...(process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : []),
+  "*.pike.replit.dev",
+  "*.replit.dev",
+  "*.repl.co",
 ].filter(Boolean);
 
 /** @type {import('next').NextConfig} */
