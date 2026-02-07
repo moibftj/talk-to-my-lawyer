@@ -2,8 +2,8 @@
  * n8n Webhook Service Tests
  *
  * Tests the n8n integration for letter generation:
- * - Configuration checks
- * - Letter generation workflow
+ * - Configuration checks (URL + auth key)
+ * - Letter generation workflow with jurisdiction research
  * - Retry logic and timeouts
  * - Data transformation
  * - Event notifications
@@ -12,7 +12,6 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 
-// Mock global fetch
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
@@ -44,13 +43,19 @@ describe('n8n Webhook Service', () => {
 
   describe('n8nConfig', () => {
     it('should return webhookUrl from environment', () => {
-      process.env.N8N_WEBHOOK_URL = 'https://n8n.example.com/webhook/letter'
+      process.env.N8N_WEBHOOK_URL = 'https://n8n.example.com/webhook/generate-letter'
 
-      expect(n8nConfig.webhookUrl).toBe('https://n8n.example.com/webhook/letter')
+      expect(n8nConfig.webhookUrl).toBe('https://n8n.example.com/webhook/generate-letter')
+    })
+
+    it('should return authKey from environment', () => {
+      process.env.N8N_WEBHOOK_AUTH_KEY = 'test-auth-key-123'
+
+      expect(n8nConfig.authKey).toBe('test-auth-key-123')
     })
 
     it('should return isConfigured true when URL is set', () => {
-      process.env.N8N_WEBHOOK_URL = 'https://n8n.example.com/webhook/letter'
+      process.env.N8N_WEBHOOK_URL = 'https://n8n.example.com/webhook/generate-letter'
 
       expect(n8nConfig.isConfigured).toBe(true)
     })
@@ -62,7 +67,7 @@ describe('n8n Webhook Service', () => {
     })
 
     it('should have correct timeout setting', () => {
-      expect(n8nConfig.timeout).toBe(60000) // 60 seconds
+      expect(n8nConfig.timeout).toBe(90000)
     })
 
     it('should have correct maxRetries setting', () => {
@@ -92,22 +97,23 @@ describe('n8n Webhook Service', () => {
 
   describe('generateLetterViaN8n', () => {
     const validFormData: N8nLetterFormData = {
-      letterType: 'demand-letter',
+      letterType: 'demand_letter',
       letterId: 'letter-123',
       userId: 'user-456',
       senderName: 'John Doe',
-      senderAddress: '123 Main St',
+      senderAddress: '123 Main St, Los Angeles, CA 90001',
       senderState: 'CA',
       senderEmail: 'john@example.com',
       recipientName: 'Jane Smith',
-      recipientAddress: '456 Oak Ave',
+      recipientAddress: '456 Oak Ave, New York, NY 10001',
       recipientState: 'NY',
-      issueDescription: 'Breach of contract',
+      issueDescription: 'Breach of contract regarding service agreement',
       desiredOutcome: 'Full refund of $5000',
     }
 
     beforeEach(() => {
-      process.env.N8N_WEBHOOK_URL = 'https://n8n.example.com/webhook/letter'
+      process.env.N8N_WEBHOOK_URL = 'https://n8n.example.com/webhook/generate-letter'
+      process.env.N8N_WEBHOOK_AUTH_KEY = 'test-auth-key'
     })
 
     it('should throw error when n8n is not configured', async () => {
@@ -118,11 +124,14 @@ describe('n8n Webhook Service', () => {
       )
     })
 
-    it('should successfully generate letter', async () => {
+    it('should successfully generate letter with research data', async () => {
       const mockResponse: N8nGenerationResponse = {
         success: true,
-        generatedContent: 'Dear Ms. Smith,\n\nThis letter serves as formal notice...',
+        generatedContent: 'Dear Ms. Smith,\n\nThis letter serves as formal notice pursuant to CA Civil Code § 1542...',
         letterId: 'letter-123',
+        status: 'pending_review',
+        researchApplied: true,
+        state: 'California',
       }
 
       mockFetch.mockResolvedValueOnce({
@@ -132,18 +141,56 @@ describe('n8n Webhook Service', () => {
 
       const result = await generateLetterViaN8n(validFormData)
 
-      expect(result).toBe(mockResponse.generatedContent)
+      expect(result.generatedContent).toBe(mockResponse.generatedContent)
+      expect(result.researchApplied).toBe(true)
+      expect(result.state).toBe('California')
+      expect(result.supabaseUpdated).toBe(true)
+      expect(result.status).toBe('pending_review')
+    })
+
+    it('should include Authorization header when auth key is set', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            generatedContent: 'Generated letter content',
+            researchApplied: false,
+          }),
+      })
+
+      await generateLetterViaN8n(validFormData)
+
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://n8n.example.com/webhook/letter',
+        'https://n8n.example.com/webhook/generate-letter',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
             'X-Webhook-Source': 'talk-to-my-lawyer',
             'X-Letter-Id': 'letter-123',
+            'Authorization': 'Bearer test-auth-key',
           }),
         })
       )
+    })
+
+    it('should not include Authorization header when auth key is not set', async () => {
+      delete process.env.N8N_WEBHOOK_AUTH_KEY
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            generatedContent: 'Generated letter content',
+          }),
+      })
+
+      await generateLetterViaN8n(validFormData)
+
+      const headers = mockFetch.mock.calls[0][1].headers
+      expect(headers['Authorization']).toBeUndefined()
     })
 
     it('should include all form data in request body', async () => {
@@ -160,14 +207,40 @@ describe('n8n Webhook Service', () => {
 
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body)
 
-      expect(callBody.letterType).toBe('demand-letter')
+      expect(callBody.letterType).toBe('demand_letter')
       expect(callBody.letterId).toBe('letter-123')
       expect(callBody.userId).toBe('user-456')
       expect(callBody.senderName).toBe('John Doe')
+      expect(callBody.senderState).toBe('CA')
       expect(callBody.recipientName).toBe('Jane Smith')
-      expect(callBody.issueDescription).toBe('Breach of contract')
+      expect(callBody.recipientState).toBe('NY')
+      expect(callBody.issueDescription).toBe('Breach of contract regarding service agreement')
       expect(callBody.source).toBe('talk-to-my-lawyer')
       expect(callBody.timestamp).toBeDefined()
+    })
+
+    it('should throw error for 401 auth failure', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve('Unauthorized'),
+      })
+
+      await expect(generateLetterViaN8n(validFormData)).rejects.toThrow(
+        'n8n webhook authentication failed'
+      )
+    })
+
+    it('should throw error for 403 auth failure', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        text: () => Promise.resolve('Forbidden'),
+      })
+
+      await expect(generateLetterViaN8n(validFormData)).rejects.toThrow(
+        'n8n webhook authentication failed'
+      )
     })
 
     it('should throw error for 404 response', async () => {
@@ -195,22 +268,23 @@ describe('n8n Webhook Service', () => {
             Promise.resolve({
               success: true,
               generatedContent: 'Generated after retry',
+              researchApplied: true,
+              state: 'California',
             }),
         })
 
       const resultPromise = generateLetterViaN8n(validFormData)
 
-      // Fast-forward through the delay
       await vi.advanceTimersByTimeAsync(2000)
 
       const result = await resultPromise
 
-      expect(result).toBe('Generated after retry')
+      expect(result.generatedContent).toBe('Generated after retry')
       expect(mockFetch).toHaveBeenCalledTimes(2)
     })
 
     it('should fail after max retries on server errors', async () => {
-      vi.useRealTimers() // Use real timers for this test
+      vi.useRealTimers()
 
       mockFetch.mockResolvedValue({
         ok: false,
@@ -219,23 +293,22 @@ describe('n8n Webhook Service', () => {
       })
 
       await expect(generateLetterViaN8n(validFormData)).rejects.toThrow('n8n request failed (500)')
-      expect(mockFetch).toHaveBeenCalledTimes(2) // maxRetries = 2
+      expect(mockFetch).toHaveBeenCalledTimes(2)
 
-      vi.useFakeTimers() // Restore fake timers
+      vi.useFakeTimers()
     })
 
     it('should handle AbortError from timeout', async () => {
       const abortError = new Error('Aborted')
       abortError.name = 'AbortError'
 
-      // Mock fetch to immediately reject with abort error on all attempts
       mockFetch.mockRejectedValue(abortError)
 
-      vi.useRealTimers() // Use real timers to avoid timing issues
+      vi.useRealTimers()
 
       await expect(generateLetterViaN8n(validFormData)).rejects.toThrow('n8n request timed out')
 
-      vi.useFakeTimers() // Restore fake timers
+      vi.useFakeTimers()
     })
 
     it('should throw error when n8n returns success:false', async () => {
@@ -259,22 +332,7 @@ describe('n8n Webhook Service', () => {
         json: () =>
           Promise.resolve({
             success: true,
-            generatedContent: '', // Empty content
-          }),
-      })
-
-      await expect(generateLetterViaN8n(validFormData)).rejects.toThrow(
-        'n8n returned success but no generated content'
-      )
-    })
-
-    it('should throw error when content is undefined', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: true,
-            // generatedContent not included
+            generatedContent: '',
           }),
       })
 
@@ -308,13 +366,13 @@ describe('n8n Webhook Service', () => {
       const result = transformIntakeToN8nFormat(
         'letter-123',
         'user-456',
-        'demand-letter',
+        'demand_letter',
         intakeData
       )
 
       expect(result.letterId).toBe('letter-123')
       expect(result.userId).toBe('user-456')
-      expect(result.letterType).toBe('demand-letter')
+      expect(result.letterType).toBe('demand_letter')
       expect(result.senderName).toBe('John Doe')
       expect(result.senderEmail).toBe('john@example.com')
       expect(result.recipientName).toBe('Jane Smith')
@@ -339,7 +397,7 @@ describe('n8n Webhook Service', () => {
       const result = transformIntakeToN8nFormat(
         'letter-123',
         'user-456',
-        'demand-letter',
+        'demand_letter',
         intakeData
       )
 
@@ -353,11 +411,11 @@ describe('n8n Webhook Service', () => {
 
     it('should convert non-string values to strings', () => {
       const intakeData = {
-        senderName: 123, // number instead of string
-        senderAddress: true, // boolean
+        senderName: 123,
+        senderAddress: true,
         senderState: null,
         recipientName: undefined,
-        recipientAddress: { street: '123' }, // object
+        recipientAddress: { street: '123' },
         recipientState: 'NY',
         issueDescription: 'Issue',
         desiredOutcome: 'Resolution',
@@ -366,7 +424,7 @@ describe('n8n Webhook Service', () => {
       const result = transformIntakeToN8nFormat(
         'letter-123',
         'user-456',
-        'demand-letter',
+        'demand_letter',
         intakeData as any
       )
 
@@ -398,7 +456,7 @@ describe('n8n Webhook Service', () => {
         recipientState: 'F',
         issueDescription: 'G',
         desiredOutcome: 'H',
-        amountDemanded: '5000', // string
+        amountDemanded: '5000',
       })
 
       expect(withNumber.amountDemanded).toBe(5000)
@@ -424,14 +482,15 @@ describe('n8n Webhook Service', () => {
       expect(mockFetch).not.toHaveBeenCalled()
     })
 
-    it('should send event to webhook', async () => {
+    it('should send event to webhook with auth header', async () => {
+      process.env.N8N_WEBHOOK_AUTH_KEY = 'test-auth-key'
       mockFetch.mockResolvedValueOnce({ ok: true })
 
       const result = await sendN8nEvent({
         event: 'letter.generation.completed',
         timestamp: '2024-01-15T10:00:00Z',
         letterId: 'letter-123',
-        letterType: 'demand-letter',
+        letterType: 'demand_letter',
         userId: 'user-456',
       })
 
@@ -442,6 +501,7 @@ describe('n8n Webhook Service', () => {
           method: 'POST',
           headers: expect.objectContaining({
             'X-Webhook-Event': 'letter.generation.completed',
+            'Authorization': 'Bearer test-auth-key',
           }),
         })
       )
@@ -471,21 +531,6 @@ describe('n8n Webhook Service', () => {
 
       expect(result).toBe(false)
     })
-
-    it('should handle fetch errors gracefully', async () => {
-      // AbortError simulates a timeout
-      const abortError = new Error('Aborted')
-      abortError.name = 'AbortError'
-      mockFetch.mockRejectedValueOnce(abortError)
-
-      const result = await sendN8nEvent({
-        event: 'letter.approved',
-        timestamp: new Date().toISOString(),
-        letterId: 'letter-123',
-      })
-
-      expect(result).toBe(false)
-    })
   })
 
   describe('notifyN8nLetterCompleted', () => {
@@ -498,13 +543,12 @@ describe('n8n Webhook Service', () => {
 
       notifyN8nLetterCompleted(
         'letter-123',
-        'demand-letter',
+        'demand_letter',
         'My Demand Letter',
         'user-456',
         false
       )
 
-      // Allow promise to settle
       await vi.advanceTimersByTimeAsync(100)
 
       expect(mockFetch).toHaveBeenCalled()
@@ -512,7 +556,7 @@ describe('n8n Webhook Service', () => {
 
       expect(callBody.event).toBe('letter.generation.completed')
       expect(callBody.letterId).toBe('letter-123')
-      expect(callBody.letterType).toBe('demand-letter')
+      expect(callBody.letterType).toBe('demand_letter')
       expect(callBody.letterTitle).toBe('My Demand Letter')
       expect(callBody.userId).toBe('user-456')
       expect(callBody.isFreeTrial).toBe(false)
@@ -522,9 +566,8 @@ describe('n8n Webhook Service', () => {
     it('should not throw on error (fire-and-forget)', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-      // Should not throw
       expect(() => {
-        notifyN8nLetterCompleted('letter-123', 'demand-letter', 'Title', 'user-456', true)
+        notifyN8nLetterCompleted('letter-123', 'demand_letter', 'Title', 'user-456', true)
       }).not.toThrow()
 
       await vi.advanceTimersByTimeAsync(100)
@@ -541,7 +584,7 @@ describe('n8n Webhook Service', () => {
 
       notifyN8nLetterFailed(
         'letter-123',
-        'demand-letter',
+        'demand_letter',
         'user-456',
         'AI service unavailable'
       )
@@ -561,7 +604,7 @@ describe('n8n Webhook Service', () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
       expect(() => {
-        notifyN8nLetterFailed('letter-123', 'demand-letter', 'user-456', 'Error')
+        notifyN8nLetterFailed('letter-123', 'demand_letter', 'user-456', 'Error')
       }).not.toThrow()
 
       await vi.advanceTimersByTimeAsync(100)

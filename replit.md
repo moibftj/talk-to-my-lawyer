@@ -11,7 +11,7 @@ A Next.js web application that provides professional lawyer-drafted letters for 
 - **Auth**: Supabase Auth (user accounts) + JWT-signed admin sessions (admin portals)
 - **Database**: Supabase (PostgreSQL)
 - **Payments**: Stripe via Replit Connector (stripe-replit-sync for managed webhooks)
-- **AI**: OpenAI via Replit AI Integrations (letter generation, gpt-4o model)
+- **AI**: n8n workflow (primary, with jurisdiction research) + OpenAI direct (fallback), gpt-4o model
 - **Email**: Resend (via queued template emails)
 - **Rate Limiting**: Upstash Redis
 
@@ -92,8 +92,15 @@ Super admins can override status restrictions (e.g., reject an already-approved 
 
 ### Complete Data Flow
 1. **User submits letter request** → `POST /api/generate-letter`
-2. **AI generates draft** → OpenAI (gpt-4o) creates letter content
-3. **Letter saved** → Status set to `pending_review` in Supabase `letters` table
+2. **PRIMARY: n8n workflow** (if configured):
+   - n8n receives form data via webhook (header auth)
+   - n8n researches state-specific statutes, disclosures, conventions (GPT-4o + Google Search)
+   - n8n generates letter with jurisdiction context via GPT-4o
+   - n8n updates Supabase directly (`ai_draft_content`, `status=pending_review`, `research_data`)
+   - n8n returns success response with `generatedContent`, `researchApplied`, `state`
+3. **FALLBACK: OpenAI direct** (if n8n unavailable/fails):
+   - App generates letter directly via OpenAI (gpt-4o)
+   - App updates Supabase with generated content
 4. **Both admin types notified** → `notifyAdminsNewLetter()` sends emails:
    - Super admins get link to `/secure-admin-gateway/review/{id}`
    - Attorney admins get link to `/attorney-portal/review/{id}`
@@ -107,7 +114,8 @@ Super admins can override status restrictions (e.g., reject an already-approved 
 `draft` → `generating` → `pending_review` → `under_review` → `approved` / `rejected`
 
 ### Key Components
-- `lib/services/letter-generation-service.ts` - AI letter generation with retry logic
+- `lib/services/n8n-webhook-service.ts` - n8n webhook integration (primary generation with jurisdiction research)
+- `lib/services/letter-generation-service.ts` - OpenAI direct letter generation (fallback)
 - `lib/services/notification-service.ts` - All email notifications (admin alerts, user updates)
 - `lib/api/admin-action-handler.ts` - Consolidated approve/reject logic with CSRF + audit trail
 - `lib/admin/letter-actions.ts` - Shared admin utilities (status updates, sanitization, admin queries)
@@ -117,6 +125,11 @@ Super admins can override status restrictions (e.g., reject an already-approved 
 ### Critical (needed for basic dev)
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+
+### n8n Integration (Primary Letter Generation)
+- `N8N_WEBHOOK_URL` - n8n webhook URL for letter generation (e.g., https://your-n8n.app/webhook/generate-letter)
+- `N8N_WEBHOOK_AUTH_KEY` - Header auth key for n8n webhook authentication
+- `N8N_EVENTS_WEBHOOK_URL` - (Optional) n8n webhook for monitoring/alerting events
 
 ### Production
 - `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key
@@ -174,6 +187,13 @@ Super admins can override status restrictions (e.g., reject an already-approved 
 - `components/admin/letter-assign-dropdown.tsx` - Client dropdown for assigning letters to attorneys
 
 ## Recent Changes
+- 2026-02-07: Aligned app with n8n letter generation workflow - n8n is now primary (with jurisdiction research), OpenAI is fallback
+- 2026-02-07: Updated n8n webhook service with auth header support (N8N_WEBHOOK_AUTH_KEY) and structured response types
+- 2026-02-07: Updated generate-letter route to try n8n first, fall back to OpenAI if n8n unavailable/fails
+- 2026-02-07: n8n handles Supabase update directly (ai_draft_content, status, research_data) - app skips duplicate update
+- 2026-02-07: Added research_data JSONB column migration for jurisdiction-specific legal research data
+- 2026-02-07: Updated all integration tests and webhook service tests for n8n-primary architecture
+- 2026-02-07: Removed all Zapier integration code and references
 - 2026-02-07: Built admin account creation tool (API + UI) - super admins can create attorney accounts from dashboard
 - 2026-02-07: Built letter assignment system - super admins can assign letters to specific attorneys via dropdown
 - 2026-02-07: Improved attorney portal - shows assigned letters first, then unassigned, then others' letters

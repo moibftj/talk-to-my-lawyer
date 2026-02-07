@@ -1,0 +1,548 @@
+{
+  "name": "Talk To My Lawyer - Letter Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "httpMethod": [
+          "POST"
+        ],
+        "path": "generate-letter",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {},
+              {},
+              {},
+              {},
+              {}
+            ]
+          }
+        }
+      },
+      "id": "f0a7eb65-7832-4727-93b1-184e29f820e8",
+      "name": "Letter Form Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        128
+      ],
+      "webhookId": "letter-generation-webhook",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and validate letter form data\nconst inputData = $input.first().json;\nconst formData = inputData.body || inputData;\n\n// Validate required fields\nconst requiredFields = ['letterType', 'senderName', 'senderAddress', 'recipientName', 'recipientAddress', 'issueDescription', 'desiredOutcome'];\nconst missingFields = requiredFields.filter(field => !formData[field]);\n\nif (missingFields.length > 0) {\n  throw new Error(`Missing required fields: ${missingFields.join(', ')}`);\n}\n\n// Extract location for geographic awareness\nfunction extractLocation(address) {\n  // Simple extraction - in production, use geocoding API\n  const parts = address.split(',').map(p => p.trim());\n  const stateZip = parts[parts.length - 1] || '';\n  const city = parts[parts.length - 2] || '';\n  \n  // Try to extract state from stateZip (e.g., \"CA 90210\" or \"California\")\n  const stateMatch = stateZip.match(/([A-Z]{2})\\s*\\d{5}/) || stateZip.match(/([A-Za-z]+)/);\n  const state = stateMatch ? stateMatch[1] : '';\n  \n  return { city, state, fullAddress: address };\n}\n\nconst senderLocation = extractLocation(formData.senderAddress);\nconst recipientLocation = extractLocation(formData.recipientAddress);\n\n// Map letter type to human-readable format\nconst letterTypeMap = {\n  'demand_letter': 'Demand Letter',\n  'cease_desist': 'Cease and Desist Letter',\n  'contract_breach': 'Contract Breach Notice',\n  'eviction_notice': 'Eviction Notice',\n  'employment_dispute': 'Employment Dispute Letter',\n  'consumer_complaint': 'Consumer Complaint Letter'\n};\n\nreturn {\n  json: {\n    letterId: formData.letterId,\n    userId: formData.userId,\n    letterType: formData.letterType,\n    letterTypeName: letterTypeMap[formData.letterType] || formData.letterType,\n    \n    // Sender Info\n    senderName: formData.senderName,\n    senderAddress: formData.senderAddress,\n    senderEmail: formData.senderEmail || '',\n    senderPhone: formData.senderPhone || '',\n    senderLocation: senderLocation,\n    \n    // Recipient Info\n    recipientName: formData.recipientName,\n    recipientAddress: formData.recipientAddress,\n    recipientEmail: formData.recipientEmail || '',\n    recipientPhone: formData.recipientPhone || '',\n    recipientLocation: recipientLocation,\n    \n    // Case Details\n    issueDescription: formData.issueDescription,\n    desiredOutcome: formData.desiredOutcome,\n    amountDemanded: formData.amountDemanded || null,\n    deadlineDate: formData.deadlineDate || null,\n    incidentDate: formData.incidentDate || null,\n    additionalDetails: formData.additionalDetails || '',\n    \n    // Metadata\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "3f37f507-06fc-4df1-906d-f49c8fa36d04",
+      "name": "Process Form Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        128
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "letters",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $('Process Form Data').item.json.letterId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "ai_draft_content",
+              "fieldValue": "={{ $('Generate Letter with Research Context').item.json.text }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "pending_review"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "research_data",
+              "fieldValue": "={{ JSON.stringify({ state: $('Research State Jurisdiction').item.json.state, statutes: $('Research State Jurisdiction').item.json.relevantStatutes, disclosures: $('Research State Jurisdiction').item.json.requiredDisclosures, conventions: $('Research State Jurisdiction').item.json.jurisdictionalConventions }) }}"
+            }
+          ]
+        }
+      },
+      "id": "2657419a-2491-4ebb-84b6-e28f559afe4c",
+      "name": "Update Letter in Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        128
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "DUzz3XeESSVcqgrT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: true, generatedContent: $('Generate Letter with Research Context').item.json.text, letterId: $('Process Form Data').item.json.letterId, status: 'pending_review', researchApplied: true, state: $('Research State Jurisdiction').item.json.state } }}",
+        "options": {}
+      },
+      "id": "a7376d12-3d81-4a6a-9a4d-2f5f8f3ec400",
+      "name": "Return Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-error",
+              "leftValue": "={{ $('Generate Letter with Research Context').item.json.error }}",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f4d07626-fce4-454b-b7be-600db7336cc1",
+      "name": "Check for Errors",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: $json.error || 'Failed to generate letter draft', letterId: $('Process Form Data').item.json.letterId } }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "6c47c6a7-2d17-46f5-8f56-56c89fb46bbf",
+      "name": "Return Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "state",
+              "value": "={{ $json.senderLocation.state }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "letterType",
+              "value": "={{ $json.letterType }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "issueDescription",
+              "value": "={{ $json.issueDescription }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "recipientLocation",
+              "value": "={{ $json.recipientLocation }}",
+              "type": "object"
+            },
+            {
+              "id": "id-5",
+              "name": "researchQuery",
+              "value": "={{ $json.letterTypeName + ' legal requirements and conventions in ' + $json.senderLocation.state + ' state' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11921368-17a6-45b8-bffd-749a814e2c70",
+      "name": "Extract State for Research",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Research the legal requirements, jurisdictional conventions, and statutory requirements for {{ $json.letterTypeName }} in {{ $json.state }} state.\n\nLetter Type: {{ $json.letterType }}\nState: {{ $json.state }}\nIssue Description: {{ $json.issueDescription }}\n\nFind:\n1. Specific state statutes and legal codes relevant to this letter type\n2. Required legal language or disclosures for {{ $json.state }}\n3. Jurisdictional conventions and formatting requirements\n4. Statutory deadlines or notice periods\n5. Relevant case law or precedents\n6. State-specific consumer protection laws if applicable\n\nProvide comprehensive, accurate legal research with citations.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a legal research assistant specializing in state-specific jurisdictional requirements. Research and provide accurate, well-cited legal information including statutes, codes, conventions, and requirements specific to the jurisdiction. Always cite specific statute numbers and legal codes."
+        }
+      },
+      "id": "1642cd34-ac9a-4ed2-8f43-c464611188b9",
+      "name": "Research State Jurisdiction",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        288,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "28d16b33-c98a-4f8d-b069-50f64518c354",
+      "name": "OpenAI Model for Research",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "mOSnvGzVyKVKcLxu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bb92f668-9971-482f-89cb-3354490c1cc9",
+      "name": "Google Search Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        352,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"state\": \"California\",\n  \"letterType\": \"demand_letter\",\n  \"relevantStatutes\": [\n    {\n      \"statuteNumber\": \"CA Civil Code § 1542\",\n      \"description\": \"General release provisions\",\n      \"relevance\": \"Required disclosure language\"\n    }\n  ],\n  \"requiredDisclosures\": [\n    \"Must include specific statutory language\",\n    \"Notice period requirements\"\n  ],\n  \"jurisdictionalConventions\": [\n    \"Standard formatting requirements\",\n    \"Proper service methods\"\n  ],\n  \"statutoryDeadlines\": [\n    {\n      \"requirement\": \"Response deadline\",\n      \"timeframe\": \"30 days\",\n      \"citation\": \"Statute reference\"\n    }\n  ],\n  \"relevantCaseLaw\": [\n    {\n      \"caseName\": \"Case citation\",\n      \"principle\": \"Legal principle established\"\n    }\n  ],\n  \"additionalRequirements\": [\n    \"State-specific requirements\"\n  ],\n  \"confidenceLevel\": \"High\"\n}"
+      },
+      "id": "d26ef14f-14b2-4b31-b09f-35c494551fac",
+      "name": "Structure Research Results",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "id": "953a1a48-f044-44bd-a296-624436a3aff3",
+      "name": "Merge Research with Form Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        688,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "id": "27788deb-b194-4731-a3c5-d25845ba309f",
+      "name": "OpenAI Model for Letter Generation",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        992,
+        352
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "mOSnvGzVyKVKcLxu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a professional {{ $json.letterTypeName }} based on the following information and legal research:\n\n=== LETTER DETAILS ===\nLetter Type: {{ $json.letterTypeName }}\nSender: {{ $json.senderName }}\nSender Address: {{ $json.senderAddress }}\nRecipient: {{ $json.recipientName }}\nRecipient Address: {{ $json.recipientAddress }}\n\nIssue Description: {{ $json.issueDescription }}\nDesired Outcome: {{ $json.desiredOutcome }}\n{{ $json.amountDemanded ? 'Amount Demanded: $' + $json.amountDemanded : '' }}\n{{ $json.deadlineDate ? 'Deadline Date: ' + $json.deadlineDate : '' }}\n{{ $json.incidentDate ? 'Incident Date: ' + $json.incidentDate : '' }}\n{{ $json.additionalDetails ? 'Additional Details: ' + $json.additionalDetails : '' }}\n\n=== JURISDICTIONAL RESEARCH ===\nState: {{ $json.state }}\n\nRelevant Statutes:\n{{ $json.relevantStatutes ? $json.relevantStatutes.map(s => '- ' + s.statuteNumber + ': ' + s.description).join('\\n') : 'None found' }}\n\nRequired Disclosures:\n{{ $json.requiredDisclosures ? $json.requiredDisclosures.map(d => '- ' + d).join('\\n') : 'None found' }}\n\nJurisdictional Conventions:\n{{ $json.jurisdictionalConventions ? $json.jurisdictionalConventions.map(c => '- ' + c).join('\\n') : 'None found' }}\n\nStatutory Deadlines:\n{{ $json.statutoryDeadlines ? $json.statutoryDeadlines.map(d => '- ' + d.requirement + ': ' + d.timeframe + ' (' + d.citation + ')').join('\\n') : 'None found' }}\n\nAdditional Requirements:\n{{ $json.additionalRequirements ? $json.additionalRequirements.map(r => '- ' + r).join('\\n') : 'None found' }}\n\n=== INSTRUCTIONS ===\nGenerate a complete, professional legal letter that:\n1. Follows all state-specific requirements and conventions for {{ $json.state }}\n2. Includes all required statutory disclosures and legal language\n3. Cites relevant statutes and legal codes where appropriate\n4. Uses proper legal formatting and professional tone\n5. Clearly states the issue, desired outcome, and any deadlines\n6. Includes all necessary contact information\n7. Is ready to be reviewed and sent\n\nFormat the letter with proper business letter structure including date, addresses, salutation, body paragraphs, and closing.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an expert legal document drafter specializing in creating professional legal correspondence. You have deep knowledge of state-specific legal requirements and conventions. Generate clear, professional, legally sound letters that incorporate all relevant statutes, required disclosures, and jurisdictional conventions. Always maintain a professional tone and proper legal formatting."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "603b0747-13ec-40cf-b1da-0806a9837db4",
+      "name": "Generate Letter with Research Context",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        912,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "workflowStage",
+              "value": "initialized",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0d550649-0c15-4cbb-b0f7-daf46e469c58",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Process Form Data": {
+      "main": [
+        [
+          {
+            "node": "Extract State for Research",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Research with Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Letter in Supabase": {
+      "main": [
+        [
+          {
+            "node": "Return Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Errors": {
+      "main": [
+        [
+          {
+            "node": "Return Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Letter Form Webhook": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Process Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract State for Research": {
+      "main": [
+        [
+          {
+            "node": "Research State Jurisdiction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model for Research": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Research State Jurisdiction",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research State Jurisdiction",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structure Research Results": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Research State Jurisdiction",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research State Jurisdiction": {
+      "main": [
+        [
+          {
+            "node": "Merge Research with Form Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Research with Form Data": {
+      "main": [
+        [
+          {
+            "node": "Generate Letter with Research Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model for Letter Generation": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Letter with Research Context",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Letter with Research Context": {
+      "main": [
+        [
+          {
+            "node": "Update Letter in Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "versionId": "83979959-6108-414e-8f65-24e0986c50c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a67a0105808af3b8e272e32260a5b28103487a4f558cd1e13faac8f94755469d"
+  },
+  "id": "YleWYMCqBS2JRa0yGN_8Q",
+  "tags": [
+    {
+      "updatedAt": "2026-01-26T21:32:37.620Z",
+      "createdAt": "2026-01-26T21:32:37.620Z",
+      "id": "57gx5BHbYMwPWCQA",
+      "name": "letter-generation"
+    },
+    {
+      "updatedAt": "2026-01-26T21:32:37.594Z",
+      "createdAt": "2026-01-26T21:32:37.594Z",
+      "id": "pn5TXO0t84puT11b",
+      "name": "legal"
+    }
+  ]
+}

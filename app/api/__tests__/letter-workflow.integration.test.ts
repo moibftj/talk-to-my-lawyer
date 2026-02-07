@@ -2,7 +2,7 @@
  * Letter Workflow Integration Tests
  * 
  * Tests the complete letter lifecycle:
- * - Generation (user + AI)
+ * - Generation (n8n primary with jurisdiction research, OpenAI fallback)
  * - Drafting & submission
  * - Attorney review (approve/reject)
  * - Completion & delivery
@@ -29,7 +29,6 @@ describe('Letter Workflow - Integration', () => {
           sender_role: 'Employee',
         }
 
-        // Simulate letter creation with AI
         const letter = {
           id: 'letter-1',
           user_id: userId,
@@ -38,7 +37,7 @@ describe('Letter Workflow - Integration', () => {
           content: 'Generated letter content here...',
           created_at: new Date().toISOString(),
           submitted_at: new Date().toISOString(),
-          ai_model: 'gpt-4-turbo',
+          ai_model: 'gpt-4o',
           ai_tokens: 1200,
         }
 
@@ -49,10 +48,9 @@ describe('Letter Workflow - Integration', () => {
       })
 
       it('should deduct user allowance after letter generation', async () => {
-        const userId = 'user-123'
         const subscription = {
           monthly_allowance: 5,
-          credits_remaining: 4, // Was 5, now 4
+          credits_remaining: 4,
           period_start: '2026-01-01',
           period_end: '2026-01-31',
         }
@@ -90,7 +88,7 @@ describe('Letter Workflow - Integration', () => {
           action: 'approve',
           reviewed_by: 'attorney-1',
           reviewed_at: new Date().toISOString(),
-          final_content: letter.content, // Attorney can edit
+          final_content: letter.content,
           review_notes: 'Looks good, approved',
         }
 
@@ -138,7 +136,7 @@ describe('Letter Workflow - Integration', () => {
           status: 'pending_review',
           content: 'Revised content',
           resubmitted_at: new Date().toISOString(),
-          rejection_reason: null, // Clear previous rejection
+          rejection_reason: null,
         }
 
         expect(resubmittedLetter.status).toBe('pending_review')
@@ -197,9 +195,9 @@ describe('Letter Workflow - Integration', () => {
         const pdfMetadata = {
           letter_id: letter.id,
           filename: `${letter.id}-demand-for-unpaid-wages.pdf`,
-          size: 25000, // bytes
+          size: 25000,
           generated_at: new Date().toISOString(),
-          content_hash: 'abc123xyz', // For verification
+          content_hash: 'abc123xyz',
         }
 
         expect(pdfMetadata.letter_id).toBe(letter.id)
@@ -299,10 +297,9 @@ describe('Letter Workflow - Integration', () => {
         period_end: '2026-01-31',
       }
 
-      // Simulate month boundary
       const renewedSubscription = {
         ...subscription,
-        credits_remaining: 5, // Reset to full allowance
+        credits_remaining: 5,
         period_start: '2026-02-01',
         period_end: '2026-02-28',
       }
@@ -310,7 +307,6 @@ describe('Letter Workflow - Integration', () => {
       expect(renewedSubscription.credits_remaining).toBe(
         subscription.monthly_allowance
       )
-      // February is month 1 in JavaScript (0-indexed)
       expect(new Date(renewedSubscription.period_start).getUTCMonth()).toBe(1)
     })
 
@@ -320,10 +316,8 @@ describe('Letter Workflow - Integration', () => {
         monthly_allowance: 5,
       }
 
-      // User generates letter, then it's rejected by attorney
-      // Refund should be issued
       const after = {
-        credits_remaining: 5, // Restored
+        credits_remaining: 5,
         monthly_allowance: 5,
       }
 
@@ -340,11 +334,10 @@ describe('Letter Workflow - Integration', () => {
         period_end: '2026-01-31',
       }
 
-      // User upgrades on Jan 15
       const newSubscription = {
         plan: 'professional',
         monthly_allowance: 10,
-        credits_remaining: 10, // Full allowance for new plan
+        credits_remaining: 10,
         period_start: '2026-01-15',
         period_end: '2026-02-15',
       }
@@ -385,165 +378,157 @@ describe('Letter Workflow - Integration', () => {
     })
   })
 
-  describe('Letter Generation Fallback (OpenAI → n8n)', () => {
-    it('should use OpenAI as primary generation method', async () => {
+  describe('Letter Generation: n8n Primary, OpenAI Fallback', () => {
+    it('should use n8n as primary generation method with jurisdiction research', async () => {
       const generation = {
-        method: 'openai',
-        model: 'gpt-4-turbo',
-        content: 'Generated via OpenAI SDK',
-        attempts: 1,
-        duration_ms: 1500,
+        method: 'n8n',
+        model: 'gpt-4o',
+        researchApplied: true,
+        state: 'California',
+        content: 'Generated via n8n with CA jurisdiction research',
+        supabaseUpdated: true,
       }
 
-      expect(generation.method).toBe('openai')
-      expect(generation.model).toBe('gpt-4-turbo')
-      expect(generation.content).toContain('OpenAI')
+      expect(generation.method).toBe('n8n')
+      expect(generation.researchApplied).toBe(true)
+      expect(generation.state).toBe('California')
+      expect(generation.supabaseUpdated).toBe(true)
     })
 
-    it('should fall back to n8n when OpenAI fails and n8n is available', async () => {
+    it('should include research_data when n8n is used', async () => {
+      const researchData = {
+        state: 'California',
+        statutes: [
+          { statuteNumber: 'CA Civil Code § 1542', description: 'General release provisions', relevance: 'Required disclosure language' }
+        ],
+        disclosures: ['Must include specific statutory language'],
+        conventions: ['Standard letter format per CA Bar guidelines'],
+      }
+
+      expect(researchData.state).toBe('California')
+      expect(researchData.statutes).toHaveLength(1)
+      expect(researchData.disclosures).toHaveLength(1)
+      expect(researchData.conventions).toHaveLength(1)
+    })
+
+    it('should fall back to OpenAI when n8n fails', async () => {
       const n8nAvailable = true
-      const openaiFailed = true
+      const n8nFailed = true
 
-      let generationMethod: 'openai' | 'n8n' = 'openai'
+      let generationMethod: 'n8n' | 'openai' = 'n8n'
       let generatedContent: string | undefined
+      let researchApplied = false
 
-      // Simulate OpenAI failure
-      if (openaiFailed) {
-        if (n8nAvailable) {
-          // Fall back to n8n
-          generationMethod = 'n8n'
-          generatedContent = 'Generated via n8n workflow'
-        }
+      if (n8nFailed) {
+        generationMethod = 'openai'
+        generatedContent = 'Generated via OpenAI fallback (no jurisdiction research)'
+        researchApplied = false
       }
 
-      expect(generationMethod).toBe('n8n')
-      expect(generatedContent).toContain('n8n')
+      expect(generationMethod).toBe('openai')
+      expect(researchApplied).toBe(false)
+      expect(generatedContent).toContain('OpenAI fallback')
     })
 
-    it('should fail when OpenAI fails and n8n is not available', async () => {
+    it('should fall back to OpenAI when n8n is not configured', async () => {
       const n8nAvailable = false
-      const openaiFailed = true
+      const openaiAvailable = true
+
+      let generationMethod = 'none'
+
+      if (n8nAvailable) {
+        generationMethod = 'n8n'
+      } else if (openaiAvailable) {
+        generationMethod = 'openai'
+      }
+
+      expect(generationMethod).toBe('openai')
+    })
+
+    it('should fail when both n8n and OpenAI are unavailable', async () => {
+      const n8nAvailable = false
+      const openaiAvailable = false
       let errorThrown = false
-      let errorMessage = ''
 
       try {
-        if (openaiFailed) {
-          if (!n8nAvailable) {
-            errorThrown = true
-            errorMessage = 'OpenAI generation failed and no fallback available'
-            throw new Error(errorMessage)
-          }
+        if (!n8nAvailable && !openaiAvailable) {
+          errorThrown = true
+          throw new Error('No generation service configured')
         }
-      } catch (e) {
-        // Expected error
+      } catch {
+        // expected
       }
 
       expect(errorThrown).toBe(true)
-      expect(errorMessage).toContain('no fallback available')
     })
 
     it('should track generation method in audit trail', async () => {
-      const auditLog = {
+      const n8nAudit = {
         letter_id: 'letter-123',
         from_status: 'generating',
         to_status: 'pending_review',
         action: 'created',
-        details: 'Letter generated successfully via OpenAI (primary)',
-        timestamp: new Date().toISOString(),
+        details: 'Letter generated via n8n (primary) with jurisdiction research for California',
       }
 
-      expect(auditLog.details).toContain('OpenAI (primary)')
-      expect(auditLog.from_status).toBe('generating')
-      expect(auditLog.to_status).toBe('pending_review')
+      expect(n8nAudit.details).toContain('n8n (primary)')
+      expect(n8nAudit.details).toContain('jurisdiction research')
+      expect(n8nAudit.details).toContain('California')
     })
 
     it('should track fallback usage in audit trail', async () => {
-      const auditLog = {
+      const fallbackAudit = {
         letter_id: 'letter-456',
         from_status: 'generating',
         to_status: 'pending_review',
         action: 'created',
-        details: 'Letter generated successfully via n8n (fallback)',
-        timestamp: new Date().toISOString(),
+        details: 'Letter generated via OpenAI (fallback) and queued for admin review',
       }
 
-      expect(auditLog.details).toContain('n8n (fallback)')
-      expect(auditLog.details).toContain('fallback')
+      expect(fallbackAudit.details).toContain('OpenAI (fallback)')
     })
 
-    it('should record OpenAI failure in trace spans', async () => {
-      const spanEvents = [
-        { name: 'openai_generation_started', timestamp: '2024-01-01T00:00:00Z' },
-        { name: 'openai_failed', timestamp: '2024-01-01T00:00:02Z', attributes: { error: 'Rate limit exceeded' } },
-        { name: 'n8n_fallback_started', timestamp: '2024-01-01T00:00:02Z' },
-        { name: 'n8n_fallback_succeeded', timestamp: '2024-01-01T00:00:05Z' },
-      ]
-
-      const hasFailureEvent = spanEvents.some(e => e.name === 'openai_failed')
-      const hasFallbackEvent = spanEvents.some(e => e.name === 'n8n_fallback_started')
-      const hasSuccessEvent = spanEvents.some(e => e.name === 'n8n_fallback_succeeded')
-
-      expect(hasFailureEvent).toBe(true)
-      expect(hasFallbackEvent).toBe(true)
-      expect(hasSuccessEvent).toBe(true)
-    })
-
-    it('should record error when both generation methods fail', async () => {
-      const auditLog = {
-        letter_id: 'letter-789',
-        from_status: 'generating',
-        to_status: 'failed',
-        action: 'generation_failed',
-        details: 'Generation failed (n8n fallback): Connection timeout',
-        timestamp: new Date().toISOString(),
+    it('should skip Supabase update when n8n handles it directly', async () => {
+      const n8nResult = {
+        generatedContent: 'Letter content from n8n...',
+        letterId: 'letter-123',
+        status: 'pending_review',
+        researchApplied: true,
+        state: 'Florida',
+        supabaseUpdated: true,
       }
 
-      expect(auditLog.to_status).toBe('failed')
-      expect(auditLog.details).toContain('n8n fallback')
-      expect(auditLog.details).toContain('timeout')
+      expect(n8nResult.supabaseUpdated).toBe(true)
+
+      const shouldUpdateSupabase = !n8nResult.supabaseUpdated
+      expect(shouldUpdateSupabase).toBe(false)
     })
 
-    it('should distinguish between primary and fallback in telemetry', async () => {
-      const telemetry = {
-        generation_method: 'openai_primary',
-        n8n_available: true,
-        openai_attempts: 1,
-        openai_duration_ms: 1200,
-        n8n_used: false,
+    it('should update Supabase when OpenAI fallback is used', async () => {
+      const openaiResult = {
+        generatedContent: 'Letter content from OpenAI...',
+        method: 'openai',
+        supabaseUpdated: false,
       }
 
-      expect(telemetry.generation_method).toBe('openai_primary')
-      expect(telemetry.n8n_available).toBe(true)
-      expect(telemetry.n8n_used).toBe(false)
+      expect(openaiResult.supabaseUpdated).toBe(false)
+
+      const shouldUpdateSupabase = !openaiResult.supabaseUpdated
+      expect(shouldUpdateSupabase).toBe(true)
     })
 
-    it('should update telemetry when fallback is used', async () => {
-      const telemetry = {
-        generation_method: 'openai_primary',
-        n8n_available: true,
-        openai_failed: true,
-        n8n_used: true,
-        n8n_duration_ms: 3500,
-        total_duration_ms: 4700, // Includes failed OpenAI attempt + n8n
-      }
-
-      expect(telemetry.openai_failed).toBe(true)
-      expect(telemetry.n8n_used).toBe(true)
-      expect(telemetry.total_duration_ms).toBeGreaterThan(telemetry.n8n_duration_ms)
-    })
-
-    it('should handle OpenAI timeout with n8n fallback', async () => {
-      const openaiTimeout = true
-      const n8nAvailable = true
+    it('should handle n8n timeout with OpenAI fallback', async () => {
+      const n8nTimeout = true
+      const openaiAvailable = true
 
       let result: { success: boolean; method: string; content: string }
 
-      if (openaiTimeout) {
-        if (n8nAvailable) {
+      if (n8nTimeout) {
+        if (openaiAvailable) {
           result = {
             success: true,
-            method: 'n8n',
-            content: 'Letter generated via n8n after OpenAI timeout',
+            method: 'openai',
+            content: 'Letter generated via OpenAI after n8n timeout',
           }
         } else {
           result = {
@@ -555,30 +540,65 @@ describe('Letter Workflow - Integration', () => {
       } else {
         result = {
           success: true,
-          method: 'openai',
-          content: 'Letter generated via OpenAI',
+          method: 'n8n',
+          content: 'Letter generated via n8n',
         }
       }
 
       expect(result.success).toBe(true)
-      expect(result.method).toBe('n8n')
-      expect(result.content).toContain('n8n')
+      expect(result.method).toBe('openai')
     })
 
-    it('should handle OpenAI rate limit with n8n fallback', async () => {
-      const openaiRateLimited = true
-      const n8nAvailable = true
+    it('should handle n8n auth failure with OpenAI fallback', async () => {
+      const n8nAuthFailed = true
+      const openaiAvailable = true
 
-      const fallbackTriggered = openaiRateLimited && n8nAvailable
+      const fallbackTriggered = n8nAuthFailed && openaiAvailable
 
       expect(fallbackTriggered).toBe(true)
 
       const result = fallbackTriggered
-        ? { method: 'n8n', reason: 'OpenAI rate limit exceeded' }
-        : { method: 'openai', reason: 'Primary method' }
+        ? { method: 'openai', reason: 'n8n webhook authentication failed' }
+        : { method: 'n8n', reason: 'Primary method' }
 
-      expect(result.method).toBe('n8n')
-      expect(result.reason).toContain('rate limit')
+      expect(result.method).toBe('openai')
+      expect(result.reason).toContain('authentication failed')
+    })
+
+    it('should record both methods in telemetry', async () => {
+      const telemetry = {
+        generation_method: 'n8n_primary',
+        n8n_available: true,
+        openai_available: true,
+        n8n_used: true,
+        n8n_duration_ms: 3500,
+        research_applied: true,
+        research_state: 'FL',
+        openai_fallback_used: false,
+      }
+
+      expect(telemetry.generation_method).toBe('n8n_primary')
+      expect(telemetry.n8n_used).toBe(true)
+      expect(telemetry.research_applied).toBe(true)
+      expect(telemetry.openai_fallback_used).toBe(false)
+    })
+
+    it('should update telemetry when fallback is used', async () => {
+      const telemetry = {
+        generation_method: 'openai_fallback',
+        n8n_available: true,
+        n8n_failed: true,
+        n8n_error: 'Connection timeout',
+        openai_fallback_used: true,
+        openai_duration_ms: 1500,
+        research_applied: false,
+        total_duration_ms: 5000,
+      }
+
+      expect(telemetry.n8n_failed).toBe(true)
+      expect(telemetry.openai_fallback_used).toBe(true)
+      expect(telemetry.research_applied).toBe(false)
+      expect(telemetry.total_duration_ms).toBeGreaterThan(telemetry.openai_duration_ms)
     })
   })
 })

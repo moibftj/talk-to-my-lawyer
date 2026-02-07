@@ -2,14 +2,17 @@
  * Letter Generation API Endpoint
  * POST /api/generate-letter
  *
- * ARCHITECTURE: OpenAI-Only Letter Generation
+ * ARCHITECTURE: n8n Primary + OpenAI Fallback
  * ============================================
  * 1. POST: User submits letter form data
- * 2. PROCESS: OpenAI generates professional legal letter
- * 3. SAVE: Letter saved to database with 'pending_review' status
+ * 2. PRIMARY: n8n workflow generates letter (jurisdiction research + AI generation)
+ *    - n8n researches state-specific statutes, disclosures, conventions
+ *    - n8n generates letter with legal context via GPT-4o
+ *    - n8n updates Supabase directly (ai_draft_content, status, research_data)
+ * 3. FALLBACK: If n8n unavailable, OpenAI generates letter directly
  * 4. NOTIFY: Admins notified for review
- * 
- * Flow: User → POST /api/generate-letter → OpenAI → Database → Admin Review Center
+ *
+ * Flow: User → POST → [n8n webhook | OpenAI fallback] → Database → Admin Review
  */
 import { type NextRequest } from "next/server"
 import { letterGenerationRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
@@ -23,47 +26,20 @@ import {
 } from '@/lib/services/allowance-service'
 import { logLetterStatusChange } from '@/lib/services/audit-service'
 import { generateLetterContent } from '@/lib/services/letter-generation-service'
+import {
+  isN8nConfigured,
+  generateLetterViaN8n,
+  transformIntakeToN8nFormat,
+  type N8nGenerationResult,
+} from '@/lib/services/n8n-webhook-service'
 import { notifyAdminsNewLetter } from '@/lib/services/notification-service'
 import type { LetterGenerationResponse } from '@/lib/types/letter.types'
 import { createBusinessSpan, addSpanAttributes, recordSpanEvent } from '@/lib/monitoring/tracing'
 
 export const runtime = "nodejs"
 
-// Constants for letter generation
-const GENERATION_TIMEOUT_MS = 60000 // 60 seconds max for OpenAI generation
+const GENERATION_TIMEOUT_MS = 60000
 
-/**
- * POST /api/generate-letter
- * 
- * Generate a professional legal letter using OpenAI
- * 
- * Request Body:
- * {
- *   letterType: string (e.g., "demand_letter", "cease_and_desist")
- *   intakeData: {
- *     senderName: string
- *     senderAddress: string
- *     senderState: string (e.g., "FL" for Florida)
- *     recipientName: string
- *     recipientAddress: string
- *     recipientState: string
- *     issueDescription: string
- *     desiredOutcome: string
- *     amountDemanded?: number
- *     deadlineDate?: string
- *     additionalDetails?: string
- *   }
- * }
- * 
- * Response:
- * {
- *   success: true
- *   letterId: string (UUID)
- *   status: "pending_review"
- *   isFreeTrial: boolean
- *   aiDraft: string (the generated letter content)
- * }
- */
 export async function POST(request: NextRequest) {
   const span = createBusinessSpan('generate_letter', {
     'http.method': 'POST',
@@ -77,8 +53,13 @@ export async function POST(request: NextRequest) {
 
   try {
     recordSpanEvent('letter_generation_started')
-    addSpanAttributes({ 
-      'generation.method': 'openai_direct', 
+
+    const n8nAvailable = isN8nConfigured()
+    const generationMethod = n8nAvailable ? 'n8n_primary' : 'openai_direct'
+
+    addSpanAttributes({
+      'generation.method': generationMethod,
+      'generation.n8n_available': n8nAvailable,
       'openai_configured': openaiConfig.isConfigured,
     })
 
@@ -145,10 +126,10 @@ export async function POST(request: NextRequest) {
     })
 
     // =========================================================================
-    // STEP 4: Verify OpenAI Configuration
+    // STEP 4: Verify Generation Service Available
     // =========================================================================
-    if (!openaiConfig.isConfigured) {
-      console.error("[GenerateLetter] OpenAI not configured. Set OPENAI_API_KEY env variable.")
+    if (!n8nAvailable && !openaiConfig.isConfigured) {
+      console.error("[GenerateLetter] No generation service configured (n8n or OpenAI).")
       return errorResponses.serverError(
         "Letter generation service is temporarily unavailable. Please try again later."
       )
@@ -197,7 +178,6 @@ export async function POST(request: NextRequest) {
     if (insertError || !newLetter) {
       console.error("[GenerateLetter] Database insert failed:", insertError)
       
-      // Refund allowance since we couldn't create the letter
       if (!isFreeTrial && !isSuperAdmin) {
         await refundLetterAllowance(user.id, 1).catch(err => {
           console.error("[GenerateLetter] Failed to refund allowance:", err)
@@ -212,112 +192,169 @@ export async function POST(request: NextRequest) {
     recordSpanEvent('letter_record_created', { letter_id: letterId! })
 
     // =========================================================================
-    // STEP 7: Generate Letter via OpenAI
+    // STEP 7: Generate Letter (n8n primary, OpenAI fallback)
     // =========================================================================
-    console.log(`[GenerateLetter] Starting OpenAI generation for letter: ${letterId}`)
-    recordSpanEvent('openai_generation_started')
-
     let generatedContent: string
+    let actualMethod: 'n8n' | 'openai' = 'openai'
+    let researchApplied = false
+    let researchState: string | undefined
 
-    try {
-      // Add timeout protection for OpenAI call
-      const generationPromise = generateLetterContent(sanitizedLetterType, sanitizedIntakeData)
-      
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Letter generation timed out')), GENERATION_TIMEOUT_MS)
-      })
+    if (n8nAvailable) {
+      // ---- PRIMARY: n8n workflow (jurisdiction research + generation) ----
+      try {
+        console.log(`[GenerateLetter] Using n8n workflow for letter: ${letterId}`)
+        recordSpanEvent('n8n_generation_started')
 
-      generatedContent = await Promise.race([generationPromise, timeoutPromise])
+        const n8nFormData = transformIntakeToN8nFormat(
+          letterId!,
+          user.id,
+          sanitizedLetterType,
+          sanitizedIntakeData as Record<string, unknown>
+        )
 
-      // Validate generated content
-      if (!generatedContent || generatedContent.trim().length < 100) {
-        throw new Error("Generated content is too short or empty")
+        const n8nResult: N8nGenerationResult = await generateLetterViaN8n(n8nFormData)
+
+        generatedContent = n8nResult.generatedContent
+        actualMethod = 'n8n'
+        researchApplied = n8nResult.researchApplied
+        researchState = n8nResult.state
+
+        if (generatedContent.trim().length < 100) {
+          throw new Error("n8n generated content is too short or empty")
+        }
+
+        console.log(`[GenerateLetter] n8n generation successful. Content length: ${generatedContent.length}, Research: ${researchApplied}, State: ${researchState}`)
+        recordSpanEvent('n8n_generation_completed', {
+          content_length: generatedContent.length,
+          research_applied: researchApplied,
+          state: researchState || 'unknown',
+        })
+
+        addSpanAttributes({
+          'generation.actual_method': 'n8n',
+          'generation.research_applied': researchApplied,
+          'generation.research_state': researchState || 'unknown',
+        })
+
+      } catch (n8nError) {
+        const n8nErrorMessage = n8nError instanceof Error ? n8nError.message : 'Unknown n8n error'
+        console.warn(`[GenerateLetter] n8n generation failed for letter ${letterId}, falling back to OpenAI:`, n8nErrorMessage)
+        recordSpanEvent('n8n_generation_failed', { error: n8nErrorMessage })
+
+        if (!openaiConfig.isConfigured) {
+          console.error(`[GenerateLetter] OpenAI fallback not available either.`)
+
+          await supabase
+            .from("letters")
+            .update({
+              status: "failed",
+              generation_error: `n8n failed: ${n8nErrorMessage}. No OpenAI fallback configured.`,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", letterId)
+
+          if (!isFreeTrial && !isSuperAdmin) {
+            await refundLetterAllowance(user.id, 1).catch(err => {
+              console.error("[GenerateLetter] Failed to refund allowance:", err)
+            })
+          }
+
+          return errorResponses.serverError(
+            "Failed to generate letter. Your credit has been refunded. Please try again."
+          )
+        }
+
+        recordSpanEvent('openai_fallback_started')
+        generatedContent = await generateViaOpenAIFallback(
+          sanitizedLetterType,
+          sanitizedIntakeData,
+          letterId!,
+          supabase,
+          isFreeTrial,
+          isSuperAdmin,
+          user.id
+        )
+        actualMethod = 'openai'
       }
+    } else {
+      // ---- FALLBACK ONLY: Direct OpenAI generation ----
+      console.log(`[GenerateLetter] n8n not configured, using OpenAI direct for letter: ${letterId}`)
+      recordSpanEvent('openai_direct_started')
 
-      console.log(`[GenerateLetter] OpenAI generation successful. Content length: ${generatedContent.length}`)
-      recordSpanEvent('openai_generation_completed', {
-        content_length: generatedContent.length,
-      })
+      generatedContent = await generateViaOpenAIFallback(
+        sanitizedLetterType,
+        sanitizedIntakeData,
+        letterId!,
+        supabase,
+        isFreeTrial,
+        isSuperAdmin,
+        user.id
+      )
+      actualMethod = 'openai'
+    }
 
-    } catch (generationError) {
-      const errorMessage = generationError instanceof Error ? generationError.message : 'Unknown generation error'
-      console.error(`[GenerateLetter] OpenAI generation failed for letter ${letterId}:`, errorMessage)
-      
-      recordSpanEvent('openai_generation_failed', { error: errorMessage })
-
-      // Update letter status to 'failed'
-      await supabase
+    // =========================================================================
+    // STEP 8: Save Generated Content (only if OpenAI fallback was used)
+    // n8n updates Supabase directly, so skip this step for n8n
+    // =========================================================================
+    if (actualMethod === 'openai') {
+      const { error: updateError } = await supabase
         .from("letters")
         .update({
-          status: "failed",
-          generation_error: errorMessage,
+          ai_draft_content: generatedContent,
+          status: "pending_review",
+          generated_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", letterId)
 
-      // Refund allowance
-      if (!isFreeTrial && !isSuperAdmin) {
-        await refundLetterAllowance(user.id, 1).catch(err => {
-          console.error("[GenerateLetter] Failed to refund allowance:", err)
-        })
+      if (updateError) {
+        console.error(`[GenerateLetter] Failed to save generated content for letter ${letterId}:`, updateError)
+        
+        await supabase
+          .from("letters")
+          .update({
+            status: "failed",
+            generation_error: "Failed to save generated content",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", letterId)
+
+        if (!isFreeTrial && !isSuperAdmin) {
+          await refundLetterAllowance(user.id, 1).catch(err => {
+            console.error("[GenerateLetter] Failed to refund allowance:", err)
+          })
+        }
+
+        return errorResponses.serverError(
+          "Failed to save generated letter. Your credit has been refunded."
+        )
       }
 
-      return errorResponses.serverError(
-        "Failed to generate letter. Your credit has been refunded. Please try again."
-      )
+      console.log(`[GenerateLetter] Letter ${letterId} saved via OpenAI fallback`)
+    } else {
+      console.log(`[GenerateLetter] Letter ${letterId} already saved by n8n workflow`)
     }
 
-    // =========================================================================
-    // STEP 8: Save Generated Content & Update Status to 'pending_review'
-    // =========================================================================
-    const { error: updateError } = await supabase
-      .from("letters")
-      .update({
-        ai_draft_content: generatedContent,
-        status: "pending_review",
-        generated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", letterId)
-
-    if (updateError) {
-      console.error(`[GenerateLetter] Failed to save generated content for letter ${letterId}:`, updateError)
-      
-      // Try to mark as failed
-      await supabase
-        .from("letters")
-        .update({
-          status: "failed",
-          generation_error: "Failed to save generated content",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", letterId)
-
-      // Refund allowance
-      if (!isFreeTrial && !isSuperAdmin) {
-        await refundLetterAllowance(user.id, 1).catch(err => {
-          console.error("[GenerateLetter] Failed to refund allowance:", err)
-        })
-      }
-
-      return errorResponses.serverError(
-        "Failed to save generated letter. Your credit has been refunded."
-      )
-    }
-
-    console.log(`[GenerateLetter] Letter ${letterId} saved and set to pending_review`)
-    recordSpanEvent('letter_saved_to_database', { status: 'pending_review' })
+    recordSpanEvent('letter_saved_to_database', {
+      status: 'pending_review',
+      method: actualMethod,
+    })
 
     // =========================================================================
     // STEP 9: Audit Trail
     // =========================================================================
+    const auditDetails = actualMethod === 'n8n'
+      ? `Letter generated via n8n (primary) with jurisdiction research${researchApplied ? ` for ${researchState || 'unknown state'}` : ''}`
+      : 'Letter generated via OpenAI (fallback) and queued for admin review'
+
     await logLetterStatusChange(
       supabase,
       letterId!,
       'generating',
       'pending_review',
       'created',
-      'Letter generated successfully via OpenAI and queued for admin review'
+      auditDetails
     ).catch(err => {
       console.warn("[GenerateLetter] Audit log failed (non-critical):", err)
     })
@@ -334,7 +371,7 @@ export async function POST(request: NextRequest) {
     // =========================================================================
     // STEP 11: Return Success Response
     // =========================================================================
-    span.setStatus({ code: 1 }) // SUCCESS
+    span.setStatus({ code: 1 })
 
     return successResponse<LetterGenerationResponse>({
       success: true,
@@ -352,7 +389,6 @@ export async function POST(request: NextRequest) {
     span.setStatus({ code: 2, message: errorMessage })
     recordSpanEvent('letter_generation_error', { error: errorMessage })
 
-    // If we created a letter but failed later, try to clean up
     if (letterId && supabaseClient) {
       await supabaseClient
         .from("letters")
@@ -362,9 +398,8 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", letterId)
-        .catch(() => {}) // Ignore cleanup errors
+        .catch(() => {})
 
-      // Refund allowance
       if (!isFreeTrial && !isSuperAdmin) {
         await refundLetterAllowance(letterId, 1).catch(() => {})
       }
@@ -377,15 +412,75 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/generate-letter
- * 
- * Health check and API documentation
+ * Generate letter content via direct OpenAI call (fallback method)
  */
+async function generateViaOpenAIFallback(
+  letterType: string,
+  intakeData: Record<string, unknown>,
+  letterId: string,
+  supabase: any,
+  isFreeTrial: boolean,
+  isSuperAdmin: boolean,
+  userId: string
+): Promise<string> {
+  try {
+    const generationPromise = generateLetterContent(letterType, intakeData)
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Letter generation timed out')), GENERATION_TIMEOUT_MS)
+    })
+
+    const generatedContent = await Promise.race([generationPromise, timeoutPromise])
+
+    if (!generatedContent || generatedContent.trim().length < 100) {
+      throw new Error("Generated content is too short or empty")
+    }
+
+    console.log(`[GenerateLetter] OpenAI fallback generation successful. Content length: ${generatedContent.length}`)
+    recordSpanEvent('openai_fallback_completed', {
+      content_length: generatedContent.length,
+    })
+
+    addSpanAttributes({
+      'generation.actual_method': 'openai_fallback',
+    })
+
+    return generatedContent
+
+  } catch (generationError) {
+    const errorMessage = generationError instanceof Error ? generationError.message : 'Unknown generation error'
+    console.error(`[GenerateLetter] OpenAI fallback failed for letter ${letterId}:`, errorMessage)
+    
+    recordSpanEvent('openai_fallback_failed', { error: errorMessage })
+
+    await supabase
+      .from("letters")
+      .update({
+        status: "failed",
+        generation_error: errorMessage,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", letterId)
+
+    if (!isFreeTrial && !isSuperAdmin) {
+      await refundLetterAllowance(userId, 1).catch(err => {
+        console.error("[GenerateLetter] Failed to refund allowance:", err)
+      })
+    }
+
+    throw generationError
+  }
+}
+
 export async function GET() {
+  const n8nAvailable = isN8nConfigured()
+
   return successResponse({
     endpoint: '/api/generate-letter',
     method: 'POST',
-    description: 'Generate a professional legal letter using OpenAI',
+    description: 'Generate a professional legal letter with jurisdiction research',
+    generationMethod: n8nAvailable ? 'n8n (primary) with OpenAI fallback' : 'OpenAI direct',
+    n8nConfigured: n8nAvailable,
     openaiConfigured: openaiConfig.isConfigured,
     requiredFields: {
       letterType: 'string - Type of letter (e.g., demand_letter, cease_and_desist)',
@@ -409,10 +504,15 @@ export async function GET() {
     flow: [
       '1. User submits letter form data via POST',
       '2. System validates input and checks user allowance',
-      '3. OpenAI generates professional legal letter',
-      '4. Letter saved with status "pending_review"',
-      '5. Admins notified for review',
-      '6. Letter appears in Admin Review Center',
+      n8nAvailable
+        ? '3. n8n researches jurisdiction (state statutes, disclosures, conventions)'
+        : '3. OpenAI generates letter directly (no jurisdiction research)',
+      n8nAvailable
+        ? '4. n8n generates letter with research context via GPT-4o'
+        : '4. Letter content generated with retry logic',
+      '5. Letter saved with status "pending_review"',
+      '6. Admins notified for review',
+      '7. Letter appears in Admin Review Center',
     ],
   })
 }
