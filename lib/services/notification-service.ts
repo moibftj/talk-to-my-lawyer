@@ -5,11 +5,15 @@
  */
 
 import { queueTemplateEmail } from '@/lib/email/service'
-import { getAdminEmails } from '@/lib/admin/letter-actions'
+import { getAdminEmails, getAdminEmailsWithRoles } from '@/lib/admin/letter-actions'
 import { getAppUrl } from '@/lib/config'
 
 /**
  * Notify admins about a new letter pending review
+ *
+ * Sends role-appropriate links:
+ * - Super admins get links to /secure-admin-gateway/review/{id}
+ * - Attorney admins get links to /attorney-portal/review/{id}
  *
  * @param letterId - ID of the letter
  * @param letterTitle - Title of the letter
@@ -20,22 +24,49 @@ export async function notifyAdminsNewLetter(
   letterTitle: string,
   letterType: string
 ): Promise<void> {
-  const adminEmails = await getAdminEmails()
+  const adminsWithRoles = await getAdminEmailsWithRoles()
 
-  if (adminEmails.length === 0) {
+  if (adminsWithRoles.length === 0) {
     console.warn('[NotificationService] No admin emails configured')
     return
   }
 
   const siteUrl = getAppUrl()
 
+  const superAdminEmails = adminsWithRoles
+    .filter(a => a.subRole === 'super_admin')
+    .map(a => a.email)
+
+  const attorneyAdminEmails = adminsWithRoles
+    .filter(a => a.subRole === 'attorney_admin')
+    .map(a => a.email)
+
   try {
-    await queueTemplateEmail('admin-alert', adminEmails, {
-      alertMessage: `New letter "${letterTitle}" requires review. Letter type: ${letterType}`,
-      actionUrl: `${siteUrl}/secure-admin-gateway/review/${letterId}`,
-      pendingReviews: 1,
-    })
-    console.log('[NotificationService] Admin notification queued for letter:', letterId)
+    const promises: Promise<unknown>[] = []
+
+    if (superAdminEmails.length > 0) {
+      promises.push(
+        queueTemplateEmail('admin-alert', superAdminEmails, {
+          alertMessage: `New letter "${letterTitle}" requires review. Letter type: ${letterType}`,
+          actionUrl: `${siteUrl}/secure-admin-gateway/review/${letterId}`,
+          pendingReviews: 1,
+        })
+      )
+    }
+
+    if (attorneyAdminEmails.length > 0) {
+      promises.push(
+        queueTemplateEmail('admin-alert', attorneyAdminEmails, {
+          alertMessage: `New letter "${letterTitle}" requires review. Letter type: ${letterType}`,
+          actionUrl: `${siteUrl}/attorney-portal/review/${letterId}`,
+          pendingReviews: 1,
+        })
+      )
+    }
+
+    await Promise.all(promises)
+    console.log('[NotificationService] Admin notifications queued for letter:', letterId,
+      `(${superAdminEmails.length} super admins, ${attorneyAdminEmails.length} attorney admins)`)
   } catch (error) {
     console.error('[NotificationService] Failed to queue admin notification:', error)
   }

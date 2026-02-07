@@ -187,14 +187,27 @@ export async function updateLetterStatus(params: {
  * Get all admin email addresses from the database
  */
 export async function getAdminEmails(): Promise<string[]> {
+  const adminsWithRoles = await getAdminEmailsWithRoles()
+  return adminsWithRoles.map(a => a.email)
+}
+
+/**
+ * Get all admin email addresses with their sub-roles from the database
+ */
+export async function getAdminEmailsWithRoles(): Promise<Array<{ email: string; subRole: string }>> {
   const supabase = await createClient()
 
   const { data } = await supabase
     .from('profiles')
-    .select('email')
+    .select('email, admin_sub_role')
     .eq('role', 'admin')
 
-  return data?.map((p: { email: string | null }) => p.email).filter(Boolean) as string[] || []
+  return (data || [])
+    .filter((p: { email: string | null }) => p.email)
+    .map((p: { email: string | null; admin_sub_role: string | null }) => ({
+      email: p.email!,
+      subRole: p.admin_sub_role || 'super_admin',
+    }))
 }
 
 /**
