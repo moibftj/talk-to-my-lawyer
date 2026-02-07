@@ -13,17 +13,17 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Mock admin authentication
 vi.mock('@/lib/auth/admin-session', () => ({
-    requireSuperAdminAuth: vi.fn(() => Promise.resolve({
+    requireSuperAdminAuth: vi.fn((..._args: any[]) => Promise.resolve({
         userId: 'admin-123',
         role: 'admin',
         adminSubRole: 'super_admin'
     })),
-    requireAttorneyAuth: vi.fn(() => Promise.resolve({
+    requireAttorneyAuth: vi.fn((..._args: any[]) => Promise.resolve({
         userId: 'attorney-456',
         role: 'admin',
         adminSubRole: 'attorney_admin'
     })),
-    isAdminAuthenticated: vi.fn(() => Promise.resolve(true)),
+    isAdminAuthenticated: vi.fn((..._args: any[]) => Promise.resolve(true)),
 }))
 
 vi.mock('@/lib/db/client-factory', () => ({
@@ -34,7 +34,7 @@ vi.mock('@/lib/db/client-factory', () => ({
 }))
 
 vi.mock('@/lib/validation/admin-validation', () => ({
-    validateAdminReviewRequest: vi.fn(() => ({
+    validateAdminReviewRequest: vi.fn((..._args: any[]) => ({
         valid: true,
         errors: [],
         data: {
@@ -56,11 +56,11 @@ describe('Review Center Integration', () => {
     describe('Review Queue Management', () => {
         it('should fetch letters pending review ordered by priority and date', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            order: vi.fn(() => ({
-                                range: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    select: vi.fn((..._args: any[]) => ({
+                        eq: vi.fn((..._args: any[]) => ({
+                            order: vi.fn((..._args: any[]) => ({
+                                range: vi.fn((..._args: any[]) => Promise.resolve({
                                     data: [
                                         {
                                             id: 'letter-1',
@@ -114,11 +114,11 @@ describe('Review Center Integration', () => {
 
         it('should track review assignments to prevent conflicts', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    update: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            select: vi.fn(() => ({
-                                single: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    update: vi.fn((..._args: any[]) => ({
+                        eq: vi.fn((..._args: any[]) => ({
+                            select: vi.fn((..._args: any[]) => ({
+                                single: vi.fn((..._args: any[]) => Promise.resolve({
                                     data: {
                                         id: 'letter-123',
                                         status: 'under_review',
@@ -131,7 +131,7 @@ describe('Review Center Integration', () => {
                         }))
                     }))
                 })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                rpc: vi.fn((..._args: any[]) => Promise.resolve({ data: null, error: null }))
             }
 
             mockDb.serviceRole.mockReturnValue(mockClient)
@@ -160,10 +160,10 @@ describe('Review Center Integration', () => {
 
         it('should prevent multiple reviewers from claiming the same letter', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    select: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    select: vi.fn((..._args: any[]) => ({
+                        eq: vi.fn((..._args: any[]) => ({
+                            single: vi.fn((..._args: any[]) => Promise.resolve({
                                 data: {
                                     id: 'letter-123',
                                     status: 'under_review',
@@ -201,11 +201,11 @@ describe('Review Center Integration', () => {
     describe('Letter Review Actions', () => {
         it('should approve letter and transition to approved status', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    update: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            select: vi.fn(() => ({
-                                single: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    update: vi.fn((..._args: any[]) => ({
+                        eq: vi.fn((..._args: any[]) => ({
+                            select: vi.fn((..._args: any[]) => ({
+                                single: vi.fn((..._args: any[]) => Promise.resolve({
                                     data: {
                                         id: 'letter-123',
                                         status: 'approved',
@@ -219,7 +219,7 @@ describe('Review Center Integration', () => {
                         }))
                     }))
                 })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                rpc: vi.fn((..._args: any[]) => Promise.resolve({ data: null, error: null }))
             }
 
             mockDb.serviceRole.mockReturnValue(mockClient)
@@ -264,11 +264,11 @@ describe('Review Center Integration', () => {
 
         it('should reject letter with detailed feedback', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    update: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            select: vi.fn(() => ({
-                                single: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    update: vi.fn((..._args: any[]) => ({
+                        eq: vi.fn((..._args: any[]) => ({
+                            select: vi.fn((..._args: any[]) => ({
+                                single: vi.fn((..._args: any[]) => Promise.resolve({
                                     data: {
                                         id: 'letter-123',
                                         status: 'rejected',
@@ -283,7 +283,7 @@ describe('Review Center Integration', () => {
                         }))
                     }))
                 })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                rpc: vi.fn((..._args: any[]) => Promise.resolve({ data: null, error: null }))
             }
 
             mockDb.serviceRole.mockReturnValue(mockClient)
@@ -330,11 +330,11 @@ describe('Review Center Integration', () => {
 
         it('should handle letter modifications during review', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    update: vi.fn(() => ({
-                        eq: vi.fn(() => ({
-                            select: vi.fn(() => ({
-                                single: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    update: vi.fn((..._args: any[]) => ({
+                        eq: vi.fn((..._args: any[]) => ({
+                            select: vi.fn((..._args: any[]) => ({
+                                single: vi.fn((..._args: any[]) => Promise.resolve({
                                     data: {
                                         id: 'letter-123',
                                         status: 'under_review',
@@ -349,7 +349,7 @@ describe('Review Center Integration', () => {
                         }))
                     }))
                 })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                rpc: vi.fn((..._args: any[]) => Promise.resolve({ data: null, error: null }))
             }
 
             mockDb.serviceRole.mockReturnValue(mockClient)
@@ -382,10 +382,10 @@ describe('Review Center Integration', () => {
     describe('Batch Review Operations', () => {
         it('should handle bulk approval of multiple letters', async () => {
             const mockClient = {
-                from: vi.fn(() => ({
-                    update: vi.fn(() => ({
-                        in: vi.fn(() => ({
-                            select: vi.fn(() => Promise.resolve({
+                from: vi.fn((..._args: any[]) => ({
+                    update: vi.fn((..._args: any[]) => ({
+                        in: vi.fn((..._args: any[]) => ({
+                            select: vi.fn((..._args: any[]) => Promise.resolve({
                                 data: [
                                     { id: 'letter-1', status: 'approved' },
                                     { id: 'letter-2', status: 'approved' },
@@ -396,7 +396,7 @@ describe('Review Center Integration', () => {
                         }))
                     }))
                 })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
+                rpc: vi.fn((..._args: any[]) => Promise.resolve({ data: null, error: null }))
             }
 
             mockDb.serviceRole.mockReturnValue(mockClient)

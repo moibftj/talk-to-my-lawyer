@@ -1,23 +1,21 @@
-/**
- * Stuck Letter Detection Cron Job
- * POST /api/cron/check-stuck-letters
- *
- * Runs periodically to detect letters stuck in 'generating' status
- * and sends alerts to admins for manual intervention.
- *
- * RUN SCHEDULE: Every 15 minutes (recommended)
- * Vercel cron: */15 * * * *
- *
- * ENVIRONMENT VARIABLES:
- * - CRON_SECRET: Required for authentication
- * - ADMIN_EMAIL: Optional, for alert delivery
- *
- * BEHAVIOR:
- * - Finds letters in 'generating' status for > 10 minutes
- * - Sends alert email to admins with stuck letter details
- * - Marks letters as 'failed' if stuck > 1 hour (configurable)
- * - Logs all actions for audit trail
- */
+// Stuck Letter Detection Cron Job
+// POST /api/cron/check-stuck-letters
+//
+// Runs periodically to detect letters stuck in 'generating' status
+// and sends alerts to admins for manual intervention.
+//
+// RUN SCHEDULE: Every 15 minutes (recommended)
+// Cron expression: */15 * * * *
+//
+// ENVIRONMENT VARIABLES:
+// - CRON_SECRET: Required for authentication
+// - ADMIN_EMAIL: Optional, for alert delivery
+//
+// BEHAVIOR:
+// - Finds letters in 'generating' status for > 10 minutes
+// - Sends alert email to admins with stuck letter details
+// - Marks letters as 'failed' if stuck > 1 hour (configurable)
+// - Logs all actions for audit trail
 import { NextRequest, NextResponse } from "next/server"
 import { verifyCronAuth } from "@/lib/middleware/cron-auth"
 import { db } from "@/lib/db/client-factory"
@@ -222,7 +220,7 @@ async function markLetterAsFailed(
       await serviceClient.rpc("refund_letter_allowance", {
         p_user_id: letter.user_id,
         p_amount: 1
-      }).catch(err => {
+      }).catch((err: unknown) => {
         console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
       })
     }

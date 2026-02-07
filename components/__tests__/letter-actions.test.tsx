@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { LetterActions } from '../letter-actions'
+import type { Letter } from '@/lib/database.types'
 
 // Mock Next.js router
 const mockPush = vi.fn()
@@ -51,7 +52,7 @@ vi.mock('jspdf', () => ({
 global.fetch = vi.fn()
 
 describe('LetterActions Component', () => {
-  const mockLetter = {
+  const mockLetter: Letter = {
     id: 'letter-123',
     user_id: 'user-123',
     title: 'Test Letter',
@@ -60,6 +61,21 @@ describe('LetterActions Component', () => {
     intake_data: {},
     created_at: '2025-01-25T10:00:00Z',
     updated_at: '2025-01-25T10:00:00Z',
+    ai_draft_content: null,
+    final_content: null,
+    reviewed_by: null,
+    reviewed_at: null,
+    review_notes: null,
+    rejection_reason: null,
+    approved_at: null,
+    draft_metadata: null,
+    pdf_url: null,
+    claimed_by: null,
+    claimed_at: null,
+    is_attorney_reviewed: false,
+    generated_at: null,
+    generation_metadata: null,
+    generation_error: null,
   }
 
   beforeEach(() => {

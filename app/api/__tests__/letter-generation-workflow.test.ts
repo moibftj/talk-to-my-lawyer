@@ -455,7 +455,7 @@ describe('Letter Generation Workflow & Review Center', () => {
         })
 
         it('should track audit trail for all review actions', async () => {
-            const auditEvents = []
+            const auditEvents: any[] = []
 
             const logAuditEvent = (event: any) => {
                 auditEvents.push({
@@ -492,7 +492,7 @@ describe('Letter Generation Workflow & Review Center', () => {
             const canApproveLetters = (userId: string) => {
                 const profile = userProfiles[userId as keyof typeof userProfiles]
                 return profile?.role === 'admin' &&
-                    ['attorney_admin', 'super_admin'].includes(profile.admin_sub_role || '')
+                    ['attorney_admin', 'super_admin'].includes((profile as any).admin_sub_role || '')
             }
 
             expect(canReviewLetters('user-123')).toBe(false)

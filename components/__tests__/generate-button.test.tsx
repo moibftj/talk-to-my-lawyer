@@ -85,7 +85,7 @@ describe('GenerateLetterButton Component', () => {
     })
 
     it('should call navigator.vibrate with 50ms duration on touch devices', () => {
-      const mockVibrate = navigator.vibrate as vi.fn
+      const mockVibrate = navigator.vibrate as unknown as ReturnType<typeof vi.fn>
       mockVibrate.mockClear()
 
       // Simulate touch device

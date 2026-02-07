@@ -90,7 +90,7 @@ describe('Admin Session Management', () => {
     })
 
     it('should create session with secure=false in development', async () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', { value: 'development', writable: true })
 
       await createAdminSession('user-123', 'admin@example.com', 'super_admin')
 

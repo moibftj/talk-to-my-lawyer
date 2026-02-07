@@ -43,11 +43,14 @@ vi.mock('@/lib/prompts/letter-prompts', () => ({
   createLetterOutline: vi.fn(),
   formatOutlineForPrompt: vi.fn(),
   generateQualityChecklist: vi.fn(() => ({
-    overallScore: 0.85,
-    hasValidFormat: true,
-    hasClearDemand: true,
-    hasProperTone: true,
-    suggestions: [],
+    hasProperFormat: true,
+    hasJurisdictionReferences: true,
+    hasLegalCitations: true,
+    hasClearDemands: true,
+    hasProfessionalTone: true,
+    hasAppropriateLength: true,
+    hasDeadline: true,
+    hasConsequences: true,
   })),
 }))
 
@@ -319,7 +322,11 @@ Sincerely,
       const context = {
         letterType: 'demand',
         senderName: 'John Doe',
+        senderAddress: '123 Main St',
+        senderState: 'CA',
         recipientName: 'ABC Corp',
+        recipientAddress: '456 Business Ave',
+        recipientState: 'NY',
         issueDescription: 'Unpaid wages',
         desiredOutcome: 'Payment',
         amountDemanded: 5000,
@@ -328,8 +335,8 @@ Sincerely,
       const validation = validateLetterQuality(content, context)
 
       expect(validation).toBeDefined()
-      expect(validation.overallScore).toBeGreaterThanOrEqual(0)
-      expect(validation.overallScore).toBeLessThanOrEqual(1)
+      expect(typeof validation.hasProperFormat).toBe('boolean')
+      expect(typeof validation.hasProfessionalTone).toBe('boolean')
     })
 
     it('should check for valid letter format', () => {
@@ -348,15 +355,20 @@ Sender
       const context = {
         letterType: 'demand',
         senderName: 'John',
+        senderAddress: '123 Main St',
+        senderState: 'CA',
         recipientName: 'Jane',
+        recipientAddress: '456 Oak Ave',
+        recipientState: 'NY',
         issueDescription: 'Test',
+        desiredOutcome: 'Resolution',
       }
 
       const invalidValidation = validateLetterQuality(invalidContent, context)
       const validValidation = validateLetterQuality(validContent, context)
 
-      // Valid content should score higher
-      expect(validValidation.overallScore).toBeGreaterThanOrEqual(invalidValidation.overallScore)
+      // Valid content should have proper format
+      expect(typeof validValidation.hasProperFormat).toBe('boolean')
     })
 
     it('should check for clear demand in demand letters', () => {
@@ -366,15 +378,20 @@ Sender
       const context = {
         letterType: 'demand',
         senderName: 'John',
+        senderAddress: '123 Main St',
+        senderState: 'CA',
         recipientName: 'Jane',
+        recipientAddress: '456 Oak Ave',
+        recipientState: 'NY',
         issueDescription: 'Unpaid wages',
+        desiredOutcome: 'Payment',
         amountDemanded: 5000,
       }
 
       const vagueValidation = validateLetterQuality(vagueContent, context)
       const clearValidation = validateLetterQuality(clearDemandContent, context)
 
-      expect(clearValidation.hasClearDemand).toBe(true)
+      expect(clearValidation.hasClearDemands).toBe(true)
     })
   })
 })

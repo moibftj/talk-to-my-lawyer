@@ -410,7 +410,7 @@ describe('Authentication Flows', () => {
       const resetPasswordLimit = [10, '1 m']
       const loginLimit = [5, '15 m']
 
-      expect(resetPasswordLimit[0]).toBeGreaterThan(loginLimit[0])
+      expect(resetPasswordLimit[0] as number).toBeGreaterThan(loginLimit[0] as number)
     })
   })
 })

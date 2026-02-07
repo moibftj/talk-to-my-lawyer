@@ -10,7 +10,7 @@ import { POST, PATCH } from '../admin/coupons/create/route'
 
 // Helper to create a Next.js-compatible request
 function createNextRequest(url: string, options?: RequestInit): any {
-  const request = new Request(url, options)
+  const request = new Request(url, options) as any
   request.nextUrl = new URL(url)
   return request
 }

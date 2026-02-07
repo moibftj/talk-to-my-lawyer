@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { POST, GET } from '../subscriptions/check-allowance/route'
+import { GET } from '../subscriptions/check-allowance/route'
 import { POST as ActivatePOST } from '../subscriptions/activate/route'
 import { GET as BillingGET } from '../subscriptions/billing-history/route'
 
@@ -179,7 +179,7 @@ describe('Subscription & Allowance API', () => {
       }
 
       // Make the update work properly
-      fromMock.mockImplementation((table: string) => {
+      ;(fromMock as ReturnType<typeof vi.fn>).mockImplementation((table: string) => {
         if (table === 'subscriptions') {
           return {
             select: selectMock,
