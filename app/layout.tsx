@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Toaster } from 'sonner'
 import "./globals.css"
 
 const DEFAULT_APP_URL = 'https://www.talk-to-my-lawyer.com'
@@ -44,6 +45,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

@@ -11,6 +11,7 @@ import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -133,6 +134,7 @@ export default function LoginPage() {
       }
 
       setError(friendlyError)
+      toast.error(friendlyError)
       setLoading(false)
     }
   }
