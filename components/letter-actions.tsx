@@ -82,14 +82,10 @@ export function LetterActions({ letter }: { letter: Letter }) {
   };
 
   const handleDownloadPDF = () => {
-    if (letter.pdf_url) {
-      window.open(letter.pdf_url, "_blank");
-    } else {
-      window.open(`/api/letters/${letter.id}/pdf`, "_blank");
-    }
+    window.open(`/api/letters/${letter.id}/pdf`, "_blank");
   };
 
-  const isPdfGenerating = letter.status === "approved" && !letter.pdf_url;
+  const isPdfGenerating = letter.status === "approved" && !letter.pdf_storage_path && !letter.pdf_url;
 
   const handleSendEmail = async () => {
     if (!recipientEmail) {

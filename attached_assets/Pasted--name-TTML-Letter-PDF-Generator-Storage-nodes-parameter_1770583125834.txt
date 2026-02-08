@@ -1,0 +1,434 @@
+{
+  "name": "TTML - Letter PDF Generator & Storage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-pdf",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "id": "pdf-webhook-trigger",
+      "name": "PDF Generation Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1200, 300],
+      "webhookId": "pdf-generation-webhook",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and validate incoming request\nconst inputData = $input.first().json;\nconst body = inputData.body || inputData;\n\nconst letterId = body.letterId;\nconst userId = body.userId;\nconst source = body.source || 'manual';\n\nif (!letterId) {\n  throw new Error('Missing required field: letterId');\n}\n\nconsole.log(`[PDF Workflow] Starting PDF generation for letter: ${letterId}`);\n\nreturn {\n  json: {\n    letterId,\n    userId: userId || null,\n    source,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "validate-input",
+      "name": "Validate Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-980, 300],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "letters",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $json.letterId }},select=id,title,letter_type,ai_draft_content,final_content,status,intake_data,created_at,approved_at,user_id,reviewed_by"
+      },
+      "id": "fetch-letter",
+      "name": "Fetch Letter from Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-760, 300]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "profiles",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $('Fetch Letter from Supabase').item.json.user_id }},select=id,full_name,email"
+      },
+      "id": "fetch-profile",
+      "name": "Fetch User Profile",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-540, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build professional legal letter HTML matching TTML letterhead style\nconst letter = $('Fetch Letter from Supabase').first().json;\nconst profile = $('Fetch User Profile').first().json;\n\nif (!letter || !letter.id) {\n  throw new Error('Letter not found in database');\n}\n\nconst content = letter.final_content || letter.ai_draft_content || '';\nconst intake = letter.intake_data || {};\nconst title = letter.title || 'Legal Letter';\nconst isDraft = letter.status !== 'approved';\nconst senderName = profile?.full_name || intake.senderName || 'Sender';\nconst recipientName = intake.recipientName || 'Recipient';\nconst recipientAddress = intake.recipientAddress || '';\nconst recipientCompany = intake.recipientCompany || '';\nconst refNumber = `TTML-${letter.id.substring(0, 8).toUpperCase()}`;\n\n// Format date\nconst dateStr = new Date(letter.approved_at || letter.created_at).toLocaleDateString('en-US', {\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\n// Escape HTML entities\nfunction escapeHtml(text) {\n  if (!text) return '';\n  return String(text)\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;')\n    .replace(/'/g, '&#39;');\n}\n\n// Convert content newlines to HTML paragraphs\nfunction contentToHtml(text) {\n  if (!text) return '';\n  return text\n    .split('\\n\\n')\n    .map(para => `<p style=\"margin: 0 0 12px 0; line-height: 1.6;\">${escapeHtml(para).replace(/\\n/g, '<br>')}</p>`)\n    .join('');\n}\n\nconst watermarkHtml = isDraft ? `\n  <div style=\"position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; color: rgba(200, 200, 200, 0.3); font-weight: bold; z-index: -1; pointer-events: none;\">\n    DRAFT\n  </div>\n` : '';\n\nconst html = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    @page {\n      size: letter;\n      margin: 25mm 20mm 25mm 25mm;\n    }\n    body {\n      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;\n      font-size: 11pt;\n      color: #333333;\n      line-height: 1.6;\n      margin: 0;\n      padding: 0;\n    }\n    .letterhead-bar {\n      background-color: #1a1a2e;\n      height: 8mm;\n      width: 100%;\n      margin-bottom: 12mm;\n    }\n    .letterhead-title {\n      font-size: 18pt;\n      font-weight: bold;\n      color: #1a1a2e;\n      margin: 0 0 2mm 0;\n      letter-spacing: 0.5px;\n    }\n    .letterhead-subtitle {\n      font-size: 9pt;\n      color: #666666;\n      margin: 0 0 8mm 0;\n    }\n    .letterhead-divider {\n      border: none;\n      border-top: 0.5px solid #e0e0e0;\n      margin: 0 0 10mm 0;\n    }\n    .date {\n      font-size: 10pt;\n      margin-bottom: 12mm;\n    }\n    .recipient-block {\n      margin-bottom: 8mm;\n    }\n    .recipient-name {\n      font-weight: bold;\n    }\n    .subject-line {\n      font-weight: bold;\n      font-size: 11pt;\n      margin: 8mm 0 10mm 0;\n    }\n    .letter-body {\n      font-size: 10pt;\n    }\n    .closing-block {\n      margin-top: 15mm;\n    }\n    .sender-name {\n      font-weight: bold;\n      margin-top: 15mm;\n    }\n    .footer {\n      position: fixed;\n      bottom: 0;\n      left: 0;\n      right: 0;\n      border-top: 0.3px solid #e0e0e0;\n      padding-top: 3mm;\n      font-size: 8pt;\n      color: #666666;\n      display: flex;\n      justify-content: space-between;\n    }\n    .footer-ref { float: left; }\n    .footer-review { float: right; }\n  </style>\n</head>\n<body>\n  ${watermarkHtml}\n\n  <!-- Letterhead -->\n  <div class=\"letterhead-bar\"></div>\n  <div class=\"letterhead-title\">TALK-TO-MY-LAWYER</div>\n  <div class=\"letterhead-subtitle\">Professional Legal Letter Services</div>\n  <hr class=\"letterhead-divider\">\n\n  <!-- Date -->\n  <div class=\"date\">${escapeHtml(dateStr)}</div>\n\n  <!-- Recipient -->\n  <div class=\"recipient-block\">\n    <div class=\"recipient-name\">${escapeHtml(recipientName)}</div>\n    ${recipientCompany ? `<div>${escapeHtml(recipientCompany)}</div>` : ''}\n    ${recipientAddress ? recipientAddress.split('\\n').map(line => `<div>${escapeHtml(line)}</div>`).join('') : ''}\n  </div>\n\n  <!-- Subject -->\n  ${title ? `<div class=\"subject-line\">Re: ${escapeHtml(title)}</div>` : ''}\n\n  <!-- Body -->\n  <div class=\"letter-body\">\n    ${contentToHtml(content)}\n  </div>\n\n  <!-- Closing -->\n  <div class=\"closing-block\">\n    <p>Sincerely,</p>\n    <div class=\"sender-name\">${escapeHtml(senderName)}</div>\n  </div>\n\n  <!-- Footer -->\n  <div class=\"footer\">\n    <span class=\"footer-ref\">Ref: ${escapeHtml(refNumber)}</span>\n    <span class=\"footer-review\">This letter has been reviewed by a licensed attorney.</span>\n  </div>\n</body>\n</html>`;\n\n// Generate safe filename\nconst safeTitle = title.replace(/[^a-z0-9]/gi, '_').substring(0, 50) || 'letter';\nconst fileName = `${letter.id}/${safeTitle}.pdf`;\n\nconsole.log(`[PDF Workflow] Built HTML for letter: ${letter.id}, content length: ${content.length}`);\n\nreturn {\n  json: {\n    letterId: letter.id,\n    userId: letter.user_id,\n    title: title,\n    fileName: fileName,\n    storagePath: `letters/${fileName}`,\n    html: html,\n    isDraft: isDraft,\n    refNumber: refNumber,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "build-html",
+      "name": "Build Letter HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-320, 300],
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://html2pdf.app/api/v1/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ html: $json.html, apiKey: '(YOUR_HTML2PDF_API_KEY)', options: { format: 'Letter', margin: { top: '25mm', right: '20mm', bottom: '25mm', left: '25mm' }, printBackground: true } }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "convert-to-pdf",
+      "name": "Convert HTML to PDF",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-100, 200],
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ALTERNATIVE: Generate PDF using built-in jsPDF approach\n// This Code node serves as a fallback if the HTML-to-PDF API is not available\n// It uses a simpler text-based approach\n\nconst htmlData = $('Build Letter HTML').first().json;\n\n// If the HTTP PDF conversion succeeded, pass through\nconst httpResult = $('Convert HTML to PDF').first();\nif (httpResult && httpResult.binary && httpResult.binary.data) {\n  console.log('[PDF Workflow] Using HTML-to-PDF API result');\n  return {\n    json: {\n      letterId: htmlData.letterId,\n      userId: htmlData.userId,\n      fileName: htmlData.fileName,\n      storagePath: htmlData.storagePath,\n      pdfSource: 'html2pdf-api',\n      timestamp: new Date().toISOString()\n    },\n    binary: httpResult.binary\n  };\n}\n\n// Fallback: create a simple text-based PDF using n8n's built-in capabilities\nconsole.log('[PDF Workflow] HTML-to-PDF API not available, using fallback');\n\nreturn {\n  json: {\n    letterId: htmlData.letterId,\n    userId: htmlData.userId,\n    fileName: htmlData.fileName,\n    storagePath: htmlData.storagePath,\n    html: htmlData.html,\n    pdfSource: 'fallback',\n    needsAppGeneration: true,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "process-pdf-result",
+      "name": "Process PDF Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [120, 300],
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://nomiiqzxaxyxnxndvkbe.supabase.co/storage/v1/object/letters/' + $json.storagePath }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/pdf"
+            },
+            {
+              "name": "x-upsert",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "upload-to-storage",
+      "name": "Upload PDF to Supabase Storage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [340, 200],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "letters",
+        "filterType": "string",
+        "filterString": "=id=eq.{{ $('Build Letter HTML').item.json.letterId }}",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "pdf_storage_path",
+              "fieldValue": "={{ $('Build Letter HTML').item.json.storagePath }}"
+            },
+            {
+              "fieldId": "pdf_generated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "update-letter-record",
+      "name": "Update Letter with PDF Path",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [560, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, letterId: $('Build Letter HTML').item.json.letterId, storagePath: $('Build Letter HTML').item.json.storagePath, pdfGeneratedAt: new Date().toISOString(), message: 'PDF generated and uploaded successfully' }) }}",
+        "options": {}
+      },
+      "id": "return-success",
+      "name": "Return Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [780, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-letter-exists",
+              "leftValue": "={{ $('Fetch Letter from Supabase').item.json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-letter-found",
+      "name": "Letter Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-540, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: 'Letter not found', letterId: $('Validate Input').item.json.letterId }) }}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "id": "return-not-found",
+      "name": "Return Not Found",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [-320, 560]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-error",
+              "leftValue": "={{ $json.error }}",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-upload-error",
+      "name": "Upload Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [560, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: 'Failed to upload PDF to storage', letterId: $('Build Letter HTML').item.json.letterId, details: $json.error || 'Unknown upload error' }) }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "return-upload-error",
+      "name": "Return Upload Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [780, 420]
+    }
+  ],
+  "connections": {
+    "PDF Generation Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Input": {
+      "main": [
+        [
+          {
+            "node": "Fetch Letter from Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Letter from Supabase": {
+      "main": [
+        [
+          {
+            "node": "Letter Found?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch User Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch User Profile": {
+      "main": [
+        [
+          {
+            "node": "Build Letter HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Letter HTML": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to PDF": {
+      "main": [
+        [
+          {
+            "node": "Process PDF Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process PDF Result": {
+      "main": [
+        [
+          {
+            "node": "Upload PDF to Supabase Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload PDF to Supabase Storage": {
+      "main": [
+        [
+          {
+            "node": "Update Letter with PDF Path",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Upload Succeeded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Letter with PDF Path": {
+      "main": [
+        [
+          {
+            "node": "Return Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Letter Found?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Return Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Succeeded?": {
+      "main": [
+        [
+          {
+            "node": "Return Upload Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

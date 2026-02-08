@@ -365,16 +365,11 @@ export function isN8nPdfConfigured(): boolean {
 export interface N8nPdfParams {
   letterId: string
   userId: string
-  title: string
-  finalContent: string
-  letterType: string
-  approvedAt: string
-  reviewedBy?: string
 }
 
 export async function generatePdfViaN8n(
   params: N8nPdfParams
-): Promise<{ pdfUrl: string; success: boolean }> {
+): Promise<{ success: boolean; storagePath?: string; letterId?: string }> {
   if (!n8nPdfConfig.isConfigured || !n8nPdfConfig.webhookUrl) {
     throw new Error('n8n PDF webhook is not configured. Set N8N_PDF_WEBHOOK_URL environment variable.')
   }
@@ -401,9 +396,10 @@ export async function generatePdfViaN8n(
         method: 'POST',
         headers,
         body: JSON.stringify({
-          ...params,
-          timestamp: new Date().toISOString(),
+          letterId: params.letterId,
+          userId: params.userId,
           source: 'talk-to-my-lawyer',
+          timestamp: new Date().toISOString(),
         }),
         signal: controller.signal,
       })
@@ -439,12 +435,14 @@ export async function generatePdfViaN8n(
       }
 
       console.log('[n8n-pdf] PDF generated successfully for:', params.letterId, {
-        pdfUrl: result.pdfUrl,
+        storagePath: result.storagePath,
+        pdfGeneratedAt: result.pdfGeneratedAt,
       })
 
       return {
-        pdfUrl: result.pdfUrl || '',
         success: true,
+        storagePath: result.storagePath,
+        letterId: result.letterId,
       }
 
     } catch (error) {

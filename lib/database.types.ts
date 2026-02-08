@@ -92,6 +92,8 @@ export interface Letter {
   approved_at: string | null;
   draft_metadata: Record<string, unknown> | null;
   pdf_url: string | null;
+  pdf_storage_path: string | null;
+  pdf_generated_at: string | null;
   claimed_by: string | null;
   claimed_at: string | null;
   is_attorney_reviewed: boolean;

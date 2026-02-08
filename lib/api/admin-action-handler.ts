@@ -172,24 +172,10 @@ export async function processLetterAction(
       generatePdfViaN8n({
         letterId,
         userId: letter.user_id,
-        title: letter.title || 'Legal Letter',
-        finalContent: bodyData.finalContent || letter.final_content || letter.ai_draft_content || '',
-        letterType: letter.letter_type || 'general',
-        approvedAt: new Date().toISOString(),
-        reviewedBy: bodyData.reviewedBy,
-      }).then(async (result) => {
-        if (result.success && result.pdfUrl) {
-          const supabase = (await import('@/lib/supabase/server')).createClient
-          const client = await supabase()
-          await client.from('letters').update({
-            pdf_url: result.pdfUrl,
-            updated_at: new Date().toISOString()
-          }).eq('id', letterId)
-          console.log(`[Admin] PDF generated for letter ${letterId}: ${result.pdfUrl}`)
-        }
+      }).then((result) => {
+        console.log(`[Admin] PDF generation triggered for letter ${letterId}:`, result.success ? 'success' : 'failed')
       }).catch((error) => {
         console.error(`[Admin] PDF generation failed for letter ${letterId}:`, error)
-        // Don't block - server-side PDF fallback is available at /api/letters/[id]/pdf
       })
     } else {
       console.log(`[Admin] n8n PDF webhook not configured, skipping PDF generation for letter ${letterId}`)

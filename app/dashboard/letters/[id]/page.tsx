@@ -92,7 +92,7 @@ export default async function LetterDetailPage({
       icon: letter.status === "approved" ? "✓" : "○",
       description:
         letter.status === "approved"
-          ? letter.pdf_url
+          ? (letter.pdf_storage_path || letter.pdf_url)
             ? "Ready to download"
             : "PDF is being generated..."
           : "Waiting for approval",
@@ -223,9 +223,9 @@ export default async function LetterDetailPage({
                   <p className="text-sm text-success/80">
                     Your letter has been approved and is ready to use.
                   </p>
-                  {letter.pdf_url ? (
+                  {(letter.pdf_storage_path || letter.pdf_url) ? (
                     <a
-                      href={letter.pdf_url}
+                      href={`/api/letters/${letter.id}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-success text-white text-sm font-medium rounded-lg hover:bg-success/90 transition-colors"

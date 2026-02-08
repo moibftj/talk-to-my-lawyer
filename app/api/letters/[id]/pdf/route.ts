@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth/authenticate-user'
 import { errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(
   _request: NextRequest,
@@ -12,7 +13,6 @@ export async function GET(
 
     const { user, supabase } = await requireAuth()
 
-    // Fetch letter and verify ownership
     const { data: letter, error: letterError } = await supabase
       .from('letters')
       .select('*, profiles(full_name)')
@@ -23,7 +23,6 @@ export async function GET(
       return errorResponses.notFound('Letter')
     }
 
-    // Verify user can access this letter (owner or admin)
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -38,9 +37,37 @@ export async function GET(
       return errorResponses.forbidden()
     }
 
-    const content = letter.final_content || letter.ai_draft_content || ''
     const safeTitle = letter.title?.trim() || 'letter'
     const fileName = `${safeTitle.replace(/[^a-z0-9]/gi, '_') || 'letter'}.pdf`
+
+    if (letter.pdf_storage_path && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const serviceClient = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        )
+        const { data: fileData, error: downloadError } = await serviceClient
+          .storage
+          .from('letters')
+          .download(letter.pdf_storage_path)
+
+        if (!downloadError && fileData) {
+          const buffer = Buffer.from(await fileData.arrayBuffer())
+          return new NextResponse(buffer, {
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Disposition': `inline; filename="${fileName}"`,
+              'Cache-Control': 'no-cache',
+            }
+          })
+        }
+        console.warn(`[PDF] Failed to download from storage, falling back to jsPDF:`, downloadError)
+      } catch (storageError) {
+        console.warn(`[PDF] Storage download error, falling back to jsPDF:`, storageError)
+      }
+    }
+
+    const content = letter.final_content || letter.ai_draft_content || ''
 
     // Determine footer text based on reviewer qualification
     let footerReviewText = 'This document has been reviewed and approved for professional formatting and clarity.'

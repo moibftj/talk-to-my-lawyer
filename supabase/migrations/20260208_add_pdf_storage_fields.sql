@@ -1,0 +1,2 @@
+ALTER TABLE letters ADD COLUMN IF NOT EXISTS pdf_storage_path TEXT;
+ALTER TABLE letters ADD COLUMN IF NOT EXISTS pdf_generated_at TIMESTAMPTZ;

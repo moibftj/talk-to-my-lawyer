@@ -93,12 +93,12 @@ export default async function MyLettersPage() {
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[letter.status]}`}>
                         {statusLabels[letter.status] || letter.status}
                       </span>
-                      {letter.status === 'approved' && letter.pdf_url && (
+                      {letter.status === 'approved' && (letter.pdf_storage_path || letter.pdf_url) && (
                         <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                       )}
-                      {letter.status === 'approved' && !letter.pdf_url && (
+                      {letter.status === 'approved' && !letter.pdf_storage_path && !letter.pdf_url && (
                         <span className="text-xs text-muted-foreground italic">PDF generating</span>
                       )}
                     </div>
