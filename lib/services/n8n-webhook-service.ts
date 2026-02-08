@@ -1,12 +1,11 @@
 /**
  * n8n Webhook Service
  *
- * Primary letter generation integration via n8n workflow.
- * n8n handles: jurisdiction research (GPT-4o + Google Search),
+ * Handles n8n-only workflows for letter generation and PDF generation.
+ * Letter generation: jurisdiction research (GPT-4o + Google Search),
  * letter generation with state-specific legal context,
  * and direct Supabase update (ai_draft_content, status, research_data).
- *
- * The app falls back to direct OpenAI generation if n8n is unavailable.
+ * PDF generation: converts approved letters to formatted PDFs via n8n workflow.
  */
 
 export interface N8nLetterFormData {
@@ -348,4 +347,120 @@ export function notifyN8nLetterFailed(
     status: 'failed',
     error,
   }).catch(() => {})
+}
+
+
+export const n8nPdfConfig = {
+  get webhookUrl() { return process.env.N8N_PDF_WEBHOOK_URL },
+  get authKey() { return process.env.N8N_PDF_WEBHOOK_AUTH_KEY },
+  get isConfigured() { return Boolean(process.env.N8N_PDF_WEBHOOK_URL) },
+  timeout: 120000,
+  maxRetries: 2,
+}
+
+export function isN8nPdfConfigured(): boolean {
+  return n8nPdfConfig.isConfigured
+}
+
+export interface N8nPdfParams {
+  letterId: string
+  userId: string
+  title: string
+  finalContent: string
+  letterType: string
+  approvedAt: string
+  reviewedBy?: string
+}
+
+export async function generatePdfViaN8n(
+  params: N8nPdfParams
+): Promise<{ pdfUrl: string; success: boolean }> {
+  if (!n8nPdfConfig.isConfigured || !n8nPdfConfig.webhookUrl) {
+    throw new Error('n8n PDF webhook is not configured. Set N8N_PDF_WEBHOOK_URL environment variable.')
+  }
+
+  const webhookUrl = n8nPdfConfig.webhookUrl
+  console.log('[n8n-pdf] Sending PDF generation request for:', params.letterId)
+
+  for (let attempt = 1; attempt <= n8nPdfConfig.maxRetries; attempt++) {
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), n8nPdfConfig.timeout)
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Webhook-Source': 'talk-to-my-lawyer',
+        'X-Letter-Id': params.letterId,
+      }
+
+      if (n8nPdfConfig.authKey) {
+        headers['Authorization'] = `Bearer ${n8nPdfConfig.authKey}`
+      }
+
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...params,
+          timestamp: new Date().toISOString(),
+          source: 'talk-to-my-lawyer',
+        }),
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('n8n PDF workflow not found. Ensure the workflow is active and listening.')
+        }
+
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('n8n PDF webhook authentication failed. Check N8N_PDF_WEBHOOK_AUTH_KEY.')
+        }
+
+        if (response.status >= 500) {
+          console.warn(`[n8n-pdf] Server error (${response.status}), attempt ${attempt}/${n8nPdfConfig.maxRetries}`)
+          if (attempt < n8nPdfConfig.maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000
+            await new Promise(resolve => setTimeout(resolve, delay))
+            continue
+          }
+        }
+
+        const errorText = await response.text()
+        throw new Error(`n8n PDF request failed (${response.status}): ${errorText}`)
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || result.message || 'n8n PDF generation failed')
+      }
+
+      console.log('[n8n-pdf] PDF generated successfully for:', params.letterId, {
+        pdfUrl: result.pdfUrl,
+      })
+
+      return {
+        pdfUrl: result.pdfUrl || '',
+        success: true,
+      }
+
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn(`[n8n-pdf] Request timeout, attempt ${attempt}/${n8nPdfConfig.maxRetries}`)
+        if (attempt < n8nPdfConfig.maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+        throw new Error('n8n PDF request timed out after multiple attempts')
+      }
+
+      throw error
+    }
+  }
+
+  throw new Error('n8n PDF generation failed after all retries')
 }

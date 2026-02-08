@@ -21,22 +21,23 @@ The application is built with Next.js 16.x using the App Router and TypeScript. 
 - **Authentication**: Supabase Auth manages user accounts, complemented by JWT-signed sessions for admin portals.
 - **Database**: Supabase (PostgreSQL) serves as the primary data store.
 - **Payments**: Stripe integration, managed via the Replit Connector, handles all payment processing.
-- **AI Letter Generation**: The primary method uses an n8n workflow for generating letters, incorporating jurisdiction-specific research using GPT-4o. A direct OpenAI (gpt-4o) integration acts as a fallback.
+- **AI Letter Generation**: n8n workflow is the ONLY generation method, incorporating jurisdiction-specific research using GPT-4o. No OpenAI fallback.
 - **Email Service**: Resend is used for sending templated emails, queued for efficient delivery.
 - **Rate Limiting**: Upstash Redis is implemented for API rate limiting.
 - **Admin Portals**: A dual-portal system exists:
     - **Super Admin Gateway**: Provides full system access (analytics, users, coupons, commissions, letter review).
     - **Attorney Portal**: Restricted access for letter review only.
     - Both portals share a login endpoint with three-factor authentication and role-based redirects.
-- **Letter Workflow**: Users submit requests, letters are generated (n8n primary, OpenAI fallback), admins are notified, review letters (start, approve, reject), and users download approved PDFs.
+- **Letter Workflow**: Users submit requests → n8n generates letter (with jurisdiction research) → admins are notified → super admin assigns to attorney → attorney/super admin reviews, edits, approves/rejects via shared ReviewModal → on approval, n8n PDF webhook generates PDF → pdf_url saved to letter → subscriber downloads from My Letters area.
+- **PDF Generation**: n8n workflow (primary, triggered on approval via `N8N_PDF_WEBHOOK_URL`), with server-side jsPDF fallback at `/api/letters/[id]/pdf`.
 - **Access Control**: Granular access control functions (`requireAdminAuth`, `requireSuperAdminAuth`, `requireAttorneyAdminAccess`) manage permissions across admin functionalities.
 - **Letter Assignment**: Super admins can assign letters to specific attorneys for review.
 
 ### External Dependencies
 - **Supabase**: Database and Authentication services.
 - **Stripe**: Payment processing, integrated via Replit Connector (`stripe-replit-sync`).
-- **n8n**: Workflow automation for primary AI letter generation and jurisdiction research.
-- **OpenAI**: AI model (GPT-4o) for letter generation (fallback and within n8n).
+- **n8n**: Workflow automation for AI letter generation (jurisdiction research + GPT-4o) and PDF generation.
+- **OpenAI**: AI model (GPT-4o) used within n8n workflow for letter generation.
 - **Resend**: Email delivery service.
 - **Upstash Redis**: Rate limiting.
 - **Replit AI Integrations**: Provides managed OpenAI API keys and base URLs.
