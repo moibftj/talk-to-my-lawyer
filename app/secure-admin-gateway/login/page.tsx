@@ -41,10 +41,9 @@ export default function AdminLoginPage() {
         throw new Error(data.error || 'Authentication failed')
       }
 
-      // Use redirectUrl from response (handles both super admin and attorney admin routing)
       const redirectUrl = data.redirectUrl || '/secure-admin-gateway/dashboard'
-      // Use window.location.href for reliable navigation with secure cookies
-      window.location.href = redirectUrl
+      const sessionUrl = `/api/admin-auth/session?token=${encodeURIComponent(data.token)}&redirect=${encodeURIComponent(redirectUrl)}`
+      window.location.href = sessionUrl
 
     } catch (err: any) {
       console.error('[AdminLogin] Error:', err)

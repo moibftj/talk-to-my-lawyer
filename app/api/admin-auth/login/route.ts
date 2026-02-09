@@ -79,29 +79,20 @@ export async function POST(request: NextRequest) {
       ? '/attorney-portal/review'
       : '/secure-admin-gateway/dashboard'
 
-    const response = NextResponse.json({
-      success: true,
-      message: 'Admin authentication successful',
-      redirectUrl,
-      subRole
-    })
-
-    response.cookies.set(ADMIN_SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: SESSION_EXPIRY_MINUTES * 60,
-      path: '/'
-    })
-
-    console.log('[AdminAuth] Admin session created:', {
+    console.log('[AdminAuth] Admin authenticated, issuing token:', {
       userId: result.userId,
       email,
       subRole,
       timestamp: new Date().toISOString()
     })
 
-    return response
+    return NextResponse.json({
+      success: true,
+      message: 'Admin authentication successful',
+      redirectUrl,
+      subRole,
+      token
+    })
 
   } catch (error) {
     console.error('[AdminAuth] Login error:', error)
