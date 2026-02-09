@@ -34,7 +34,7 @@ export const stripe = {
   get publishableKey() { return process.env.STRIPE_PUBLISHABLE_KEY || '' },
   get webhookSecret() { return process.env.STRIPE_WEBHOOK_SECRET || '' },
   get isConfigured() {
-    return Boolean(process.env.STRIPE_SECRET_KEY || process.env.REPLIT_CONNECTORS_HOSTNAME)
+    return Boolean(process.env.STRIPE_SECRET_KEY)
   },
 } as const
 
