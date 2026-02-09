@@ -43,9 +43,9 @@ export async function createAdminSession(
   const cookieStore = await cookies()
   cookieStore.set(ADMIN_SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: SESSION_EXPIRY_MINUTES * 60, // Convert to seconds
+    secure: true,
+    sameSite: 'none',
+    maxAge: SESSION_EXPIRY_MINUTES * 60,
     path: '/'
   })
 
@@ -112,8 +112,8 @@ export async function verifyAdminSession(): Promise<AdminSession | null> {
 
     cookieStore.set(ADMIN_SESSION_COOKIE, newToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none',
       maxAge: SESSION_EXPIRY_MINUTES * 60,
       path: '/'
     })
