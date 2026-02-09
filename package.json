@@ -103,7 +103,7 @@
     "date-fns": "latest",
     "drizzle-zod": "^0.8.3",
     "input-otp": "1.4.2",
-    "jspdf": "^4.0.0",
+    "jspdf": "^4.1.0",
     "lucide-react": "^0.454.0",
     "motion": "^12.29.0",
     "nanoid": "^5.1.6",
