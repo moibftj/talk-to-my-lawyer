@@ -120,10 +120,14 @@ export async function getStripeSync(): Promise<any> {
     throw new Error('[Stripe] DATABASE_URL is required for StripeSync')
   }
 
+  const syncDbUrl = databaseUrl.includes('sslmode=')
+    ? databaseUrl.replace(/sslmode=[^&]+/, 'sslmode=no-verify')
+    : databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'sslmode=no-verify'
+
   stripeSyncInstance = new StripeSync({
     stripeSecretKey: secretKey,
     poolConfig: {
-      connectionString: databaseUrl,
+      connectionString: syncDbUrl,
     },
   })
 

@@ -54,7 +54,10 @@ async function initStripe() {
 
     if (isReplit) {
       const { runMigrations } = await import('stripe-replit-sync')
-      await runMigrations({ databaseUrl })
+      const dbUrlForSync = databaseUrl.includes('sslmode=')
+        ? databaseUrl.replace(/sslmode=[^&]+/, 'sslmode=no-verify')
+        : databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'sslmode=no-verify'
+      await runMigrations({ databaseUrl: dbUrlForSync })
       console.log('[Instrumentation] Stripe sync migrations completed')
 
       const { getStripeSync } = await import('./lib/stripe/client')
