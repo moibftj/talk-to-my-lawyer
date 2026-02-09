@@ -9,7 +9,7 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-N8N_WEBHOOK_URL = "https://designtec.app.n8n.cloud/webhook-test/generate-letter"
+N8N_WEBHOOK_URL = "https://designtec.app.n8n.cloud/webhook/legal-letter-submission"
 
 [userenv.development]
 NEXT_PUBLIC_SITE_URL = "https://a1df3ad0-e0d9-4c8b-8dd1-cfb3898fc241-00-4dds6dc7auhz.pike.replit.dev"
