@@ -2,56 +2,40 @@
  * n8n Webhook Service
  *
  * Handles n8n-only workflows for letter generation and PDF generation.
- * Letter generation: jurisdiction research (GPT-4o + Google Search),
+ * Letter generation: jurisdiction research (GPT-4o + Perplexity/SerpAPI),
  * letter generation with state-specific legal context,
- * and direct Supabase update (ai_draft_content, status, research_data).
+ * and direct Supabase update (letter_content, status, statutes_cited, etc.).
  * PDF generation: converts approved letters to formatted PDFs via n8n workflow.
+ *
+ * IMPORTANT: The n8n workflow expects a nested payload format:
+ * { letterType: "Demand Letter", letterId: "uuid", intakeData: { senderName, ... } }
+ * n8n uses responseMode: "lastNode" so the response is the Supabase update result.
+ * n8n saves directly to Supabase (letter_content, subject, statutes_cited, etc.)
  */
+
+const LETTER_TYPE_MAP: Record<string, string> = {
+  'demand_letter': 'Demand Letter',
+  'cease_desist': 'Cease & Desist',
+  'contract_breach': 'Contract Breach',
+  'eviction_notice': 'Eviction Notice',
+  'employment_dispute': 'Employment Dispute',
+  'consumer_complaint': 'Consumer Complaint',
+}
+
+export function mapLetterTypeForN8n(snakeCaseType: string): string {
+  return LETTER_TYPE_MAP[snakeCaseType] || snakeCaseType
+}
 
 export interface N8nLetterFormData {
   letterType: string
   letterId: string
   userId: string
-
-  senderName: string
-  senderAddress: string
-  senderState: string
-  senderEmail?: string
-  senderPhone?: string
-
-  recipientName: string
-  recipientAddress: string
-  recipientState: string
-  recipientEmail?: string
-  recipientPhone?: string
-
-  issueDescription: string
-  desiredOutcome: string
-  additionalDetails?: string
-
-  amountDemanded?: number
-  deadline?: string
-  incidentDate?: string
-  courtType?: string
-}
-
-export interface N8nGenerationResponse {
-  success: boolean
-  generatedContent?: string
-  letterId?: string
-  status?: string
-  researchApplied?: boolean
-  state?: string
-  error?: string
-  message?: string
+  intakeData: Record<string, unknown>
 }
 
 export interface N8nGenerationResult {
-  generatedContent: string
   letterId: string
   status: string
-  researchApplied: boolean
-  state?: string
   supabaseUpdated: boolean
 }
 
@@ -100,28 +84,7 @@ export async function generateLetterViaN8n(
         letterType: formData.letterType,
         letterId: formData.letterId,
         userId: formData.userId,
-
-        senderName: formData.senderName,
-        senderAddress: formData.senderAddress,
-        senderState: formData.senderState,
-        senderEmail: formData.senderEmail,
-        senderPhone: formData.senderPhone,
-
-        recipientName: formData.recipientName,
-        recipientAddress: formData.recipientAddress,
-        recipientState: formData.recipientState,
-        recipientEmail: formData.recipientEmail,
-        recipientPhone: formData.recipientPhone,
-
-        issueDescription: formData.issueDescription,
-        desiredOutcome: formData.desiredOutcome,
-        additionalDetails: formData.additionalDetails,
-
-        amountDemanded: formData.amountDemanded,
-        deadline: formData.deadline,
-        incidentDate: formData.incidentDate,
-        courtType: formData.courtType,
-
+        intakeData: formData.intakeData,
         timestamp: new Date().toISOString(),
         source: 'talk-to-my-lawyer',
       }
@@ -135,6 +98,8 @@ export async function generateLetterViaN8n(
       if (n8nConfig.authKey) {
         headers['Authorization'] = `Bearer ${n8nConfig.authKey}`
       }
+
+      console.log('[n8n] Sending payload with letterType:', formData.letterType, 'intakeData keys:', Object.keys(formData.intakeData))
 
       const response = await fetch(webhookUrl, {
         method: 'POST',
@@ -167,28 +132,15 @@ export async function generateLetterViaN8n(
         throw new Error(`n8n request failed (${response.status}): ${errorText}`)
       }
 
-      const result: N8nGenerationResponse = await response.json()
+      const responseData = await response.json()
 
-      if (!result.success) {
-        throw new Error(result.error || result.message || 'n8n generation failed')
-      }
-
-      if (!result.generatedContent) {
-        throw new Error('n8n returned success but no generated content')
-      }
-
-      console.log('[n8n] Letter generated successfully for:', formData.letterId, {
-        researchApplied: result.researchApplied,
-        state: result.state,
-        contentLength: result.generatedContent.length,
+      console.log('[n8n] Letter generation completed for:', formData.letterId, {
+        responseKeys: Object.keys(responseData),
       })
 
       return {
-        generatedContent: result.generatedContent,
-        letterId: result.letterId || formData.letterId,
-        status: result.status || 'pending_review',
-        researchApplied: result.researchApplied ?? false,
-        state: result.state,
+        letterId: formData.letterId,
+        status: 'pending_review',
         supabaseUpdated: true,
       }
 
@@ -219,28 +171,8 @@ export function transformIntakeToN8nFormat(
   return {
     letterId,
     userId,
-    letterType,
-
-    senderName: String(intakeData.senderName || ''),
-    senderAddress: String(intakeData.senderAddress || ''),
-    senderState: String(intakeData.senderState || ''),
-    senderEmail: intakeData.senderEmail ? String(intakeData.senderEmail) : undefined,
-    senderPhone: intakeData.senderPhone ? String(intakeData.senderPhone) : undefined,
-
-    recipientName: String(intakeData.recipientName || ''),
-    recipientAddress: String(intakeData.recipientAddress || ''),
-    recipientState: String(intakeData.recipientState || ''),
-    recipientEmail: intakeData.recipientEmail ? String(intakeData.recipientEmail) : undefined,
-    recipientPhone: intakeData.recipientPhone ? String(intakeData.recipientPhone) : undefined,
-
-    issueDescription: String(intakeData.issueDescription || ''),
-    desiredOutcome: String(intakeData.desiredOutcome || ''),
-    additionalDetails: intakeData.additionalDetails ? String(intakeData.additionalDetails) : undefined,
-
-    amountDemanded: typeof intakeData.amountDemanded === 'number' ? intakeData.amountDemanded : undefined,
-    deadline: intakeData.deadlineDate ? String(intakeData.deadlineDate) : undefined,
-    incidentDate: intakeData.incidentDate ? String(intakeData.incidentDate) : undefined,
-    courtType: intakeData.courtType ? String(intakeData.courtType) : undefined,
+    letterType: mapLetterTypeForN8n(letterType),
+    intakeData,
   }
 }
 

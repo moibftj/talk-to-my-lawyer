@@ -13,7 +13,6 @@ import {
   isN8nConfigured,
   generateLetterViaN8n,
   transformIntakeToN8nFormat,
-  type N8nGenerationResult,
 } from '@/lib/services/n8n-webhook-service'
 import { notifyAdminsNewLetter } from '@/lib/services/notification-service'
 import type { LetterGenerationResponse } from '@/lib/types/letter.types'
