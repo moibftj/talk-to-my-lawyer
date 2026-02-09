@@ -100,6 +100,11 @@ export interface Letter {
   generated_at: string | null;
   generation_metadata: Record<string, unknown> | null;
   generation_error: string | null;
+  subject: string | null;
+  statutes_cited: string[] | null;
+  legal_basis: string | null;
+  next_steps: string | null;
+  delivery_instructions: string | null;
   claimer?: {
     id: string;
     full_name: string | null;

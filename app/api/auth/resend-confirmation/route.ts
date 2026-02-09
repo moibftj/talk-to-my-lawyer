@@ -86,13 +86,13 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Generate a new confirmation link using Supabase
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.talk-to-my-lawyer.com'
+
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-      type: 'signup',
+      type: 'magiclink',
       email: user.email!,
-      password: 'temp-password-placeholder',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://talk-to-my-lawyer.com'}/dashboard`,
+        redirectTo: `${baseUrl}/dashboard`,
       }
     } as any)
 

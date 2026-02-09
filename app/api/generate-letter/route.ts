@@ -151,10 +151,6 @@ export async function POST(request: NextRequest) {
     console.log(`[GenerateLetter] Created letter record: ${letterId}`)
     recordSpanEvent('letter_record_created', { letter_id: letterId! })
 
-    let generatedContent: string
-    let researchApplied = false
-    let researchState: string | undefined
-
     try {
       console.log(`[GenerateLetter] Using n8n workflow for letter: ${letterId}`)
       recordSpanEvent('n8n_generation_started')
@@ -166,26 +162,12 @@ export async function POST(request: NextRequest) {
         sanitizedIntakeData as Record<string, unknown>
       )
 
-      const n8nResult: N8nGenerationResult = await generateLetterViaN8n(n8nFormData)
+      const n8nResult = await generateLetterViaN8n(n8nFormData)
 
-      generatedContent = n8nResult.generatedContent
-      researchApplied = n8nResult.researchApplied
-      researchState = n8nResult.state
-
-      if (generatedContent.trim().length < 100) {
-        throw new Error("n8n generated content is too short or empty")
-      }
-
-      console.log(`[GenerateLetter] n8n generation successful. Content length: ${generatedContent.length}, Research: ${researchApplied}, State: ${researchState}`)
+      console.log(`[GenerateLetter] n8n generation successful for letter: ${letterId}`)
       recordSpanEvent('n8n_generation_completed', {
-        content_length: generatedContent.length,
-        research_applied: researchApplied,
-        state: researchState || 'unknown',
-      })
-
-      addSpanAttributes({
-        'generation.research_applied': researchApplied,
-        'generation.research_state': researchState || 'unknown',
+        letter_id: letterId!,
+        supabase_updated: n8nResult.supabaseUpdated,
       })
 
     } catch (n8nError) {
@@ -215,6 +197,15 @@ export async function POST(request: NextRequest) {
 
     console.log(`[GenerateLetter] Letter ${letterId} saved by n8n workflow`)
 
+    await supabase
+      .from("letters")
+      .update({
+        status: "pending_review",
+        generated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", letterId)
+
     recordSpanEvent('letter_saved_to_database', {
       status: 'pending_review',
       method: 'n8n',
@@ -226,7 +217,7 @@ export async function POST(request: NextRequest) {
       'generating',
       'pending_review',
       'created',
-      `Letter generated via n8n with jurisdiction research${researchApplied ? ` for ${researchState || 'unknown state'}` : ''}`
+      `Letter generated via n8n with jurisdiction research`
     ).catch(err => {
       console.warn("[GenerateLetter] Audit log failed (non-critical):", err)
     })
@@ -244,7 +235,7 @@ export async function POST(request: NextRequest) {
       letterId: letterId!,
       status: 'pending_review',
       isFreeTrial: isFreeTrial,
-      aiDraft: generatedContent,
+      aiDraft: undefined,
     })
 
   } catch (error: unknown) {
