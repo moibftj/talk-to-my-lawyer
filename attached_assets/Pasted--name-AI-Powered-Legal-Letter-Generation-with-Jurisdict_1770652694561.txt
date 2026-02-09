@@ -1,0 +1,735 @@
+{
+  "name": "AI-Powered Legal Letter Generation with Jurisdiction Research",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "legal-letter-submission",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "b89b6ce1-bb08-4fc4-9fc9-d74df477b702",
+      "name": "Receive Form Submission",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        256,
+        368
+      ],
+      "webhookId": "9629925a-0944-4d48-8a01-1dde4ea735a9",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6rGE2IxLfXt5wJ7B",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "letterType",
+              "value": "={{ $json.body.letterType }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "intakeData",
+              "value": "={{ JSON.stringify($json.body.intakeData) }}",
+              "type": "object"
+            },
+            {
+              "id": "id-3",
+              "name": "senderName",
+              "value": "={{ $json.body.intakeData.senderName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "senderState",
+              "value": "={{ $json.body.intakeData.senderState }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "recipientName",
+              "value": "={{ $json.body.intakeData.recipientName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "recipientState",
+              "value": "={{ $json.body.intakeData.recipientState }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "issueDescription",
+              "value": "={{ $json.body.intakeData.issueDescription }}",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "desiredOutcome",
+              "value": "={{ $json.body.intakeData.desiredOutcome }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "148c098b-5325-408e-a41e-5677d94c05e1",
+      "name": "Extract Form Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "letters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.body.letterId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "generating"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "423925ab-c039-4af6-96d5-e499859393d6",
+      "name": "Update Letter Status to Generating",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        704,
+        368
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "DUzz3XeESSVcqgrT",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "jurisdictionContext",
+              "value": "=Sender State: {{ $json.body.senderState }}, Recipient State: {{ $json.body.recipientState }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "letterTypeFormatted",
+              "value": "={{ $json.body.letterType }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "fullIntakeData",
+              "value": "={{ JSON.stringify($json.body.intakeData) }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "courtType",
+              "value": "={{ $json.body.intakeData.courtType || 'Not specified' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "6928fecb-606b-4d0d-8362-ae3a61e606f7",
+      "name": "Prepare Jurisdiction Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        928,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.letterType }}",
+                    "rightValue": "Demand Letter",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Demand Letter"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.letterType }}",
+                    "rightValue": "Cease & Desist",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Cease & Desist"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.letterType }}",
+                    "rightValue": "Contract Breach",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Contract Breach"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.letterType }}",
+                    "rightValue": "Eviction Notice",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Eviction Notice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.letterType }}",
+                    "rightValue": "Employment Dispute",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Employment Dispute"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.letterType }}",
+                    "rightValue": "Consumer Complaint",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Consumer Complaint"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "db1f8641-6026-4516-9682-4afd150d24b0",
+      "name": "Route by Letter Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1152,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.issueDescription }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are a legal jurisdiction research expert specializing in US state law.\n\nYour task is to research jurisdiction-specific legal requirements for {{ $json.letterTypeFormatted }} based on:\n- Sender State: {{ $json.senderState }}\n- Recipient State: {{ $json.recipientState }}\n- Court Type: {{ $json.courtType }}\n- Letter Type: {{ $json.letterTypeFormatted }}\n\nResearch and provide:\n1. Applicable state statutes and laws for both sender and recipient states\n2. Relevant legal precedents and case law\n3. Jurisdiction-specific requirements (notice periods, formatting, delivery methods)\n4. State-specific legal language and terminology requirements\n5. Any interstate legal considerations if sender and recipient are in different states\n6. Court-specific rules if court type is specified\n\nProvide citations for all legal references. Return your research in the structured JSON format."
+        }
+      },
+      "id": "21dac3c2-7507-4c8e-863e-6c3abb1df231",
+      "name": "Jurisdiction Research Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1632,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "a5b32082-fd67-42ae-bc9c-b2ea64bb7e16",
+      "name": "GPT-4o Model for Research",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1376,
+        592
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "mOSnvGzVyKVKcLxu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"senderStateStatutes\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"statute\": {\"type\": \"string\"},\n          \"citation\": {\"type\": \"string\"},\n          \"summary\": {\"type\": \"string\"}\n        }\n      }\n    },\n    \"recipientStateStatutes\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"statute\": {\"type\": \"string\"},\n          \"citation\": {\"type\": \"string\"},\n          \"summary\": {\"type\": \"string\"}\n        }\n      }\n    },\n    \"legalPrecedents\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"caseName\": {\"type\": \"string\"},\n          \"citation\": {\"type\": \"string\"},\n          \"relevance\": {\"type\": \"string\"}\n        }\n      }\n    },\n    \"jurisdictionRequirements\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"noticePeriod\": {\"type\": \"string\"},\n        \"deliveryMethod\": {\"type\": \"string\"},\n        \"formattingRequirements\": {\"type\": \"string\"}\n      }\n    },\n    \"requiredLanguage\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"interstateConsiderations\": {\"type\": \"string\"}\n  }\n}"
+      },
+      "id": "6d89b35e-3a17-4b10-9293-549e7ef17638",
+      "name": "Structure Research Output",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2016,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Search for jurisdiction-specific legal statutes, case law, and legal requirements with citations",
+        "messages": {
+          "message": [
+            {}
+          ]
+        },
+        "options": {},
+        "requestOptions": {}
+      },
+      "id": "4eb9fe49-c9a3-4339-b930-fcbba81ff7d0",
+      "name": "Perplexity Legal Research",
+      "type": "n8n-nodes-base.perplexityTool",
+      "typeVersion": 1,
+      "position": [
+        1632,
+        592
+      ],
+      "credentials": {
+        "perplexityApi": {
+          "id": "6a7Yj3aqll51VCQj",
+          "name": "Perplexity account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "851df750-92df-4fe6-ae55-3cb74f904e7f",
+      "name": "SerpAPI Legal Search",
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        592
+      ],
+      "credentials": {
+        "serpApi": {
+          "id": "P2YTPHPR2vZVneV7",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "0c361285-5900-4839-8df2-5ac14788896d",
+      "name": "Research Context Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1504,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an expert legal letter drafting attorney with expertise in {{ $json.letterTypeFormatted }}.\n\nUsing the jurisdiction research provided and the client intake data, draft a professional {{ $json.letterTypeFormatted }} that:\n\n1. Follows all jurisdiction-specific requirements from the research\n2. Incorporates required legal language and terminology\n3. Cites relevant statutes and case law where appropriate\n4. Addresses the issue: {{ $json.issueDescription }}\n5. Seeks the desired outcome: {{ $json.desiredOutcome }}\n6. Uses proper legal formatting and structure\n7. Includes all required sender and recipient information\n8. Incorporates any additional details provided\n9. Follows notice period and delivery method requirements\n10. Maintains a professional, authoritative tone\n\nClient Information:\n- Sender: {{ $json.senderName }}, {{ $json.intakeData.senderAddress }}, {{ $json.senderState }}\n- Recipient: {{ $json.recipientName }}, {{ $json.intakeData.recipientAddress }}, {{ $json.recipientState }}\n\nReturn the complete letter in the structured JSON format."
+        }
+      },
+      "id": "73eaec71-6038-42e6-bfa0-4ccdcaa49520",
+      "name": "Letter Drafting Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2224,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "4491c977-4236-4785-b1d0-7eb812014a60",
+      "name": "GPT-4o Model for Drafting",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2240,
+        592
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "mOSnvGzVyKVKcLxu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"letterContent\": {\"type\": \"string\", \"description\": \"The complete formatted legal letter\"},\n    \"subject\": {\"type\": \"string\", \"description\": \"Letter subject line\"},\n    \"statutesCited\": {\n      \"type\": \"array\",\n      \"items\": {\"type\": \"string\"},\n      \"description\": \"List of statutes cited in the letter\"\n    },\n    \"legalBasis\": {\"type\": \"string\", \"description\": \"Summary of legal basis for the letter\"},\n    \"nextSteps\": {\"type\": \"string\", \"description\": \"Recommended next steps or actions\"},\n    \"deliveryInstructions\": {\"type\": \"string\", \"description\": \"How the letter should be delivered based on jurisdiction requirements\"}\n  },\n  \"required\": [\"letterContent\", \"subject\"]\n}"
+      },
+      "id": "6b79bc9f-a7a9-44e4-99b7-0eb66ae1a0d7",
+      "name": "Structure Letter Output",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2368,
+        592
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "letters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extract Form Data').item.json.body.letterId }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "pending_review"
+            },
+            {
+              "fieldId": "ai_draft_content",
+              "fieldValue": "={{ $json.output.letterContent }}"
+            },
+            {
+              "fieldId": "subject",
+              "fieldValue": "={{ $json.output.subject }}"
+            },
+            {
+              "fieldId": "statutes_cited",
+              "fieldValue": "={{ JSON.stringify($json.output.statutesCited) }}"
+            },
+            {
+              "fieldId": "legal_basis",
+              "fieldValue": "={{ $json.output.legalBasis }}"
+            },
+            {
+              "fieldId": "next_steps",
+              "fieldValue": "={{ $json.output.nextSteps }}"
+            },
+            {
+              "fieldId": "delivery_instructions",
+              "fieldValue": "={{ $json.output.deliveryInstructions }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "cd417e76-fc3b-4fa8-a8be-0079c551102c",
+      "name": "Save Generated Letter",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        368
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "DUzz3XeESSVcqgrT",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Extract Form Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Form Data": {
+      "main": [
+        [
+          {
+            "node": "Update Letter Status to Generating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Letter Status to Generating": {
+      "main": [
+        [
+          {
+            "node": "Prepare Jurisdiction Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Jurisdiction Data": {
+      "main": [
+        [
+          {
+            "node": "Route by Letter Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Letter Type": {
+      "main": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o Model for Research": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structure Research Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Perplexity Legal Research": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI Legal Search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Context Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jurisdiction Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Letter Drafting Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4o Model for Drafting": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Letter Drafting Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structure Letter Output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Letter Drafting Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Letter Drafting Agent": {
+      "main": [
+        [
+          {
+            "node": "Save Generated Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "96a277e2-fcd2-47fb-9e4f-c15ac7bc640f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a67a0105808af3b8e272e32260a5b28103487a4f558cd1e13faac8f94755469d"
+  },
+  "id": "KbHeEiu2GT0pPAkjT7xdg",
+  "tags": []
+}
