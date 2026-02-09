@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -31,9 +32,42 @@ import ScrollRevealWrapper from "@/components/home/scroll-reveal-wrapper";
 import TestimonialsSection from "@/components/home/testimonials-section";
 import FAQSection from "@/components/home/faq-section";
 
+export const metadata: Metadata = {
+  title: "Talk-to-my-Lawyer | Professional Legal Letters Drafted by Attorneys",
+  description: "Get professional, attorney-reviewed legal letters in 24 hours. Demand letters, cease & desist, breach of contract notices starting at $50. Powered by AI, reviewed by real lawyers.",
+  keywords: ["legal letters", "demand letter", "cease and desist", "attorney reviewed", "legal document", "breach of contract letter", "legal notice"],
+  openGraph: {
+    title: "Talk-to-my-Lawyer | Professional Legal Letters Drafted by Attorneys",
+    description: "Get professional, attorney-reviewed legal letters in 24 hours. Demand letters, cease & desist, breach of contract notices starting at $50. Powered by AI, reviewed by real lawyers.",
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LegalService",
+  name: "Talk-to-my-Lawyer",
+  description: "Professional legal letter generation with attorney approval. Get demand letters, cease and desist notices, and more.",
+  provider: {
+    "@type": "Organization",
+    name: "Talk-to-my-Lawyer",
+    url: "https://www.talk-to-my-lawyer.com",
+  },
+  areaServed: "US",
+  priceRange: "$50 - $200",
+};
+
 export default function Page() {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30 text-gray-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <AuthRedirect />
       <ScrollRevealWrapper />
 

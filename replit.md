@@ -16,6 +16,11 @@ The application is built with Next.js 16.x using the App Router and TypeScript. 
 - **Homepage**: Server-Side Rendered (SSR) for SEO, featuring sections like Hero, Stats, Letter Types, Testimonials, Pricing, Features, FAQ, and Footer.
 - **Toasts**: `sonner` Toaster is integrated for user notifications across the application.
 - **Form Stepper**: A 3-step progress stepper (`components/ui/form-stepper.tsx`) guides users through the letter creation process.
+- **Error Boundaries**: Branded `error.tsx` pages at root, `/dashboard`, `/secure-admin-gateway`, and `/attorney-portal` levels catch crashes gracefully with "Try Again" buttons and navigation links.
+- **404 Pages**: Custom `not-found.tsx` pages at root, `/dashboard`, `/secure-admin-gateway`, and `/attorney-portal` levels.
+- **Loading States**: Skeleton-based `loading.tsx` pages for all dashboard sub-pages (letters, billing, subscription, settings, commissions, referrals, payouts, coupons, employee-settings) and attorney-portal review pages.
+- **Middleware**: `middleware.ts` at project root delegates to `lib/supabase/proxy.ts` for route protection, session refresh, and role-based redirects.
+- **SEO**: `app/robots.ts` and `app/sitemap.ts` for search engine optimization. Page-specific metadata on homepage, how-it-works, FAQ, membership, and contact pages. JSON-LD structured data (LegalService schema) on homepage.
 
 **Technical Implementations & Feature Specifications:**
 - **Authentication**: Supabase Auth manages user accounts, complemented by JWT-signed sessions for admin portals.

@@ -1,9 +1,13 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { Scale, Mail, FileText, MessageSquare, Shield, ArrowRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+
+export const metadata: Metadata = {
+  title: "Membership Plans & Pricing | Talk-to-my-Lawyer",
+  description: "Choose a membership plan for professional legal letters. Single letters from $200 or subscribe for $50/letter with our monthly membership.",
+}
 
 const reasons = [
   {

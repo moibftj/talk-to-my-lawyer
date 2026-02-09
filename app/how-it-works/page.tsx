@@ -1,9 +1,13 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { Scale, ClipboardList, PenTool, CheckCircle, Mail, FileDown, ArrowRight, Home } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+
+export const metadata: Metadata = {
+  title: "How It Works | Talk-to-my-Lawyer",
+  description: "Learn how Talk-to-my-Lawyer creates professional legal letters. Submit your details, our AI drafts your letter, attorneys review it, and you get a PDF download.",
+}
 
 const steps = [
   {

@@ -1,9 +1,13 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { Scale, Phone, Mail, Clock, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+
+export const metadata: Metadata = {
+  title: "Contact Us | Talk-to-my-Lawyer",
+  description: "Get in touch with Talk-to-my-Lawyer. Questions about our legal letter service? We're here to help.",
+}
 
 export default function ContactPage() {
   return (
