@@ -100,6 +100,13 @@ export interface Letter {
   generated_at: string | null;
   generation_metadata: Record<string, unknown> | null;
   generation_error: string | null;
+  sender_state: string | null;
+  sender_country: string | null;
+  recipient_state: string | null;
+  recipient_country: string | null;
+  jurisdiction: string | null;
+  court_type: string | null;
+  research_data: Record<string, unknown> | null;
   subject: string | null;
   statutes_cited: string[] | null;
   legal_basis: string | null;
