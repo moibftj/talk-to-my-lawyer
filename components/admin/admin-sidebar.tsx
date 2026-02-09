@@ -100,7 +100,7 @@ export function AdminSidebar() {
               priority
             />
             {!isCollapsed && (
-              <span className="text-sm font-semibold text-gray-900">TalkToMyLawyer.com</span>
+              <span className="text-sm font-semibold text-gray-900">Talk-to-my-Lawyer</span>
             )}
           </div>
           <Button

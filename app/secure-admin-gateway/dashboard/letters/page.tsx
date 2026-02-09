@@ -28,7 +28,7 @@ export default async function AdminLettersPage() {
     .order('created_at', { ascending: true })
 
   const assignedIds = letters?.map((l: any) => l.assigned_to).filter(Boolean) || []
-  let assignedAttorneys: Record<string, string> = {}
+  const assignedAttorneys: Record<string, string> = {}
   if (assignedIds.length > 0) {
     try {
       const { data: attorneys } = await supabase

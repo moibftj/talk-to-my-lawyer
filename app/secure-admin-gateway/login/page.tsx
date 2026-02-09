@@ -41,10 +41,9 @@ export default function AdminLoginPage() {
         throw new Error(data.error || 'Authentication failed')
       }
 
-      // Use redirectUrl from response (handles both super admin and attorney admin routing)
       const redirectUrl = data.redirectUrl || '/secure-admin-gateway/dashboard'
-      // Use window.location.href for reliable navigation with secure cookies
-      window.location.href = redirectUrl
+      const sessionUrl = `/api/admin-auth/session?token=${encodeURIComponent(data.token)}&redirect=${encodeURIComponent(redirectUrl)}`
+      window.location.href = sessionUrl
 
     } catch (err: any) {
       console.error('[AdminLogin] Error:', err)
@@ -56,7 +55,7 @@ export default function AdminLoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <title>Admin Login - TalkToMyLawyer.com</title>
+      <title>Admin Login - Talk-to-my-Lawyer</title>
       <Card className="w-full max-w-md border-slate-700 bg-slate-800/50 backdrop-blur">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">

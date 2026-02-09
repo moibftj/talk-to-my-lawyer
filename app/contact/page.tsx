@@ -1,9 +1,13 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { Scale, Phone, Mail, Clock, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+
+export const metadata: Metadata = {
+  title: "Contact Us | Talk-to-my-Lawyer",
+  description: "Get in touch with Talk-to-my-Lawyer. Questions about our legal letter service? We're here to help.",
+}
 
 export default function ContactPage() {
   return (
@@ -147,7 +151,7 @@ export default function ContactPage() {
       {/* Footer */}
       <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg-px-8 text-center">
-          <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
+          <p>&copy; 2025 Talk-to-my-Lawyer. All rights reserved.</p>
         </div>
       </footer>
     </div>

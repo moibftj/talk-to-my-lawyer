@@ -151,7 +151,6 @@ export async function processLetterAction(
     auditNotes,
   })
 
-  // 5. Send notification email (non-blocking)
   if (letter?.user_id) {
     await notifyLetterOwner({
       userId: letter.user_id,
@@ -164,6 +163,23 @@ export async function processLetterAction(
     }).catch((error) => {
       console.error(`[Admin] Failed to send notification:`, error)
     })
+  }
+
+  if (actionName === 'approve') {
+    const { isN8nPdfConfigured, generatePdfViaN8n } = await import('@/lib/services/n8n-webhook-service')
+
+    if (isN8nPdfConfigured()) {
+      generatePdfViaN8n({
+        letterId,
+        userId: letter.user_id,
+      }).then((result) => {
+        console.log(`[Admin] PDF generation triggered for letter ${letterId}:`, result.success ? 'success' : 'failed')
+      }).catch((error) => {
+        console.error(`[Admin] PDF generation failed for letter ${letterId}:`, error)
+      })
+    } else {
+      console.log(`[Admin] n8n PDF webhook not configured, skipping PDF generation for letter ${letterId}`)
+    }
   }
 
   return successResponse({ success: true, message: actionConfig.successMessage })

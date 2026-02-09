@@ -1,15 +1,30 @@
 /**
  * Next.js Configuration for Talk-To-My-Lawyer
  *
- * Production deployment optimizations:
+ * Supports dual deployment: Replit (dev) and Vercel (production)
+ * - Standalone output for Replit containerized deployments
+ * - Vercel uses its own build pipeline (no standalone needed)
  * - Strict TypeScript checking enforced
  * - Image optimization enabled for Supabase storage
  * - Security headers and CSP configured
  * - Extended timeouts for AI generation endpoints
  */
+const isVercel = Boolean(process.env.VERCEL);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const isReplit = Boolean(process.env.REPL_ID || process.env.REPLIT_DEV_DOMAIN);
+
+const replitDomains = [
+  ...(process.env.REPLIT_DEV_DOMAIN ? [process.env.REPLIT_DEV_DOMAIN] : []),
+  ...(process.env.REPLIT_DOMAINS ? process.env.REPLIT_DOMAINS.split(",") : []),
+  "*.pike.replit.dev",
+  "*.replit.dev",
+  "*.repl.co",
+].filter(Boolean);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  ...(isVercel ? {} : { output: "standalone" }),
+
   // TypeScript strict mode - DO NOT disable in production
   // If build errors occur, fix the underlying type issues
   typescript: {
@@ -65,7 +80,7 @@ const nextConfig = {
     ],
   },
 
-  allowedDevOrigins: ["localhost", "127.0.0.1"],
+  allowedDevOrigins: ["localhost", "127.0.0.1", ...replitDomains],
   async headers() {
     const headers = [];
 

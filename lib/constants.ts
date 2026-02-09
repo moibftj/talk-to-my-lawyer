@@ -1,5 +1,5 @@
 export const DEFAULT_LOGO_SRC = '/logo.png'
-export const DEFAULT_LOGO_ALT = 'TalkToMyLawyer.com logo'
+export const DEFAULT_LOGO_ALT = 'Talk-to-my-Lawyer logo'
 
 /**
  * Time conversion constants for readability

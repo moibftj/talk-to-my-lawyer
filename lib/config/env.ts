@@ -74,8 +74,26 @@ export const cron = {
  * App configuration
  */
 export const app = {
-  get url() { return process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' },
+  get url() {
+    if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+    if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+    return 'https://www.talk-to-my-lawyer.com'
+  },
   get nodeEnv() { return process.env.NODE_ENV || 'development' },
+} as const
+
+/**
+ * Platform detection
+ */
+export const platform = {
+  get isReplit() { return Boolean(process.env.REPL_ID || process.env.REPLIT_CONNECTORS_HOSTNAME) },
+  get isVercel() { return Boolean(process.env.VERCEL) },
+  get name() {
+    if (this.isReplit) return 'replit'
+    if (this.isVercel) return 'vercel'
+    return 'standard'
+  },
 } as const
 
 /**
@@ -117,7 +135,10 @@ export function isTest(): boolean {
  * Get the application URL
  */
 export function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com'
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return 'https://www.talk-to-my-lawyer.com'
 }
 
 /**
@@ -154,10 +175,15 @@ export function validateEnv(): { valid: boolean; missing: string[] } {
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-    'OPENAI_API_KEY',
-    'STRIPE_SECRET_KEY',
-    'STRIPE_PUBLISHABLE_KEY',
-    'STRIPE_WEBHOOK_SECRET',
+  ]
+
+  const conditionalVars: Array<{ keys: string[]; label: string }> = [
+    { keys: ['AI_INTEGRATIONS_OPENAI_API_KEY', 'OPENAI_API_KEY'], label: 'OpenAI API Key (OPENAI_API_KEY or AI_INTEGRATIONS_OPENAI_API_KEY)' },
+    { keys: ['STRIPE_SECRET_KEY', 'REPLIT_CONNECTORS_HOSTNAME'], label: 'Stripe (STRIPE_SECRET_KEY or Replit Connector)' },
+  ]
+
+  const productionVars = [
+    'SUPABASE_SERVICE_ROLE_KEY',
     'RESEND_API_KEY',
     'ADMIN_PORTAL_KEY',
     'CRON_SECRET',
@@ -166,6 +192,20 @@ export function validateEnv(): { valid: boolean; missing: string[] } {
   for (const key of requiredVars) {
     if (!process.env[key]) {
       missing.push(key)
+    }
+  }
+
+  for (const { keys, label } of conditionalVars) {
+    if (!keys.some(k => process.env[k])) {
+      missing.push(label)
+    }
+  }
+
+  if (isProduction()) {
+    for (const key of productionVars) {
+      if (!process.env[key]) {
+        missing.push(key)
+      }
     }
   }
 

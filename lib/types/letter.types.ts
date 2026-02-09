@@ -38,6 +38,8 @@ export interface LetterWithProfile {
   rejection_reason: string | null
   draft_metadata: Record<string, unknown> | null
   pdf_url: string | null
+  pdf_storage_path: string | null
+  pdf_generated_at: string | null
   reviewed_by: string | null
   reviewed_at: string | null
   approved_at: string | null

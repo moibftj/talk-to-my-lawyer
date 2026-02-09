@@ -15,8 +15,16 @@ import {
   type LetterStatus,
 } from "@/components/generation-tracker-modal";
 import { FileUpload, type UploadedFile } from "@/components/ui/file-upload";
+import { FormStepper } from "@/components/ui/form-stepper";
 import { createClient } from "@/lib/supabase/client";
 import { US_STATES } from "@/lib/validation/letter-schema";
+import { toast } from "sonner";
+
+const FORM_STEPS = [
+  { label: 'Select Type', description: 'Choose your letter type' },
+  { label: 'Fill Details', description: 'Provide case information' },
+  { label: 'Review & Submit', description: 'Review and send for approval' },
+];
 
 const LETTER_TYPES = [
   {
@@ -200,6 +208,7 @@ export default function NewLetterPage() {
 
     // Check if user has subscription before generating
     if (!hasSubscription) {
+      toast.info('Subscription required to generate letters');
       setShowSubscriptionModal(true);
       return;
     }
@@ -295,11 +304,13 @@ export default function NewLetterPage() {
         setTrackerStatus(status as LetterStatus);
       }
 
-      // Automatically take the user to the letter status page (now queued for admin review)
+      toast.success('Letter submitted for review!');
       router.push(`/dashboard/letters/${newLetterId}?submitted=1`);
     } catch (err: any) {
       console.error("[v0] Letter creation error:", err);
-      setError(err.message || "Failed to create letter");
+      const errorMessage = err.message || "Failed to create letter";
+      setError(errorMessage);
+      toast.error(errorMessage);
       setShowTrackerModal(false);
     } finally {
       setLoading(false);
@@ -318,9 +329,14 @@ export default function NewLetterPage() {
         onClose={() => setShowSubscriptionModal(false)}
         message="To generate and submit attorney drafts, please choose a subscription plan:"
       />
-      <h1 className="text-3xl font-bold text-foreground mb-8">
+      <h1 className="text-3xl font-bold text-foreground mb-4">
         Create New Letter
       </h1>
+      <FormStepper
+        steps={FORM_STEPS}
+        currentStep={aiDraft ? 2 : selectedType ? 1 : 0}
+      />
+      <div className="mb-4" />
       {!selectedType ? (
         <div className="bg-card rounded-lg shadow-sm border p-6">
           <h2 className="text-2xl font-bold mb-8 text-center text-slate-900">

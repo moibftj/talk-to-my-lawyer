@@ -92,12 +92,26 @@ export interface Letter {
   approved_at: string | null;
   draft_metadata: Record<string, unknown> | null;
   pdf_url: string | null;
+  pdf_storage_path: string | null;
+  pdf_generated_at: string | null;
   claimed_by: string | null;
   claimed_at: string | null;
   is_attorney_reviewed: boolean;
   generated_at: string | null;
   generation_metadata: Record<string, unknown> | null;
   generation_error: string | null;
+  sender_state: string | null;
+  sender_country: string | null;
+  recipient_state: string | null;
+  recipient_country: string | null;
+  jurisdiction: string | null;
+  court_type: string | null;
+  research_data: Record<string, unknown> | null;
+  subject: string | null;
+  statutes_cited: string[] | null;
+  legal_basis: string | null;
+  next_steps: string | null;
+  delivery_instructions: string | null;
   claimer?: {
     id: string;
     full_name: string | null;

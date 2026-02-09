@@ -1,9 +1,13 @@
-'use client'
-
+import type { Metadata } from 'next'
 import Image from 'next/image'
 import { Scale, Mail, FileText, MessageSquare, Shield, ArrowRight, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+
+export const metadata: Metadata = {
+  title: "Membership Plans & Pricing | Talk-to-my-Lawyer",
+  description: "Choose a membership plan for professional legal letters. Single letters from $200 or subscribe for $50/letter with our monthly membership.",
+}
 
 const reasons = [
   {
@@ -155,7 +159,7 @@ export default function MembershipPage() {
       {/* Footer */}
       <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p>&copy; 2025 TalkToMyLawyer.com. All rights reserved.</p>
+          <p>&copy; 2025 Talk-to-my-Lawyer. All rights reserved.</p>
         </div>
       </footer>
     </div>

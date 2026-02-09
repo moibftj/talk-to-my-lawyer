@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { Toaster } from 'sonner'
 import "./globals.css"
 
 const DEFAULT_APP_URL = 'https://www.talk-to-my-lawyer.com'
@@ -14,7 +15,7 @@ const APP_URL = (() => {
 const LOGO_URL = '/logo.png'
 
 export const metadata: Metadata = {
-  title: "TalkToMyLawyer.com - Professional Legal Letters",
+  title: "Talk-to-my-Lawyer - Professional Legal Letters",
   description: "Professional legal letter generation with attorney approval. Get demand letters, cease and desist notices, and more.",
   generator: 'v0.app',
   metadataBase: new URL(APP_URL),
@@ -44,6 +45,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   )

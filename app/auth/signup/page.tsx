@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
+import { toast } from 'sonner'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
@@ -96,20 +97,24 @@ export default function SignUpPage() {
         }
       }
 
+      toast.success('Account created! Check your email.')
       router.push('/auth/check-email')
     } catch (err: any) {
       console.error('Signup error details:', err)
       
       // Provide more specific error messages
+      let errorMessage = 'Failed to create account. Please try again.'
       if (err.message?.includes('Invalid redirect URL')) {
-        setError('Configuration error. Please contact support.')
+        errorMessage = 'Configuration error. Please contact support.'
       } else if (err.message?.includes('User already registered')) {
-        setError('An account with this email already exists. Try signing in instead.')
+        errorMessage = 'An account with this email already exists. Try signing in instead.'
       } else if (err.message?.includes('Email not confirmed')) {
-        setError('Please check your email and click the confirmation link.')
-      } else {
-        setError(err.message || 'Failed to create account. Please try again.')
+        errorMessage = 'Please check your email and click the confirmation link.'
+      } else if (err.message) {
+        errorMessage = err.message
       }
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
