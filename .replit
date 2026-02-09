@@ -9,6 +9,9 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
+NEXT_PUBLIC_APP_URL = "https://www.talk-to-my-lawyer.com"
+NEXT_PUBLIC_SUPABASE_URL = "https://nomiiqzxaxyxnxndvkbe.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbWlpcXp4YXh5eG54bmR2a2JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzQwNzYsImV4cCI6MjA4MzY5NDA3Nn0.Wi5A7cHcx95-mDogBbxBzLQ9K7ACbJDrGx0hAhKOK1k"
 
 [userenv.development]
 NEXT_PUBLIC_SITE_URL = "https://a1df3ad0-e0d9-4c8b-8dd1-cfb3898fc241-00-4dds6dc7auhz.pike.replit.dev"
