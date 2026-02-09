@@ -11,23 +11,14 @@ export function getOpenAIProvider() {
     return openAIProviderInstance
   }
 
-  const replitApiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-  const replitBaseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
-  const directApiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
 
-  if (replitApiKey && replitBaseURL) {
-    console.log('[OpenAI] Using Replit AI Integrations')
+  if (apiKey) {
     openAIProviderInstance = createOpenAI({
-      apiKey: replitApiKey,
-      baseURL: replitBaseURL,
-    })
-  } else if (directApiKey) {
-    console.log('[OpenAI] Using direct OpenAI API connection')
-    openAIProviderInstance = createOpenAI({
-      apiKey: directApiKey,
+      apiKey: apiKey,
     })
   } else {
-    console.warn('[OpenAI] No API key configured. Set OPENAI_API_KEY or use Replit AI Integrations.')
+    console.warn('[OpenAI] OPENAI_API_KEY is not configured.')
     openAIProviderInstance = createOpenAI({
       apiKey: '',
     })
