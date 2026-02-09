@@ -10,6 +10,7 @@
  * - Extended timeouts for AI generation endpoints
  */
 const isVercel = Boolean(process.env.VERCEL);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const isReplit = Boolean(process.env.REPL_ID || process.env.REPLIT_DEV_DOMAIN);
 
 const replitDomains = [

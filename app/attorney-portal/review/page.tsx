@@ -41,7 +41,7 @@ export default async function AttorneyReviewPage() {
   const underReviewCount = allLetters.filter((l: any) => l.status === 'under_review').length
 
   const otherAssigneeIds = [...new Set(othersLetters.map((l: any) => l.assigned_to).filter(Boolean))] as string[]
-  let assigneeNames: Record<string, string> = {}
+  const assigneeNames: Record<string, string> = {}
 
   if (otherAssigneeIds.length > 0) {
     try {
