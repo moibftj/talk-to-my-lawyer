@@ -168,6 +168,7 @@ $$;
 
 -- 4. CHECK AND RECORD WEBHOOK (Stripe idempotency)
 -- Prevents duplicate processing of the same Stripe event
+DROP FUNCTION IF EXISTS public.check_and_record_webhook(text, text, jsonb);
 CREATE OR REPLACE FUNCTION public.check_and_record_webhook(
   p_stripe_event_id TEXT,
   p_event_type TEXT,
