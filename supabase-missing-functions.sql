@@ -1,10 +1,11 @@
 -- ============================================================================
 -- MISSING DATABASE FUNCTIONS FOR TALK-TO-MY-LAWYER
 -- Run this entire script in Supabase SQL Editor (Dashboard > SQL Editor > New Query)
+-- Safe to re-run: all functions are dropped before recreation.
 -- ============================================================================
 
 -- 1. LOG LETTER AUDIT
--- Used across letter workflow for tracking status changes and actions
+DROP FUNCTION IF EXISTS public.log_letter_audit(uuid, text, text, text, text, text, jsonb, jsonb);
 CREATE OR REPLACE FUNCTION public.log_letter_audit(
   p_letter_id UUID,
   p_action TEXT,
@@ -34,7 +35,7 @@ END;
 $$;
 
 -- 2. VERIFY AND COMPLETE SUBSCRIPTION
--- Called by Stripe webhook and verify-payment to atomically create/update subscription
+DROP FUNCTION IF EXISTS public.verify_and_complete_subscription(uuid, text, text, text, int, int, numeric, numeric, numeric, text);
 CREATE OR REPLACE FUNCTION public.verify_and_complete_subscription(
   p_user_id UUID,
   p_stripe_session_id TEXT,
@@ -112,7 +113,7 @@ END;
 $$;
 
 -- 3. CREATE FREE SUBSCRIPTION
--- Called when coupon gives 100% discount
+DROP FUNCTION IF EXISTS public.create_free_subscription(uuid, text, int, int, numeric, numeric, numeric, text);
 CREATE OR REPLACE FUNCTION public.create_free_subscription(
   p_user_id UUID,
   p_plan_type TEXT DEFAULT 'unknown',
@@ -167,7 +168,6 @@ END;
 $$;
 
 -- 4. CHECK AND RECORD WEBHOOK (Stripe idempotency)
--- Prevents duplicate processing of the same Stripe event
 DROP FUNCTION IF EXISTS public.check_and_record_webhook(text, text, jsonb);
 CREATE OR REPLACE FUNCTION public.check_and_record_webhook(
   p_stripe_event_id TEXT,
@@ -204,7 +204,7 @@ END;
 $$;
 
 -- 5. MARK EMAIL SENT
--- Updates email queue entry after successful send
+DROP FUNCTION IF EXISTS public.mark_email_sent(uuid, text, int);
 CREATE OR REPLACE FUNCTION public.mark_email_sent(
   p_email_id UUID,
   p_provider TEXT DEFAULT NULL,
@@ -227,7 +227,7 @@ END;
 $$;
 
 -- 6. MARK EMAIL FAILED
--- Updates email queue entry after failed send
+DROP FUNCTION IF EXISTS public.mark_email_failed(uuid, text, text);
 CREATE OR REPLACE FUNCTION public.mark_email_failed(
   p_email_id UUID,
   p_error_message TEXT,
@@ -260,7 +260,7 @@ END;
 $$;
 
 -- 7. GET EMAIL QUEUE STATS
--- Returns statistics about the email queue
+DROP FUNCTION IF EXISTS public.get_email_queue_stats();
 CREATE OR REPLACE FUNCTION public.get_email_queue_stats()
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -284,7 +284,7 @@ END;
 $$;
 
 -- 8. RECORD PRIVACY ACCEPTANCE
--- Records user's acceptance of privacy policy
+DROP FUNCTION IF EXISTS public.record_privacy_acceptance(uuid, text, text, text, boolean, boolean);
 CREATE OR REPLACE FUNCTION public.record_privacy_acceptance(
   p_user_id UUID,
   p_policy_version TEXT,
@@ -317,7 +317,7 @@ END;
 $$;
 
 -- 9. HAS ACCEPTED PRIVACY POLICY
--- Checks if user has accepted a specific policy version
+DROP FUNCTION IF EXISTS public.has_accepted_privacy_policy(uuid, text);
 CREATE OR REPLACE FUNCTION public.has_accepted_privacy_policy(
   p_user_id UUID,
   p_required_version TEXT
@@ -339,7 +339,7 @@ END;
 $$;
 
 -- 10. EXPORT USER DATA (GDPR)
--- Exports all user data for GDPR compliance
+DROP FUNCTION IF EXISTS public.export_user_data(uuid);
 CREATE OR REPLACE FUNCTION public.export_user_data(
   p_user_id UUID
 )
@@ -376,7 +376,7 @@ END;
 $$;
 
 -- 11. LOG DATA ACCESS (GDPR)
--- Logs access to user data for GDPR audit trail
+DROP FUNCTION IF EXISTS public.log_data_access(uuid, text, text, text, text, text, text, text);
 CREATE OR REPLACE FUNCTION public.log_data_access(
   p_user_id UUID,
   p_accessed_by TEXT,
