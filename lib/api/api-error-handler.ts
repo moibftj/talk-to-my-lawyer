@@ -6,6 +6,8 @@
 import { NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { isDevelopment } from '@/lib/config/env'
+import * as Sentry from '@sentry/nextjs'
+import { enrichEventTags } from '@/lib/monitoring/sentry/filters'
 
 /**
  * Custom error classes for different error types
@@ -94,6 +96,29 @@ export function handleApiError(
   } else {
     console.error(`${logPrefix} Unknown error:`, {error, requestId})
   }
+
+  // Send error to Sentry (with filtering applied by beforeSend)
+  Sentry.captureException(error, {
+    tags: {
+      context: context || 'unknown',
+      requestId: requestId || 'none',
+    },
+    extra: {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    },
+  })
+
+  // Add breadcrumb for error context
+  Sentry.addBreadcrumb({
+    category: 'api_error',
+    message: `API error in ${context || 'unknown'}`,
+    level: 'error',
+    data: {
+      requestId,
+      errorType: error instanceof Error ? error.name : 'unknown',
+    },
+  })
 
   // Handle known ApiErrors
   if (error instanceof ApiError) {

@@ -10,6 +10,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await initializeTracing();
+    await initializeSentry();
 
     console.log("[Instrumentation] Initializing server instrumentation...");
 
@@ -28,6 +29,16 @@ export async function register() {
     });
 
     console.log("[Instrumentation] Server instrumentation complete");
+  }
+}
+
+async function initializeSentry() {
+  try {
+    // Initialize Sentry server-side monitoring
+    await import("./lib/monitoring/sentry/sentry.server.config");
+    console.log("[Instrumentation] Sentry monitoring initialized");
+  } catch (error) {
+    console.error("[Instrumentation] Failed to initialize Sentry:", error);
   }
 }
 

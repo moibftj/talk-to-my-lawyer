@@ -87,6 +87,7 @@
     "@radix-ui/react-tooltip": "1.2.8",
     "@react-email/components": "^1.0.6",
     "@react-email/render": "^2.0.4",
+    "@sentry/nextjs": "^10.38.0",
     "@stripe/stripe-js": "^8.6.4",
     "@supabase/supabase-js": "latest",
     "@tanstack/react-query": "^5.90.19",

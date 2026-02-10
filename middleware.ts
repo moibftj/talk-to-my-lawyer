@@ -28,12 +28,52 @@
 
 import { type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/proxy'
+import * as Sentry from '@sentry/nextjs'
 
 // Use Node.js runtime for crypto.createHmac (JWT verification)
 export const runtime = 'nodejs'
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  try {
+    return await updateSession(request)
+  } catch (error) {
+    // Capture middleware errors in Sentry
+    Sentry.captureException(error, {
+      tags: {
+        middleware: true,
+        path: request.nextUrl.pathname,
+        method: request.method,
+      },
+      extra: {
+        url: request.url,
+        userAgent: request.headers.get('user-agent'),
+        referer: request.headers.get('referer'),
+      },
+    })
+
+    // Add breadcrumb for middleware error
+    Sentry.addBreadcrumb({
+      category: 'middleware',
+      message: `Middleware error on ${request.nextUrl.pathname}`,
+      level: 'error',
+      data: {
+        method: request.method,
+        path: request.nextUrl.pathname,
+      },
+    })
+
+    // Fallback response - redirect to error page
+    return new Response(
+      JSON.stringify({
+        error: 'Internal server error',
+        requestId: crypto.randomUUID(),
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+  }
 }
 
 export const config = {
