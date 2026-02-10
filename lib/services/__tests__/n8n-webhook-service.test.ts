@@ -151,7 +151,7 @@ describe("n8n Webhook Service", () => {
     });
 
     it("should include custom auth header when auth key is set", async () => {
-      process.env.N8N_WEBHOOK_AUTH_HEADER = 'N8N_LETTER_WEBHOOK_AUTH_KEY';
+      process.env.N8N_WEBHOOK_AUTH_HEADER = "N8N_LETTER_WEBHOOK_AUTH_KEY";
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -171,7 +171,7 @@ describe("n8n Webhook Service", () => {
             "Content-Type": "application/json",
             "X-Webhook-Source": "talk-to-my-lawyer",
             "X-Letter-Id": "letter-123",
-            "N8N_LETTER_WEBHOOK_AUTH_KEY": "test-auth-key",
+            N8N_LETTER_WEBHOOK_AUTH_KEY: "test-auth-key",
           }),
         }),
       );
