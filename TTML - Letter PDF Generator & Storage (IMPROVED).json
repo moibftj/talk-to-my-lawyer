@@ -8,9 +8,7 @@
         "responseMode": "lastNode",
         "options": {
           "responseHeaders": {
-            "entries": [
-              { "name": "Content-Type", "value": "application/json" }
-            ]
+            "entries": [{ "name": "Content-Type", "value": "application/json" }]
           }
         }
       },
@@ -36,7 +34,13 @@
         "operation": "get",
         "tableId": "letters",
         "filters": {
-          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Validate Input').item.json.letterId }}" }]
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Validate Input').item.json.letterId }}"
+            }
+          ]
         }
       },
       "id": "edd3c558-85c4-41a5-9ce7-4c2caec7b1c8",
@@ -50,7 +54,13 @@
         "operation": "get",
         "tableId": "profiles",
         "filters": {
-          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Fetch Letter from Supabase').item.json.user_id }}" }]
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Fetch Letter from Supabase').item.json.user_id }}"
+            }
+          ]
         }
       },
       "id": "41a655d2-7a62-4880-bb46-2711950bd077",
@@ -61,7 +71,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build professional legal letter HTML matching TTML letterhead style\nconst letter = $('Fetch Letter from Supabase').first().json;\nconst profile = $('Fetch User Profile').first().json;\n\nif (!letter || !letter.id) {\n  throw new Error('Letter not found in database');\n}\n\n// Use letter_content for approved letters, fall back to ai_draft_content for other states\nconst content = letter.letter_content || letter.ai_draft_content || '';\nconst intake = letter.intake_data || {};\nconst title = letter.subject || letter.title || 'Legal Letter';\nconst isDraft = letter.status !== 'approved';\nconst senderName = profile?.full_name || intake.senderName || 'Sender';\nconst recipientName = intake.recipientName || 'Recipient';\nconst recipientAddress = intake.recipientAddress || '';\nconst recipientCompany = intake.recipientCompany || '';\nconst refNumber = `TTML-${letter.id.substring(0, 8).toUpperCase()}`;\n\n// Format date - use approved_at for approved letters, created_at for drafts\nconst dateSource = letter.approved_at || letter.created_at;\nconst dateStr = new Date(dateSource).toLocaleDateString('en-US', {\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\n// Escape HTML entities\nfunction escapeHtml(text) {\n  if (!text) return '';\n  return String(text)\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;')\n    .replace(/'/g, '&#39;');\n}\n\n// Convert content newlines to HTML paragraphs\nfunction contentToHtml(text) {\n  if (!text) return '';\n  return text\n    .split('\\n\\n')\n    .map(para => `<p style=\"margin: 0 0 12px 0; line-height: 1.6;\">${escapeHtml(para).replace(/\\n/g, '<br>')}</p>`)\n    .join('');\n}\n\nconst watermarkHtml = isDraft ? `\n  <div style=\"position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; color: rgba(200, 200, 200, 0.3); font-weight: bold; z-index: -1; pointer-events: none;\">\n    DRAFT - NOT APPROVED\n  </div>\n` : '';\n\nconst html = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    @page {\n      size: letter;\n      margin: 25mm 20mm 25mm 25mm;\n    }\n    body {\n      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;\n      font-size: 11pt;\n      color: #333333;\n      line-height: 1.6;\n      margin: 0;\n      padding: 0;\n    }\n    .letterhead-bar {\n      background-color: #1a1a2e;\n      height: 8mm;\n      width: 100%;\n      margin-bottom: 12mm;\n    }\n    .letterhead-title {\n      font-size: 18pt;\n      font-weight: bold;\n      color: #1a1a2e;\n      margin: 0 0 2mm 0;\n      letter-spacing: 0.5px;\n    }\n    .letterhead-subtitle {\n      font-size: 9pt;\n      color: #666666;\n      margin: 0 0 8mm 0;\n    }\n    .letterhead-divider {\n      border: none;\n      border-top: 0.5px solid #e0e0e0;\n      margin: 0 0 10mm 0;\n    }\n    .date {\n      font-size: 10pt;\n      margin-bottom: 12mm;\n    }\n    .recipient-block {\n      margin-bottom: 8mm;\n    }\n    .recipient-name {\n      font-weight: bold;\n    }\n    .subject-line {\n      font-weight: bold;\n      font-size: 11pt;\n      margin: 8mm 0 10mm 0;\n    }\n    .letter-body {\n      font-size: 10pt;\n    }\n    .closing-block {\n      margin-top: 15mm;\n    }\n    .sender-name {\n      font-weight: bold;\n      margin-top: 15mm;\n    }\n    .footer {\n      position: fixed;\n      bottom: 0;\n      left: 0;\n      right: 0;\n      border-top: 0.3px solid #e0e0e0;\n      padding-top: 3mm;\n      font-size: 8pt;\n      color: #666666;\n      display: flex;\n      justify-content: space-between;\n    }\n    .footer-ref { float: left; }\n    .footer-review { float: right; }\n  </style>\n</head>\n<body>\n  ${watermarkHtml}\n\n  <!-- Letterhead -->\n  <div class=\"letterhead-bar\"></div>\n  <div class=\"letterhead-title\">TALK-TO-MY-LAWYER</div>\n  <div class=\"letterhead-subtitle\">Professional Legal Letter Services</div>\n  <hr class=\"letterhead-divider\">\n\n  <!-- Date -->\n  <div class=\"date\">${escapeHtml(dateStr)}</div>\n\n  <!-- Recipient -->\n  <div class=\"recipient-block\">\n    <div class=\"recipient-name\">${escapeHtml(recipientName)}</div>\n    ${recipientCompany ? `<div>${escapeHtml(recipientCompany)}</div>` : ''}\n    ${recipientAddress ? recipientAddress.split('\\n').map(line => `<div>${escapeHtml(line)}</div>`).join('') : ''}\n  </div>\n\n  <!-- Subject -->\n  ${title ? `<div class=\"subject-line\">Re: ${escapeHtml(title)}</div>` : ''}\n\n  <!-- Body -->\n  <div class=\"letter-body\">\n    ${contentToHtml(content)}\n  </div>\n\n  <!-- Closing -->\n  <div class=\"closing-block\">\n    <p>Sincerely,</p>\n    <div class=\"sender-name\">${escapeHtml(senderName)}</div>\n  </div>\n\n  <!-- Footer -->\n  <div class=\"footer\">\n    <span class=\"footer-ref\">Ref: ${escapeHtml(refNumber)}</span>\n    ${!isDraft ? '<span class=\"footer-review\">This letter has been reviewed by a licensed attorney.</span>' : ''}\n  </div>\n</body>\n</html>`;\n\n// Generate safe filename\nconst safeTitle = title.replace(/[^a-z0-9]/gi, '_').substring(0, 50) || 'letter';\nconst fileName = `${letter.id}/${safeTitle}.pdf`;\n\nconsole.log(`[PDF Workflow] Built HTML for letter: ${letter.id}, content length: ${content.length}`);\n\nreturn {\n  json: {\n    letterId: letter.id,\n    userId: letter.user_id,\n    title: title,\n    fileName: fileName,\n    storagePath: `letters/${fileName}`,\n    html: html,\n    isDraft: isDraft,\n    refNumber: refNumber,\n    timestamp: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Build professional legal letter HTML matching TTML letterhead style\nconst letter = $('Fetch Letter from Supabase').first().json;\nconst profile = $('Fetch User Profile').first().json;\n\nif (!letter || !letter.id) {\n  throw new Error('Letter not found in database');\n}\n\n// Use final_content for approved letters, fall back to ai_draft_content for other states\nconst content = letter.final_content || letter.ai_draft_content || '';\nconst intake = letter.intake_data || {};\nconst title = letter.subject || letter.title || 'Legal Letter';\nconst isDraft = letter.status !== 'approved' && letter.status !== 'completed';\nconst senderName = profile?.full_name || intake.senderName || 'Sender';\nconst recipientName = intake.recipientName || 'Recipient';\nconst recipientAddress = intake.recipientAddress || '';\nconst recipientCompany = intake.recipientCompany || '';\nconst refNumber = `TTML-${letter.id.substring(0, 8).toUpperCase()}`;\n\n// Format date - use approved_at for approved letters, created_at for drafts\nconst dateSource = letter.approved_at || letter.created_at;\nconst dateStr = new Date(dateSource).toLocaleDateString('en-US', {\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\n// Escape HTML entities\nfunction escapeHtml(text) {\n  if (!text) return '';\n  return String(text)\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\\\"/g, '&quot;')\n    .replace(/'/g, '&#39;');\n}\n\n// Convert content newlines to HTML paragraphs\nfunction contentToHtml(text) {\n  if (!text) return '';\n  return text\n    .split('\\\\n\\\\n')\n    .map(para => `<p style=\\\"margin: 0 0 12px 0; line-height: 1.6;\\\">${escapeHtml(para).replace(/\\\\n/g, '<br>')}</p>`)\n    .join('');\n}\n\nconst watermarkHtml = isDraft ? `\\n  <div style=\\\"position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 80px; color: rgba(200, 200, 200, 0.3); font-weight: bold; z-index: -1; pointer-events: none;\\\">\\n    DRAFT - NOT APPROVED\\n  </div>\\n` : '';\n\nconst html = `<!DOCTYPE html>\\n<html>\\n<head>\\n  <meta charset=\\\"UTF-8\\\">\\n  <style>\\n    @page {\\n      size: letter;\\n      margin: 25mm 20mm 25mm 25mm;\\n    }\\n    body {\\n      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;\\n      font-size: 11pt;\\n      color: #333333;\\n      line-height: 1.6;\\n      margin: 0;\\n      padding: 0;\\n    }\\n    .letterhead-bar {\\n      background-color: #1a1a2e;\\n      height: 8mm;\\n      width: 100%;\\n      margin-bottom: 12mm;\\n    }\\n    .letterhead-title {\\n      font-size: 18pt;\\n      font-weight: bold;\\n      color: #1a1a2e;\\n      margin: 0 0 2mm 0;\\n      letter-spacing: 0.5px;\\n    }\\n    .letterhead-subtitle {\\n      font-size: 9pt;\\n      color: #666666;\\n      margin: 0 0 8mm 0;\\n    }\\n    .letterhead-divider {\\n      border: none;\\n      border-top: 0.5px solid #e0e0e0;\\n      margin: 0 0 10mm 0;\\n    }\\n    .date {\\n      font-size: 10pt;\\n      margin-bottom: 12mm;\\n    }\\n    .recipient-block {\\n      margin-bottom: 8mm;\\n    }\\n    .recipient-name {\\n      font-weight: bold;\\n    }\\n    .subject-line {\\n      font-weight: bold;\\n      font-size: 11pt;\\n      margin: 8mm 0 10mm 0;\\n    }\\n    .letter-body {\\n      font-size: 10pt;\\n    }\\n    .closing-block {\\n      margin-top: 15mm;\\n    }\\n    .sender-name {\\n      font-weight: bold;\\n      margin-top: 15mm;\\n    }\\n    .footer {\\n      position: fixed;\\n      bottom: 0;\\n      left: 0;\\n      right: 0;\\n      border-top: 0.3px solid #e0e0e0;\\n      padding-top: 3mm;\\n      font-size: 8pt;\\n      color: #666666;\\n      display: flex;\\n      justify-content: space-between;\\n    }\\n    .footer-ref { float: left; }\\n    .footer-review { float: right; }\\n  </style>\\n</head>\\n<body>\\n  ${watermarkHtml}\\n\\n  <!-- Letterhead -->\\n  <div class=\\\"letterhead-bar\\\"></div>\\n  <div class=\\\"letterhead-title\\\">TALK-TO-MY-LAWYER</div>\\n  <div class=\\\"letterhead-subtitle\\\">Professional Legal Letter Services</div>\\n  <hr class=\\\"letterhead-divider\\\">\\n\\n  <!-- Date -->\\n  <div class=\\\"date\\\">${escapeHtml(dateStr)}</div>\\n\\n  <!-- Recipient -->\\n  <div class=\\\"recipient-block\\\">\\n    <div class=\\\"recipient-name\\\">${escapeHtml(recipientName)}</div>\\n    ${recipientCompany ? `<div>${escapeHtml(recipientCompany)}</div>` : ''}\\n    ${recipientAddress ? recipientAddress.split('\\\\n').map(line => `<div>${escapeHtml(line)}</div>`).join('') : ''}\\n  </div>\\n\\n  <!-- Subject -->\\n  ${title ? `<div class=\\\"subject-line\\\">Re: ${escapeHtml(title)}</div>` : ''}\\n\\n  <!-- Body -->\\n  <div class=\\\"letter-body\\\">\\n    ${contentToHtml(content)}\\n  </div>\\n\\n  <!-- Closing -->\\n  <div class=\\\"closing-block\\\">\\n    <p>Sincerely,</p>\\n    <div class=\\\"sender-name\\\">${escapeHtml(senderName)}</div>\\n  </div>\\n\\n  <!-- Footer -->\\n  <div class=\\\"footer\\\">\\n    <span class=\\\"footer-ref\\\">Ref: ${escapeHtml(refNumber)}</span>\\n    ${!isDraft ? '<span class=\\\"footer-review\\\">This letter has been reviewed by a licensed attorney.</span>' : ''}\\n  </div>\\n</body>\\n</html>`;\n\n// Generate safe filename\nconst safeTitle = title.replace(/[^a-z0-9]/gi, '_').substring(0, 50) || 'letter';\nconst fileName = `${letter.id}/${safeTitle}.pdf`;\n\nconsole.log(`[PDF Workflow] Built HTML for letter: ${letter.id}, content length: ${content.length}`);\n\nreturn {\n  json: {\n    letterId: letter.id,\n    userId: letter.user_id,\n    title: title,\n    fileName: fileName,\n    storagePath: `letters/${fileName}`,\n    html: html,\n    isDraft: isDraft,\n    refNumber: refNumber,\n    timestamp: new Date().toISOString()\n  }\n};"
       },
       "id": "394a170c-9c44-4443-87c8-464faa85b52f",
       "name": "Build Letter HTML",
@@ -112,7 +122,10 @@
           "parameters": [
             { "name": "Content-Type", "value": "application/pdf" },
             { "name": "x-upsert", "value": "true" },
-            { "name": "Authorization", "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}" }
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.SUPABASE_SERVICE_ROLE_KEY }}"
+            }
           ]
         },
         "sendBody": true,
@@ -131,13 +144,28 @@
         "operation": "update",
         "tableId": "letters",
         "filters": {
-          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Build Letter HTML').item.json.letterId }}" }]
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Build Letter HTML').item.json.letterId }}"
+            }
+          ]
         },
         "fieldsUi": {
           "fieldValues": [
-            { "fieldId": "pdf_storage_path", "fieldValue": "={{ $('Build Letter HTML').item.json.storagePath }}" },
-            { "fieldId": "pdf_generated_at", "fieldValue": "={{ new Date().toISOString() }}" },
-            { "fieldId": "updated_at", "fieldValue": "={{ new Date().toISOString() }}" }
+            {
+              "fieldId": "pdf_storage_path",
+              "fieldValue": "={{ $('Build Letter HTML').item.json.storagePath }}"
+            },
+            {
+              "fieldId": "pdf_generated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
           ]
         }
       },
@@ -189,7 +217,9 @@
       "main": [[{ "node": "Validate Input", "type": "main", "index": 0 }]]
     },
     "Validate Input": {
-      "main": [[{ "node": "Fetch Letter from Supabase", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Fetch Letter from Supabase", "type": "main", "index": 0 }]
+      ]
     },
     "Fetch Letter from Supabase": {
       "main": [[{ "node": "Fetch User Profile", "type": "main", "index": 0 }]]
@@ -204,13 +234,25 @@
       "main": [[{ "node": "Process PDF Result", "type": "main", "index": 0 }]]
     },
     "Process PDF Result": {
-      "main": [[{ "node": "Upload PDF to Supabase Storage", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upload PDF to Supabase Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upload PDF to Supabase Storage": {
-      "main": [[{ "node": "Update Letter with PDF Path", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Update Letter with PDF Path", "type": "main", "index": 0 }]
+      ]
     },
     "Update Letter with PDF Path": {
-      "main": [[{ "node": "Return Success Response", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Return Success Response", "type": "main", "index": 0 }]
+      ]
     }
   },
   "pinData": {},
