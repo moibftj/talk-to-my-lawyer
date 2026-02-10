@@ -98,7 +98,7 @@ describe('Admin Session Management', () => {
         expect.objectContaining({
           httpOnly: true,
           secure: true,
-          sameSite: 'lax',
+          sameSite: 'none',
           maxAge: 1800,
           path: '/',
         })
@@ -114,7 +114,7 @@ describe('Admin Session Management', () => {
       expect(sessionData!.lastActivity).toBeDefined()
     })
 
-    it('should create session with secure=false in development', async () => {
+    it('should create session with secure=true in all environments', async () => {
       process.env = { ...process.env, NODE_ENV: 'development' }
 
       await createAdminSession('user-123', 'admin@example.com', 'super_admin')
@@ -123,7 +123,8 @@ describe('Admin Session Management', () => {
         'admin_session',
         expect.any(String),
         expect.objectContaining({
-          secure: false,
+          secure: true,
+          sameSite: 'none',
         })
       )
     })
