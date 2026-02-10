@@ -160,11 +160,19 @@ describe('LetterActions Component', () => {
   })
 
   describe('Approved Letter Actions', () => {
-    it('should render download PDF button for approved letters', () => {
-      render(<LetterActions letter={{ ...mockLetter, status: 'approved' }} />)
+    it('should render download PDF button for approved letters with pdf_url', () => {
+      render(<LetterActions letter={{ ...mockLetter, status: 'approved', pdf_url: 'https://example.com/letter.pdf' }} />)
 
       expect(
         screen.getByRole('button', { name: /download pdf/i })
+      ).toBeInTheDocument()
+    })
+
+    it('should show PDF generating state when approved without pdf_url', () => {
+      render(<LetterActions letter={{ ...mockLetter, status: 'approved' }} />)
+
+      expect(
+        screen.getByRole('button', { name: /pdf generating/i })
       ).toBeInTheDocument()
     })
 
@@ -184,8 +192,10 @@ describe('LetterActions Component', () => {
       ).not.toBeInTheDocument()
     })
 
-    it('should download PDF successfully', async () => {
+    it('should open PDF in new window on download click', async () => {
       const user = userEvent.setup()
+      const mockOpen = vi.fn()
+      window.open = mockOpen
 
       render(
         <LetterActions
@@ -193,6 +203,7 @@ describe('LetterActions Component', () => {
             ...mockLetter,
             status: 'approved',
             final_content: 'Test letter content',
+            pdf_url: 'https://example.com/letter.pdf',
           }}
         />
       )
@@ -200,10 +211,10 @@ describe('LetterActions Component', () => {
       const downloadButton = screen.getByRole('button', { name: /download pdf/i })
       await user.click(downloadButton)
 
-      // jsPDF should be imported and called
-      await waitFor(() => {
-        expect(global.alert).not.toHaveBeenCalled()
-      })
+      expect(mockOpen).toHaveBeenCalledWith(
+        '/api/letters/letter-123/pdf',
+        '_blank'
+      )
     })
   })
 
