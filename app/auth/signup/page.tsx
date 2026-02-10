@@ -1,90 +1,109 @@
-'use client'
+"use client";
 
-import Image from 'next/image'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/ui/password-input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
-import { toast } from 'sonner'
+import Image from "next/image";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
+import { toast } from "sonner";
 
 export default function SignUpPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState<'subscriber' | 'employee'>('subscriber')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"subscriber" | "employee">("subscriber");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   // Initialize Supabase client lazily
   const getSupabase = () => {
     try {
-      return createClient()
+      return createClient();
     } catch (err) {
-      setError('Application not properly configured. Please contact support.')
-      return null
+      setError("Application not properly configured. Please contact support.");
+      return null;
     }
-  }
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters')
-      setLoading(false)
-      return
+      setError("Password must be at least 6 characters");
+      setLoading(false);
+      return;
     }
 
-    const supabase = getSupabase()
+    const supabase = getSupabase();
     if (!supabase) {
-      setLoading(false)
-      return
+      setLoading(false);
+      return;
     }
 
     try {
       // Use production domain as primary, fallback to current origin
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.talk-to-my-lawyer.com' || (typeof window !== 'undefined' ? window.location.origin : 'https://www.talk-to-my-lawyer.com')
-      
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        "https://www.talk-to-my-lawyer.com" ||
+        (typeof window !== "undefined"
+          ? window.location.origin
+          : "https://www.talk-to-my-lawyer.com");
+
       const roleRedirects: Record<string, string> = {
-        'subscriber': '/dashboard/letters',
-        'employee': '/dashboard/commissions'
-      }
-      
-      const redirectUrl = `${baseUrl}${roleRedirects[role]}`
+        subscriber: "/dashboard/letters",
+        employee: "/dashboard/commissions",
+      };
 
-      console.log('Signup redirect URL:', redirectUrl)
+      const redirectUrl = `${baseUrl}${roleRedirects[role]}`;
 
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-            role: role
-          }
-        }
-      })
+      console.log("Signup redirect URL:", redirectUrl);
+
+      const { data: authData, error: signUpError } = await supabase.auth.signUp(
+        {
+          email,
+          password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: fullName,
+              role: role,
+            },
+          },
+        },
+      );
 
       if (signUpError) {
-        console.error('Signup error:', signUpError)
-        throw signUpError
+        console.error("Signup error:", signUpError);
+        throw signUpError;
       }
 
       if (authData.user) {
@@ -92,33 +111,45 @@ export default function SignUpPage() {
         // - on_auth_user_created: Creates profile from user metadata (role, full_name)
         // - trigger_create_employee_coupon: Creates coupon for employee roles
         // No manual API call needed - triggers run immediately after auth.user insert
-        if (role === 'employee') {
-          console.log('Employee signup initiated - profile and coupon will be created by database triggers')
+        if (role === "employee") {
+          console.log(
+            "Employee signup initiated - profile and coupon will be created by database triggers",
+          );
         }
       }
 
-      toast.success('Account created! Check your email.')
-      router.push('/auth/check-email')
-    } catch (err: any) {
-      console.error('Signup error details:', err)
-      
-      // Provide more specific error messages
-      let errorMessage = 'Failed to create account. Please try again.'
-      if (err.message?.includes('Invalid redirect URL')) {
-        errorMessage = 'Configuration error. Please contact support.'
-      } else if (err.message?.includes('User already registered')) {
-        errorMessage = 'An account with this email already exists. Try signing in instead.'
-      } else if (err.message?.includes('Email not confirmed')) {
-        errorMessage = 'Please check your email and click the confirmation link.'
-      } else if (err.message) {
-        errorMessage = err.message
+      // If email confirmation is disabled, the session is already active — go straight to dashboard
+      if (authData.session) {
+        toast.success("Account created! Redirecting to dashboard...");
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        // Email confirmation is required — send user to check-email page
+        toast.success("Account created! Check your email.");
+        router.push("/auth/check-email");
       }
-      setError(errorMessage)
-      toast.error(errorMessage)
+    } catch (err: any) {
+      console.error("Signup error details:", err);
+
+      // Provide more specific error messages
+      let errorMessage = "Failed to create account. Please try again.";
+      if (err.message?.includes("Invalid redirect URL")) {
+        errorMessage = "Configuration error. Please contact support.";
+      } else if (err.message?.includes("User already registered")) {
+        errorMessage =
+          "An account with this email already exists. Try signing in instead.";
+      } else if (err.message?.includes("Email not confirmed")) {
+        errorMessage =
+          "Please check your email and click the confirmation link.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-muted/30 to-muted p-4">
@@ -136,7 +167,8 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
           <CardDescription>
-            Get professional, attorney-reviewed legal letters delivered to your inbox
+            Get professional, attorney-reviewed legal letters delivered to your
+            inbox
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -169,13 +201,20 @@ export default function SignUpPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Account Type</Label>
-              <Select value={role} onValueChange={(value: any) => setRole(value)}>
+              <Select
+                value={role}
+                onValueChange={(value: any) => setRole(value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="subscriber">Subscriber - Generate Letters</SelectItem>
-                  <SelectItem value="employee">Employee - Earn Commissions</SelectItem>
+                  <SelectItem value="subscriber">
+                    Subscriber - Generate Letters
+                  </SelectItem>
+                  <SelectItem value="employee">
+                    Employee - Earn Commissions
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -207,17 +246,20 @@ export default function SignUpPage() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {loading ? "Creating account..." : "Sign Up"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="text-primary hover:text-primary/80 hover:underline">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="text-primary hover:text-primary/80 hover:underline"
+            >
               Sign in
             </Link>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
