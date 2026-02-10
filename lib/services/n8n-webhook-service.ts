@@ -45,6 +45,7 @@ export interface N8nGenerationResult {
 interface N8nConfig {
   webhookUrl: string | undefined;
   authKey: string | undefined;
+  authHeaderName: string;
   isConfigured: boolean;
   timeout: number;
   maxRetries: number;
