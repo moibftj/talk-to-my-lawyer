@@ -1,25 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { verifyAdminSessionFromRequest, type AdminSession } from '@/lib/auth/admin-session'
-
-// Parse admin session cookie and get sub-role
-function getAdminSessionWithSubRole(request: NextRequest): AdminSession | null {
-  const sessionCookie = request.cookies.get('admin_session')
-  if (!sessionCookie) {
-    return null
-  }
-
-  try {
-    const session: AdminSession = JSON.parse(sessionCookie.value)
-    const now = Date.now()
-    if (now - session.lastActivity > 30 * 60 * 1000) {
-      return null
-    }
-    return session
-  } catch {
-    return null
-  }
-}
+import { verifyAdminSessionFromRequest } from '@/lib/auth/admin-session'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -94,7 +75,7 @@ export async function updateSession(request: NextRequest) {
       }
 
       // Verify admin session and check sub-role
-      const adminSession = getAdminSessionWithSubRole(request)
+      const adminSession = verifyAdminSessionFromRequest(request)
       if (!adminSession) {
         const url = request.nextUrl.clone()
         url.pathname = '/attorney-portal/login'
@@ -122,7 +103,7 @@ export async function updateSession(request: NextRequest) {
       }
 
       // Verify admin session for all other admin portal routes
-      const adminSession = getAdminSessionWithSubRole(request)
+      const adminSession = verifyAdminSessionFromRequest(request)
       if (!adminSession) {
         const url = request.nextUrl.clone()
         url.pathname = `/${adminPortalRoute}/login`

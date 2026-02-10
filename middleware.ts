@@ -1,5 +1,8 @@
 /**
- * Next.js Middleware (Edge Runtime)
+ * Next.js Middleware (Node.js Runtime)
+ *
+ * Uses Node.js runtime (not Edge) because admin session verification
+ * requires crypto.createHmac for JWT signature validation.
  *
  * In Next.js 16.x App Router, this middleware file handles:
  * - Session refresh for authenticated users
@@ -25,6 +28,9 @@
 
 import { type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/proxy'
+
+// Use Node.js runtime for crypto.createHmac (JWT verification)
+export const runtime = 'nodejs'
 
 export async function middleware(request: NextRequest) {
   return await updateSession(request)
