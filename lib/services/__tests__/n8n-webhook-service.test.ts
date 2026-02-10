@@ -100,15 +100,17 @@ describe('n8n Webhook Service', () => {
       letterType: 'demand_letter',
       letterId: 'letter-123',
       userId: 'user-456',
-      senderName: 'John Doe',
-      senderAddress: '123 Main St, Los Angeles, CA 90001',
-      senderState: 'CA',
-      senderEmail: 'john@example.com',
-      recipientName: 'Jane Smith',
-      recipientAddress: '456 Oak Ave, New York, NY 10001',
-      recipientState: 'NY',
-      issueDescription: 'Breach of contract regarding service agreement',
-      desiredOutcome: 'Full refund of $5000',
+      intakeData: {
+        senderName: 'John Doe',
+        senderAddress: '123 Main St, Los Angeles, CA 90001',
+        senderState: 'CA',
+        senderEmail: 'john@example.com',
+        recipientName: 'Jane Smith',
+        recipientAddress: '456 Oak Ave, New York, NY 10001',
+        recipientState: 'NY',
+        issueDescription: 'Breach of contract regarding service agreement',
+        desiredOutcome: 'Full refund of $5000',
+      },
     }
 
     beforeEach(() => {
@@ -124,28 +126,21 @@ describe('n8n Webhook Service', () => {
       )
     })
 
-    it('should successfully generate letter with research data', async () => {
-      const mockResponse: N8nGenerationResponse = {
-        success: true,
-        generatedContent: 'Dear Ms. Smith,\n\nThis letter serves as formal notice pursuant to CA Civil Code § 1542...',
-        letterId: 'letter-123',
-        status: 'pending_review',
-        researchApplied: true,
-        state: 'California',
-      }
-
+    it('should successfully generate letter', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockResponse),
+        json: () => Promise.resolve({
+          success: true,
+          letterId: 'letter-123',
+          status: 'pending_review',
+        }),
       })
 
       const result = await generateLetterViaN8n(validFormData)
 
-      expect(result.generatedContent).toBe(mockResponse.generatedContent)
-      expect(result.researchApplied).toBe(true)
-      expect(result.state).toBe('California')
       expect(result.supabaseUpdated).toBe(true)
       expect(result.status).toBe('pending_review')
+      expect(result.letterId).toBe('letter-123')
     })
 
     it('should include Authorization header when auth key is set', async () => {
@@ -154,8 +149,6 @@ describe('n8n Webhook Service', () => {
         json: () =>
           Promise.resolve({
             success: true,
-            generatedContent: 'Generated letter content',
-            researchApplied: false,
           }),
       })
 
@@ -183,7 +176,6 @@ describe('n8n Webhook Service', () => {
         json: () =>
           Promise.resolve({
             success: true,
-            generatedContent: 'Generated letter content',
           }),
       })
 
@@ -193,13 +185,12 @@ describe('n8n Webhook Service', () => {
       expect(headers['Authorization']).toBeUndefined()
     })
 
-    it('should include all form data in request body', async () => {
+    it('should include all form data with intakeData wrapper in request body', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
             success: true,
-            generatedContent: 'Generated letter content',
           }),
       })
 
@@ -210,11 +201,12 @@ describe('n8n Webhook Service', () => {
       expect(callBody.letterType).toBe('demand_letter')
       expect(callBody.letterId).toBe('letter-123')
       expect(callBody.userId).toBe('user-456')
-      expect(callBody.senderName).toBe('John Doe')
-      expect(callBody.senderState).toBe('CA')
-      expect(callBody.recipientName).toBe('Jane Smith')
-      expect(callBody.recipientState).toBe('NY')
-      expect(callBody.issueDescription).toBe('Breach of contract regarding service agreement')
+      expect(callBody.intakeData).toBeDefined()
+      expect(callBody.intakeData.senderName).toBe('John Doe')
+      expect(callBody.intakeData.senderState).toBe('CA')
+      expect(callBody.intakeData.recipientName).toBe('Jane Smith')
+      expect(callBody.intakeData.recipientState).toBe('NY')
+      expect(callBody.intakeData.issueDescription).toBe('Breach of contract regarding service agreement')
       expect(callBody.source).toBe('talk-to-my-lawyer')
       expect(callBody.timestamp).toBeDefined()
     })
@@ -267,9 +259,8 @@ describe('n8n Webhook Service', () => {
           json: () =>
             Promise.resolve({
               success: true,
-              generatedContent: 'Generated after retry',
-              researchApplied: true,
-              state: 'California',
+              letterId: 'letter-123',
+              status: 'pending_review',
             }),
         })
 
@@ -279,7 +270,7 @@ describe('n8n Webhook Service', () => {
 
       const result = await resultPromise
 
-      expect(result.generatedContent).toBe('Generated after retry')
+      expect(result.letterId).toBe('letter-123')
       expect(mockFetch).toHaveBeenCalledTimes(2)
     })
 
@@ -311,39 +302,27 @@ describe('n8n Webhook Service', () => {
       vi.useFakeTimers()
     })
 
-    it('should throw error when n8n returns success:false', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            success: false,
-            error: 'AI generation failed',
-          }),
-      })
-
-      await expect(generateLetterViaN8n(validFormData)).rejects.toThrow(
-        'AI generation failed'
-      )
-    })
-
-    it('should throw error when no content returned', async () => {
+    it('should return result on success', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () =>
           Promise.resolve({
             success: true,
-            generatedContent: '',
+            letterId: 'letter-123',
+            status: 'pending_review',
           }),
       })
 
-      await expect(generateLetterViaN8n(validFormData)).rejects.toThrow(
-        'n8n returned success but no generated content'
-      )
+      const result = await generateLetterViaN8n(validFormData)
+
+      expect(result.letterId).toBe('letter-123')
+      expect(result.status).toBe('pending_review')
+      expect(result.supabaseUpdated).toBe(true)
     })
   })
 
   describe('transformIntakeToN8nFormat', () => {
-    it('should transform intake data to n8n format', () => {
+    it('should wrap intake data in n8n format', () => {
       const intakeData = {
         senderName: 'John Doe',
         senderAddress: '123 Main St',
@@ -372,17 +351,11 @@ describe('n8n Webhook Service', () => {
 
       expect(result.letterId).toBe('letter-123')
       expect(result.userId).toBe('user-456')
-      expect(result.letterType).toBe('demand_letter')
-      expect(result.senderName).toBe('John Doe')
-      expect(result.senderEmail).toBe('john@example.com')
-      expect(result.recipientName).toBe('Jane Smith')
-      expect(result.issueDescription).toBe('Contract breach')
-      expect(result.amountDemanded).toBe(5000)
-      expect(result.deadline).toBe('2024-03-01')
-      expect(result.courtType).toBe('small-claims')
+      expect(result.letterType).toBe('Demand Letter') // Maps to display name
+      expect(result.intakeData).toEqual(intakeData)
     })
 
-    it('should handle missing optional fields', () => {
+    it('should map letter type to display name', () => {
       const intakeData = {
         senderName: 'John Doe',
         senderAddress: '123 Main St',
@@ -397,25 +370,20 @@ describe('n8n Webhook Service', () => {
       const result = transformIntakeToN8nFormat(
         'letter-123',
         'user-456',
-        'demand_letter',
+        'cease_desist',
         intakeData
       )
 
-      expect(result.senderEmail).toBeUndefined()
-      expect(result.senderPhone).toBeUndefined()
-      expect(result.recipientEmail).toBeUndefined()
-      expect(result.additionalDetails).toBeUndefined()
-      expect(result.amountDemanded).toBeUndefined()
-      expect(result.deadline).toBeUndefined()
+      expect(result.letterType).toBe('Cease & Desist')
     })
 
-    it('should convert non-string values to strings', () => {
+    it('should handle letter types not in map', () => {
       const intakeData = {
-        senderName: 123,
-        senderAddress: true,
-        senderState: null,
-        recipientName: undefined,
-        recipientAddress: { street: '123' },
+        senderName: 'John Doe',
+        senderAddress: '123 Main St',
+        senderState: 'CA',
+        recipientName: 'Jane Smith',
+        recipientAddress: '456 Oak Ave',
         recipientState: 'NY',
         issueDescription: 'Issue',
         desiredOutcome: 'Resolution',
@@ -424,43 +392,11 @@ describe('n8n Webhook Service', () => {
       const result = transformIntakeToN8nFormat(
         'letter-123',
         'user-456',
-        'demand_letter',
-        intakeData as any
+        'custom_letter_type',
+        intakeData
       )
 
-      expect(result.senderName).toBe('123')
-      expect(result.senderAddress).toBe('true')
-      expect(result.senderState).toBe('')
-      expect(result.recipientName).toBe('')
-    })
-
-    it('should only include amountDemanded if it is a number', () => {
-      const withNumber = transformIntakeToN8nFormat('l1', 'u1', 'type', {
-        senderName: 'A',
-        senderAddress: 'B',
-        senderState: 'C',
-        recipientName: 'D',
-        recipientAddress: 'E',
-        recipientState: 'F',
-        issueDescription: 'G',
-        desiredOutcome: 'H',
-        amountDemanded: 5000,
-      })
-
-      const withString = transformIntakeToN8nFormat('l2', 'u2', 'type', {
-        senderName: 'A',
-        senderAddress: 'B',
-        senderState: 'C',
-        recipientName: 'D',
-        recipientAddress: 'E',
-        recipientState: 'F',
-        issueDescription: 'G',
-        desiredOutcome: 'H',
-        amountDemanded: '5000',
-      })
-
-      expect(withNumber.amountDemanded).toBe(5000)
-      expect(withString.amountDemanded).toBeUndefined()
+      expect(result.letterType).toBe('custom_letter_type') // No mapping, uses as-is
     })
   })
 

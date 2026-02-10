@@ -4,198 +4,220 @@
  * Creates user profiles after signup.
  * Handles both session-based and access token authentication (for post-signup flow).
  */
-import { NextRequest } from "next/server"
-import { authRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis"
-import { successResponse, errorResponses, handleApiError } from "@/lib/api/api-error-handler"
-import { sendTemplateEmail } from "@/lib/email"
-import { db } from "@/lib/db/client-factory"
+import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
+import { authRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis";
+import {
+  successResponse,
+  errorResponses,
+  handleApiError,
+  ValidationError,
+} from "@/lib/api/api-error-handler";
+import { sendTemplateEmail } from "@/lib/email";
+import { db } from "@/lib/db/client-factory";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface CreateProfileBody {
+  email: string;
+  fullName: string;
+  role?: string;
+  userId?: string;
+  accessToken?: string;
+}
+
+interface AuthResult {
+  user: User;
+  method: "session" | "access_token";
+}
+
+// ============================================================================
+// Auth Helper
+// ============================================================================
+
+/**
+ * Authenticate user via session cookie or access token fallback.
+ * Access token auth handles the race condition where session cookie isn't set
+ * immediately after signup.
+ */
+async function authenticateRequest(
+  body: CreateProfileBody,
+): Promise<AuthResult | null> {
+  const { userId, accessToken } = body;
+  const supabase = await db.server();
+
+  // Try session-based auth first
+  const { data: sessionData, error: sessionError } =
+    await supabase.auth.getUser();
+
+  if (!sessionError && sessionData.user) {
+    return { user: sessionData.user, method: "session" };
+  }
+
+  // Fallback: access token for immediate post-signup profile creation
+  if (accessToken && userId) {
+    const tempClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } },
+    );
+
+    const { data: tokenData, error: tokenError } =
+      await tempClient.auth.getUser(accessToken);
+
+    if (!tokenError && tokenData.user && tokenData.user.id === userId) {
+      console.log("[CreateProfile] Authenticated via access token");
+      return { user: tokenData.user, method: "access_token" };
+    }
+  }
+
+  console.error(
+    "[CreateProfile] Authentication failed:",
+    sessionError?.message,
+  );
+  return null;
+}
+
+// ============================================================================
+// Validation
+// ============================================================================
+
+function validateInput(body: CreateProfileBody): void {
+  const errors: Array<{ field: string; message: string }> = [];
+
+  if (!body.email?.trim()) {
+    errors.push({ field: "email", message: "Email is required" });
+  }
+  if (!body.fullName?.trim()) {
+    errors.push({ field: "fullName", message: "Full name is required" });
+  }
+
+  if (errors.length > 0) {
+    throw new ValidationError("Missing required fields", errors);
+  }
+}
+
+// ============================================================================
+// Business Logic
+// ============================================================================
+
+async function createProfile(userId: string, email: string, fullName: string) {
+  const serviceClient = db.serviceRole();
+
+  const { data, error } = await serviceClient
+    .from("profiles")
+    .upsert(
+      {
+        id: userId,
+        email: email.toLowerCase().trim(),
+        role: "subscriber" as const,
+        full_name: fullName.trim(),
+      },
+      { onConflict: "id", ignoreDuplicates: false },
+    )
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[CreateProfile] Profile creation error:", error);
+    throw new Error("Failed to create profile");
+  }
+
+  return data;
+}
+
+function sendWelcomeEmail(email: string, fullName: string): void {
+  const firstName = fullName.split(" ")[0];
+  const dashboardUrl = `${
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://talk-to-my-lawyer.com"
+  }/dashboard`;
+
+  // Fire-and-forget: don't block response on email delivery
+  sendTemplateEmail("welcome", email, {
+    userName: firstName,
+    actionUrl: dashboardUrl,
+  })
+    .then((result) => {
+      if (result.success) {
+        console.log("[CreateProfile] Welcome email sent:", result.messageId);
+      } else {
+        console.error("[CreateProfile] Welcome email failed:", result.error);
+      }
+    })
+    .catch((error) => {
+      console.error("[CreateProfile] Welcome email error:", error);
+    });
+}
+
+// ============================================================================
+// Route Handler
+// ============================================================================
 
 export async function POST(request: NextRequest) {
   try {
-    // Apply rate limiting
+    // 1. Rate limiting
     const rateLimitResponse = await safeApplyRateLimit(
       request,
       authRateLimit,
       5,
       "15 m",
-    )
-    if (rateLimitResponse) return rateLimitResponse
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
-    // Parse and validate input first (need accessToken early)
-    const body = await request.json()
-    const { email, role, fullName, userId, accessToken } = body
+    // 2. Parse request
+    const body: CreateProfileBody = await request.json();
 
-    // Verify user is authenticated - either via session cookie or access token
-    const supabase = await db.server()
-    let user = null
-    let authError = null
-
-    // Try session-based auth first
-    const { data: sessionData, error: sessionError } =
-      await supabase.auth.getUser()
-
-    if (!sessionError && sessionData.user) {
-      // Session auth succeeded
-      user = sessionData.user
-    } else if (accessToken && userId) {
-      // Fallback: use access token for immediate post-signup profile creation
-      // This handles the race condition where session cookie isn't set yet
-      const { createClient } = await import("@supabase/supabase-js")
-      const tempClient = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          auth: {
-            persistSession: false,
-          },
-        },
-      )
-
-      const { data: tokenData, error: tokenError } =
-        await tempClient.auth.getUser(accessToken)
-
-      if (!tokenError && tokenData.user && tokenData.user.id === userId) {
-        user = tokenData.user
-        console.log(
-          "[CreateProfile] Authenticated via access token (post-signup flow)",
-        )
-      } else {
-        authError = tokenError || new Error("Token validation failed")
-      }
-    } else {
-      authError =
-        sessionError || new Error("No session or access token provided")
+    // 3. Authenticate
+    const auth = await authenticateRequest(body);
+    if (!auth) {
+      return errorResponses.unauthorized();
     }
 
-    if (authError || !user) {
-      console.error("[CreateProfile] Authentication error:", authError)
-      return errorResponses.unauthorized()
-    }
-
-    // Ensure the userId from the request matches the authenticated user
-    if (userId && userId !== user.id) {
+    // 4. Verify user ID matches (if provided)
+    if (body.userId && body.userId !== auth.user.id) {
       console.error("[CreateProfile] User ID mismatch:", {
-        requestUserId: userId,
-        authenticatedUserId: user.id,
-      })
-      return errorResponses.forbidden("Cannot create profile for another user")
+        requested: body.userId,
+        authenticated: auth.user.id,
+      });
+      return errorResponses.forbidden("Cannot create profile for another user");
     }
 
-    // Validate required fields
-    if (!email || !fullName) {
-      return errorResponses.validation("Missing required fields", [
-        { field: "email", message: "Email is required" },
-        { field: "fullName", message: "Full name is required" },
-      ])
+    // 5. Validate input
+    validateInput(body);
+
+    // 6. Prevent role escalation - only subscribers via this endpoint
+    if (body.role && body.role !== "subscriber") {
+      return errorResponses.forbidden(
+        "Only subscriber profiles can be created via this endpoint",
+      );
     }
 
-    const requestedRole = role || "subscriber"
+    // 7. Create profile
+    const profile = await createProfile(
+      auth.user.id,
+      body.email,
+      body.fullName,
+    );
 
-    // Prevent role escalation from client requests
-    if (requestedRole !== "subscriber") {
-      return errorResponses.forbidden("Only subscriber profiles can be created via this endpoint")
-    }
+    console.log("[CreateProfile] Success:", {
+      userId: auth.user.id,
+      email: body.email,
+    });
 
-    // Use service role client for profile creation (elevated permissions)
-    const serviceClient = db.serviceRole()
-
-    // Profile insert data matching the database schema
-    const profileInsert = {
-      id: user.id,
-      email: email.toLowerCase().trim(),
-      role: requestedRole as any,
-      full_name: fullName.trim(),
-    }
-
-    const { data: profileData, error: profileError } = await (serviceClient as any)
-      .from("profiles")
-      .upsert(profileInsert, {
-        onConflict: "id",
-        ignoreDuplicates: false,
-      })
-      .select()
-      .single()
-
-    if (profileError) {
-      console.error("[CreateProfile] Profile creation error:", profileError)
-      return errorResponses.serverError("Failed to create profile")
-    }
-
-    // Note: Employee coupon is created automatically by the database trigger
-    // (trigger_create_employee_coupon) when profile with role='employee' is inserted.
-    // We verify it was created successfully here.
-    if (role === "employee") {
-      // Wait a moment for trigger to complete, then verify coupon exists
-      const { data: couponData, error: couponCheckError } = await (serviceClient as any)
-        .from("employee_coupons")
-        .select("code")
-        .eq("employee_id", user.id)
-        .single()
-
-      if (couponCheckError || !couponData) {
-        // Trigger may have failed - create coupon manually as fallback
-        console.warn(
-          "[CreateProfile] Coupon not found after trigger, creating manually...",
-        )
-        const couponCode = `EMP-${user.id.slice(0, 6).toUpperCase()}${Math.random().toString(36).substring(2, 4).toUpperCase()}`
-        const couponInsert = {
-          employee_id: user.id,
-          code: couponCode,
-          discount_percent: 20,
-          is_active: true,
-        }
-        const { error: couponInsertError } = await (serviceClient as any)
-          .from("employee_coupons")
-          .insert(couponInsert)
-
-        if (couponInsertError) {
-          console.error(
-            "[CreateProfile] Fallback coupon creation failed:",
-            couponInsertError,
-          )
-        } else {
-          console.log("[CreateProfile] Fallback coupon created:", couponCode)
-        }
-      } else {
-        console.log(
-          "[CreateProfile] Employee coupon verified:",
-          (couponData as any).code,
-        )
-      }
-    }
-
-    console.log("[CreateProfile] Profile created successfully", {
-      userId: user.id,
-      email,
-      role,
-    })
-
-    // Send welcome email directly (not queued) for immediate delivery
-    sendTemplateEmail("welcome", email, {
-      userName: fullName.split(" ")[0], // First name
-      actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://talk-to-my-lawyer.com"}/dashboard`,
-    })
-      .then((result) => {
-        if (result.success) {
-          console.log(
-            "[CreateProfile] Welcome email sent successfully:",
-            result.messageId,
-          )
-        } else {
-          console.error("[CreateProfile] Welcome email failed:", result.error)
-        }
-      })
-      .catch((error) => {
-        console.error("[CreateProfile] Failed to send welcome email:", error)
-        // Don't fail the request if email sending fails
-      })
+    // 8. Send welcome email (non-blocking)
+    sendWelcomeEmail(body.email, body.fullName);
 
     return successResponse({
       success: true,
-      profile: profileData,
+      profile,
       message: "Profile created successfully",
-    })
+    });
   } catch (error) {
-    return handleApiError(error, "CreateProfile")
+    return handleApiError(error, "CreateProfile");
   }
 }

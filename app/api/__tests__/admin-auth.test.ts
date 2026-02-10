@@ -2,10 +2,9 @@
  * Admin Authentication Tests
  *
  * Tests security-critical admin authentication:
- * - 3-factor authentication (portal key + credentials + role)
- * - Timing-safe comparison for portal key
+ * - 2-factor authentication (credentials + role verification)
  * - Role-based routing (super_admin vs attorney_admin)
- * - Session creation and destruction
+ * - JWT token issuance for session setup
  * - Rate limiting
  */
 
@@ -30,25 +29,29 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
 }))
 
+// Mock JWT utilities
+vi.mock('@/lib/security/jwt', () => ({
+  getJWTSecret: vi.fn(() => 'test-jwt-secret'),
+  createSessionToken: vi.fn((userId: string, email: string, subRole: string, expiresInMinutes: number) => {
+    return `jwt-${userId}-${email}-${subRole}-${expiresInMinutes}`
+  }),
+}))
+
 // Mock admin session
 vi.mock('@/lib/auth/admin-session', () => ({
   verifyAdminCredentials: vi.fn(),
-  createAdminSession: vi.fn(),
   getAdminSession: vi.fn(),
   destroyAdminSession: vi.fn(),
 }))
 
-import { createClient } from '@/lib/supabase/server'
 import {
   verifyAdminCredentials,
-  createAdminSession,
   getAdminSession,
   destroyAdminSession,
 } from '@/lib/auth/admin-session'
 import { safeApplyRateLimit } from '@/lib/rate-limit-redis'
 
 const mockVerifyAdminCredentials = verifyAdminCredentials as ReturnType<typeof vi.fn>
-const mockCreateAdminSession = createAdminSession as ReturnType<typeof vi.fn>
 const mockGetAdminSession = getAdminSession as ReturnType<typeof vi.fn>
 const mockDestroyAdminSession = destroyAdminSession as ReturnType<typeof vi.fn>
 const mockSafeApplyRateLimit = safeApplyRateLimit as ReturnType<typeof vi.fn>
@@ -69,7 +72,7 @@ describe('Admin Authentication', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env = { ...originalEnv, ADMIN_PORTAL_KEY: 'test-portal-key-12345' }
+    process.env = { ...originalEnv }
   })
 
   afterEach(() => {
@@ -81,40 +84,27 @@ describe('Admin Authentication', () => {
       it('should reject request without email', async () => {
         const request = createMockRequest({
           password: 'password123',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
         const json = await response.json()
 
         expect(response.status).toBe(400)
-        expect(json.error).toContain('Email, password, and portal key are required')
+        expect(json.error).toContain('Email and password are required')
       })
 
       it('should reject request without password', async () => {
         const request = createMockRequest({
           email: 'admin@example.com',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
         const json = await response.json()
 
         expect(response.status).toBe(400)
-        expect(json.error).toContain('Email, password, and portal key are required')
-      })
-
-      it('should reject request without portal key', async () => {
-        const request = createMockRequest({
-          email: 'admin@example.com',
-          password: 'password123',
-        })
-
-        const response = await LoginPost(request)
-        const json = await response.json()
-
-        expect(response.status).toBe(400)
-        expect(json.error).toContain('Email, password, and portal key are required')
+        expect(json.error).toContain('Email and password are required')
       })
 
       it('should reject empty request body', async () => {
@@ -124,53 +114,7 @@ describe('Admin Authentication', () => {
         const json = await response.json()
 
         expect(response.status).toBe(400)
-        expect(json.error).toContain('Email, password, and portal key are required')
-      })
-    })
-
-    describe('Portal Key Validation (3rd Factor)', () => {
-      it('should reject invalid portal key', async () => {
-        const request = createMockRequest({
-          email: 'admin@example.com',
-          password: 'password123',
-          portalKey: 'wrong-portal-key',
-        })
-
-        const response = await LoginPost(request)
-        const json = await response.json()
-
-        expect(response.status).toBe(401)
-        expect(json.error).toBe('Invalid portal key')
-      })
-
-      it('should reject portal key with wrong length', async () => {
-        const request = createMockRequest({
-          email: 'admin@example.com',
-          password: 'password123',
-          portalKey: 'short',
-        })
-
-        const response = await LoginPost(request)
-        const json = await response.json()
-
-        expect(response.status).toBe(401)
-        expect(json.error).toBe('Invalid portal key')
-      })
-
-      it('should return 500 when ADMIN_PORTAL_KEY is not configured', async () => {
-        delete process.env.ADMIN_PORTAL_KEY
-
-        const request = createMockRequest({
-          email: 'admin@example.com',
-          password: 'password123',
-          portalKey: 'any-key',
-        })
-
-        const response = await LoginPost(request)
-        const json = await response.json()
-
-        expect(response.status).toBe(500)
-        expect(json.error).toBe('Admin portal not properly configured')
+        expect(json.error).toContain('Email and password are required')
       })
     })
 
@@ -184,7 +128,7 @@ describe('Admin Authentication', () => {
         const request = createMockRequest({
           email: 'admin@example.com',
           password: 'wrong-password',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
@@ -207,7 +151,7 @@ describe('Admin Authentication', () => {
         const request = createMockRequest({
           email: 'subscriber@example.com',
           password: 'password123',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
@@ -218,19 +162,61 @@ describe('Admin Authentication', () => {
       })
     })
 
+    describe('Role Validation', () => {
+      it('should reject when intended role does not match actual role', async () => {
+        mockVerifyAdminCredentials.mockResolvedValue({
+          success: true,
+          userId: 'attorney-456',
+          subRole: 'attorney_admin', // User is attorney_admin
+        })
+
+        const request = createMockRequest({
+          email: 'attorney@example.com',
+          password: 'correct-password',
+          intendedRole: 'super_admin', // But selected super_admin
+        })
+
+        const response = await LoginPost(request)
+        const json = await response.json()
+
+        expect(response.status).toBe(403)
+        expect(json.error).toContain('You do not have Super Admin access')
+        expect(json.error).toContain('Your role is Attorney Admin')
+      })
+
+      it('should reject super admin trying to access attorney admin role', async () => {
+        mockVerifyAdminCredentials.mockResolvedValue({
+          success: true,
+          userId: 'admin-123',
+          subRole: 'super_admin',
+        })
+
+        const request = createMockRequest({
+          email: 'superadmin@example.com',
+          password: 'correct-password',
+          intendedRole: 'attorney_admin',
+        })
+
+        const response = await LoginPost(request)
+        const json = await response.json()
+
+        expect(response.status).toBe(403)
+        expect(json.error).toContain('You do not have Attorney Admin access')
+      })
+    })
+
     describe('Successful Authentication', () => {
-      it('should authenticate super_admin and redirect to admin gateway', async () => {
+      it('should authenticate super_admin and return JWT token with redirect', async () => {
         mockVerifyAdminCredentials.mockResolvedValue({
           success: true,
           userId: 'admin-user-123',
           subRole: 'super_admin',
         })
-        mockCreateAdminSession.mockResolvedValue(undefined)
 
         const request = createMockRequest({
           email: 'superadmin@example.com',
           password: 'correct-password',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
@@ -240,25 +226,20 @@ describe('Admin Authentication', () => {
         expect(json.success).toBe(true)
         expect(json.redirectUrl).toBe('/secure-admin-gateway/dashboard')
         expect(json.subRole).toBe('super_admin')
-        expect(mockCreateAdminSession).toHaveBeenCalledWith(
-          'admin-user-123',
-          'superadmin@example.com',
-          'super_admin'
-        )
+        expect(json.token).toBeDefined()
       })
 
-      it('should authenticate attorney_admin and redirect to attorney portal', async () => {
+      it('should authenticate attorney_admin and return JWT token with redirect', async () => {
         mockVerifyAdminCredentials.mockResolvedValue({
           success: true,
           userId: 'attorney-user-456',
           subRole: 'attorney_admin',
         })
-        mockCreateAdminSession.mockResolvedValue(undefined)
 
         const request = createMockRequest({
           email: 'attorney@example.com',
           password: 'correct-password',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'attorney_admin',
         })
 
         const response = await LoginPost(request)
@@ -268,25 +249,20 @@ describe('Admin Authentication', () => {
         expect(json.success).toBe(true)
         expect(json.redirectUrl).toBe('/attorney-portal/review')
         expect(json.subRole).toBe('attorney_admin')
-        expect(mockCreateAdminSession).toHaveBeenCalledWith(
-          'attorney-user-456',
-          'attorney@example.com',
-          'attorney_admin'
-        )
+        expect(json.token).toBeDefined()
       })
 
-      it('should default to super_admin when subRole is not set', async () => {
+      it('should default to super_admin when intendedRole is not provided', async () => {
         mockVerifyAdminCredentials.mockResolvedValue({
           success: true,
           userId: 'admin-user-789',
-          // subRole not provided
+          subRole: 'super_admin',
         })
-        mockCreateAdminSession.mockResolvedValue(undefined)
 
         const request = createMockRequest({
           email: 'admin@example.com',
           password: 'correct-password',
-          portalKey: 'test-portal-key-12345',
+          // No intendedRole provided
         })
 
         const response = await LoginPost(request)
@@ -295,6 +271,26 @@ describe('Admin Authentication', () => {
         expect(response.status).toBe(200)
         expect(json.subRole).toBe('super_admin')
         expect(json.redirectUrl).toBe('/secure-admin-gateway/dashboard')
+      })
+
+      it('should default intendedRole to super_admin when role matches', async () => {
+        mockVerifyAdminCredentials.mockResolvedValue({
+          success: true,
+          userId: 'admin-user-789',
+          subRole: 'super_admin',
+        })
+
+        const request = createMockRequest({
+          email: 'admin@example.com',
+          password: 'correct-password',
+          intendedRole: 'super_admin',
+        })
+
+        const response = await LoginPost(request)
+        const json = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(json.subRole).toBe('super_admin')
       })
     })
 
@@ -309,7 +305,7 @@ describe('Admin Authentication', () => {
         const request = createMockRequest({
           email: 'admin@example.com',
           password: 'password123',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
@@ -340,7 +336,7 @@ describe('Admin Authentication', () => {
         const request = createMockRequest({
           email: 'admin@example.com',
           password: 'password123',
-          portalKey: 'test-portal-key-12345',
+          intendedRole: 'super_admin',
         })
 
         const response = await LoginPost(request)
@@ -413,47 +409,11 @@ describe('Admin Authentication Security', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env = { ...originalEnv, ADMIN_PORTAL_KEY: 'test-portal-key-12345' }
+    process.env = { ...originalEnv }
   })
 
   afterEach(() => {
     process.env = originalEnv
-  })
-
-  it('should use timing-safe comparison for portal key to prevent timing attacks', async () => {
-    // This test verifies the code path uses timingSafeEqual
-    // We can't directly test timing, but we verify both correct and incorrect keys
-    // take similar code paths
-
-    const correctKeyRequest = createMockRequest({
-      email: 'admin@example.com',
-      password: 'password123',
-      portalKey: 'test-portal-key-12345',
-    })
-
-    const wrongKeyRequest = createMockRequest({
-      email: 'admin@example.com',
-      password: 'password123',
-      portalKey: 'test-portal-key-wrong', // Same length but different
-    })
-
-    mockVerifyAdminCredentials.mockResolvedValue({
-      success: false,
-      error: 'Invalid credentials',
-    })
-
-    const correctResponse = await LoginPost(correctKeyRequest)
-    const wrongResponse = await LoginPost(wrongKeyRequest)
-
-    // Wrong key should fail at portal key check (401)
-    expect(wrongResponse.status).toBe(401)
-    const wrongJson = await wrongResponse.json()
-    expect(wrongJson.error).toBe('Invalid portal key')
-
-    // Correct key should proceed to credential check (also 401 but different error)
-    expect(correctResponse.status).toBe(401)
-    const correctJson = await correctResponse.json()
-    expect(correctJson.error).toBe('Invalid credentials')
   })
 
   it('should not reveal whether email exists in error messages', async () => {
@@ -465,7 +425,7 @@ describe('Admin Authentication Security', () => {
     const request = createMockRequest({
       email: 'nonexistent@example.com',
       password: 'password123',
-      portalKey: 'test-portal-key-12345',
+      intendedRole: 'super_admin',
     })
 
     const response = await LoginPost(request)
@@ -475,5 +435,28 @@ describe('Admin Authentication Security', () => {
     expect(json.error).toBe('Invalid email or password')
     expect(json.error).not.toContain('not found')
     expect(json.error).not.toContain('does not exist')
+  })
+
+  it('should validate role server-side to prevent client bypass', async () => {
+    // Simulate client-side manipulation: user claims to be super_admin
+    // but database shows they are only attorney_admin
+    mockVerifyAdminCredentials.mockResolvedValue({
+      success: true,
+      userId: 'attorney-123',
+      subRole: 'attorney_admin', // Server-side truth
+    })
+
+    const request = createMockRequest({
+      email: 'attorney@example.com',
+      password: 'correct-password',
+      intendedRole: 'super_admin', // Client-side claim (manipulated)
+    })
+
+    const response = await LoginPost(request)
+    const json = await response.json()
+
+    // Should reject because server-side validation catches the mismatch
+    expect(response.status).toBe(403)
+    expect(json.error).toContain('You do not have Super Admin access')
   })
 })

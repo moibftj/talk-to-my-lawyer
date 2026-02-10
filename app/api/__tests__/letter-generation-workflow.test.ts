@@ -42,15 +42,13 @@ vi.mock('@/lib/auth/authenticate-user', () => ({
     }))
 }))
 
-vi.mock('@/lib/db/client-factory', () => ({
-    db: {
-        server: vi.fn(),
-        serviceRole: vi.fn(),
-    },
-}))
-
 vi.mock('@/lib/services/allowance-service', () => ({
-    checkAndDeductAllowance: vi.fn(),
+    checkAndDeductAllowance: vi.fn(() => Promise.resolve({
+        success: true,
+        isFreeTrial: false,
+        isSuperAdmin: false,
+        remaining: 4
+    })),
     refundLetterAllowance: vi.fn(),
 }))
 
@@ -61,8 +59,10 @@ vi.mock('@/lib/validation/letter-schema', () => ({
         data: {
             senderName: 'John Doe',
             senderAddress: '123 Main St',
+            senderState: 'CA',
             recipientName: 'ABC Company',
             recipientAddress: '456 Corporate Blvd',
+            recipientState: 'NY',
             issueDescription: 'Test issue description with enough characters to pass validation',
             desiredOutcome: 'Test desired outcome',
         }
@@ -84,54 +84,36 @@ vi.mock('@/lib/services/notification-service', () => ({
     notifyAdminsNewLetter: vi.fn(() => Promise.resolve()),
 }))
 
-vi.mock('@/lib/services/letter-generation-service', () => ({
-    generateLetterContent: vi.fn(() => Promise.resolve('Generated letter content that is long enough to pass validation. This is a professionally drafted legal letter with sufficient detail and legal language to meet the minimum content requirements.')),
+vi.mock('@/lib/services/n8n-webhook-service', () => ({
+    isN8nConfigured: vi.fn(() => true),
+    generateLetterViaN8n: vi.fn(() => Promise.resolve({
+        letterId: 'letter-123',
+        status: 'pending_review',
+        supabaseUpdated: true,
+    })),
+    transformIntakeToN8nFormat: vi.fn((letterId, userId, letterType, intakeData) => ({
+        letterId,
+        userId,
+        letterType: letterType === 'demand_letter' ? 'Demand Letter' : letterType, // Map to display name
+        intakeData,
+    })),
 }))
 
 vi.mock('@/lib/services/audit-service', () => ({
     logLetterStatusChange: vi.fn(() => Promise.resolve()),
 }))
 
-import { db } from '@/lib/db/client-factory'
-import { checkAndDeductAllowance } from '@/lib/services/allowance-service'
+import { generateLetterViaN8n } from '@/lib/services/n8n-webhook-service'
 
-const mockDb = db as any
-const mockCheckAndDeductAllowance = checkAndDeductAllowance as any
+const mockGenerateLetterViaN8n = generateLetterViaN8n as any
 
 describe('Letter Generation Workflow & Review Center', () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
 
-    describe('OpenAI Direct Letter Generation', () => {
-        it('should create letter and generate via OpenAI', async () => {
-            const mockServiceClient = {
-                from: vi.fn(() => ({
-                    insert: vi.fn(() => ({
-                        select: vi.fn(() => ({
-                            single: vi.fn(() => Promise.resolve({
-                                data: {
-                                    id: 'letter-123',
-                                    status: 'generating',
-                                    user_id: 'user-123',
-                                    letter_type: 'demand_letter'
-                                },
-                                error: null
-                            }))
-                        }))
-                    }))
-                })),
-                rpc: vi.fn(() => Promise.resolve({ data: null, error: null }))
-            }
-
-            mockDb.serviceRole.mockReturnValue(mockServiceClient)
-            mockCheckAndDeductAllowance.mockResolvedValue({
-                success: true,
-                isFreeTrial: false,
-                isSuperAdmin: false,
-                remaining: 4
-            })
-
+    describe('n8n Letter Generation', () => {
+        it('should create letter and generate via n8n', async () => {
             const request = new Request('http://localhost:3000/api/generate-letter', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -139,8 +121,10 @@ describe('Letter Generation Workflow & Review Center', () => {
                     intakeData: {
                         senderName: 'John Doe',
                         senderAddress: '123 Main St',
+                        senderState: 'CA',
                         recipientName: 'ABC Company',
                         recipientAddress: '456 Corporate Blvd',
+                        recipientState: 'NY',
                         issueDescription: 'Test issue description with enough characters to pass validation',
                         desiredOutcome: 'Test desired outcome'
                     }
@@ -154,8 +138,10 @@ describe('Letter Generation Workflow & Review Center', () => {
                     intakeData: {
                         senderName: 'John Doe',
                         senderAddress: '123 Main St',
+                        senderState: 'CA',
                         recipientName: 'ABC Company',
                         recipientAddress: '456 Corporate Blvd',
+                        recipientState: 'NY',
                         issueDescription: 'Test issue description with enough characters to pass validation',
                         desiredOutcome: 'Test desired outcome'
                     }
@@ -168,7 +154,58 @@ describe('Letter Generation Workflow & Review Center', () => {
             expect(response.status).toBe(200)
             expect(json.letterId).toBe('letter-123')
             expect(json.status).toBe('pending_review')
-            expect(json.aiDraft).toBeDefined()
+        })
+
+        it('should call n8n service with correct parameters', async () => {
+            const request = new Request('http://localhost:3000/api/generate-letter', {
+                method: 'POST',
+                body: JSON.stringify({
+                    letterType: 'demand_letter',
+                    intakeData: {
+                        senderName: 'John Doe',
+                        senderAddress: '123 Main St',
+                        senderState: 'CA',
+                        recipientName: 'ABC Company',
+                        recipientAddress: '456 Corporate Blvd',
+                        recipientState: 'NY',
+                        issueDescription: 'Test issue description with enough characters to pass validation',
+                        desiredOutcome: 'Test desired outcome'
+                    }
+                }),
+            })
+
+            const nextRequest = {
+                ...request,
+                json: () => Promise.resolve({
+                    letterType: 'demand_letter',
+                    intakeData: {
+                        senderName: 'John Doe',
+                        senderAddress: '123 Main St',
+                        senderState: 'CA',
+                        recipientName: 'ABC Company',
+                        recipientAddress: '456 Corporate Blvd',
+                        recipientState: 'NY',
+                        issueDescription: 'Test issue description with enough characters to pass validation',
+                        desiredOutcome: 'Test desired outcome'
+                    }
+                }),
+            } as unknown as any
+
+            await GenerateLetterPost(nextRequest)
+
+            expect(mockGenerateLetterViaN8n).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    letterId: expect.any(String),
+                    userId: 'user-123',
+                    letterType: 'Demand Letter',
+                    intakeData: expect.objectContaining({
+                        senderName: 'John Doe',
+                        senderState: 'CA',
+                        recipientName: 'ABC Company',
+                        recipientState: 'NY',
+                    })
+                })
+            )
         })
     })
 
