@@ -20,16 +20,66 @@
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "id-1", "name": "letterType", "value": "={{ $json.body.letterType }}", "type": "string" },
-            { "id": "id-2", "name": "letterId", "value": "={{ $json.body.letterId }}", "type": "string" },
-            { "id": "id-3", "name": "userId", "value": "={{ $json.body.userId }}", "type": "string" },
-            { "id": "id-4", "name": "senderName", "value": "={{ $json.body.intakeData.senderName }}", "type": "string" },
-            { "id": "id-5", "name": "senderState", "value": "={{ $json.body.intakeData.senderState }}", "type": "string" },
-            { "id": "id-6", "name": "recipientName", "value": "={{ $json.body.intakeData.recipientName }}", "type": "string" },
-            { "id": "id-7", "name": "recipientState", "value": "={{ $json.body.intakeData.recipientState }}", "type": "string" },
-            { "id": "id-8", "name": "issueDescription", "value": "={{ $json.body.intakeData.issueDescription }}", "type": "string" },
-            { "id": "id-9", "name": "desiredOutcome", "value": "={{ $json.body.intakeData.desiredOutcome }}", "type": "string" },
-            { "id": "id-10", "name": "intakeData", "value": "={{ JSON.stringify($json.body.intakeData) }}", "type": "object" }
+            {
+              "id": "id-1",
+              "name": "letterType",
+              "value": "={{ $json.body.letterType }}",
+              "type": "string"
+            },
+            {
+              "id": "id-2",
+              "name": "letterId",
+              "value": "={{ $json.body.letterId }}",
+              "type": "string"
+            },
+            {
+              "id": "id-3",
+              "name": "userId",
+              "value": "={{ $json.body.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "id-4",
+              "name": "senderName",
+              "value": "={{ $json.body.intakeData.senderName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-5",
+              "name": "senderState",
+              "value": "={{ $json.body.intakeData.senderState }}",
+              "type": "string"
+            },
+            {
+              "id": "id-6",
+              "name": "recipientName",
+              "value": "={{ $json.body.intakeData.recipientName }}",
+              "type": "string"
+            },
+            {
+              "id": "id-7",
+              "name": "recipientState",
+              "value": "={{ $json.body.intakeData.recipientState }}",
+              "type": "string"
+            },
+            {
+              "id": "id-8",
+              "name": "issueDescription",
+              "value": "={{ $json.body.intakeData.issueDescription }}",
+              "type": "string"
+            },
+            {
+              "id": "id-9",
+              "name": "desiredOutcome",
+              "value": "={{ $json.body.intakeData.desiredOutcome }}",
+              "type": "string"
+            },
+            {
+              "id": "id-10",
+              "name": "intakeData",
+              "value": "={{ JSON.stringify($json.body.intakeData) }}",
+              "type": "object"
+            }
           ]
         },
         "includeOtherFields": false,
@@ -46,12 +96,21 @@
         "operation": "update",
         "tableId": "letters",
         "filters": {
-          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $json.letterId }}" }]
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.letterId }}"
+            }
+          ]
         },
         "fieldsUi": {
           "fieldValues": [
             { "fieldId": "status", "fieldValue": "generating" },
-            { "fieldId": "updated_at", "fieldValue": "={{ new Date().toISOString() }}" }
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
           ]
         }
       },
@@ -172,19 +231,49 @@
         "operation": "update",
         "tableId": "letters",
         "filters": {
-          "conditions": [{ "keyName": "id", "condition": "eq", "keyValue": "={{ $('Extract Form Data').item.json.letterId }}" }]
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Extract Form Data').item.json.letterId }}"
+            }
+          ]
         },
         "fieldsUi": {
           "fieldValues": [
             { "fieldId": "status", "fieldValue": "pending_review" },
-            { "fieldId": "letter_content", "fieldValue": "={{ $json.output.letterContent }}" },
-            { "fieldId": "subject", "fieldValue": "={{ $json.output.subject }}" },
-            { "fieldId": "statutes_cited", "fieldValue": "={{ JSON.stringify($json.output.statutesCited || []) }}" },
-            { "fieldId": "legal_basis", "fieldValue": "={{ $json.output.legalBasis }}" },
-            { "fieldId": "next_steps", "fieldValue": "={{ $json.output.nextSteps }}" },
-            { "fieldId": "delivery_instructions", "fieldValue": "={{ $json.output.deliveryInstructions }}" },
-            { "fieldId": "generated_at", "fieldValue": "={{ new Date().toISOString() }}" },
-            { "fieldId": "updated_at", "fieldValue": "={{ new Date().toISOString() }}" }
+            {
+              "fieldId": "ai_draft_content",
+              "fieldValue": "={{ $json.output.letterContent }}"
+            },
+            {
+              "fieldId": "subject",
+              "fieldValue": "={{ $json.output.subject }}"
+            },
+            {
+              "fieldId": "statutes_cited",
+              "fieldValue": "={{ JSON.stringify($json.output.statutesCited || []) }}"
+            },
+            {
+              "fieldId": "legal_basis",
+              "fieldValue": "={{ $json.output.legalBasis }}"
+            },
+            {
+              "fieldId": "next_steps",
+              "fieldValue": "={{ $json.output.nextSteps }}"
+            },
+            {
+              "fieldId": "delivery_instructions",
+              "fieldValue": "={{ $json.output.deliveryInstructions }}"
+            },
+            {
+              "fieldId": "generated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            },
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ new Date().toISOString() }}"
+            }
           ]
         }
       },
@@ -197,7 +286,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ success: true, letterId: $('Extract Form Data').item.json.letterId, status: 'pending_review', supabaseUpdated: true, message: 'Letter generated with jurisdiction research' }) }}",
+        "responseBody": "={{ JSON.stringify({ success: true, letterId: $('Extract Form Data').item.json.letterId, status: 'pending_review', supabaseUpdated: true, message: 'Letter generated with jurisdiction research', letterContent: $json.output?.letterContent || '', subject: $json.output?.subject || '' }) }}",
         "options": {}
       },
       "id": "return-success",
@@ -224,37 +313,101 @@
       "main": [[{ "node": "Extract Form Data", "type": "main", "index": 0 }]]
     },
     "Extract Form Data": {
-      "main": [[{ "node": "Update Letter Status to Generating", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Update Letter Status to Generating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Update Letter Status to Generating": {
-      "main": [[{ "node": "Jurisdiction Research Agent", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Jurisdiction Research Agent", "type": "main", "index": 0 }]
+      ]
     },
     "GPT-4o Model for Research": {
-      "ai_languageModel": [[{ "node": "Jurisdiction Research Agent", "type": "ai_languageModel", "index": 0 }]]
+      "ai_languageModel": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Structure Research Output": {
-      "ai_outputParser": [[{ "node": "Jurisdiction Research Agent", "type": "ai_outputParser", "index": 0 }]]
+      "ai_outputParser": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Perplexity Legal Research": {
-      "ai_tool": [[{ "node": "Jurisdiction Research Agent", "type": "ai_tool", "index": 0 }]]
+      "ai_tool": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Research Context Memory": {
-      "ai_memory": [[{ "node": "Jurisdiction Research Agent", "type": "ai_memory", "index": 0 }]]
+      "ai_memory": [
+        [
+          {
+            "node": "Jurisdiction Research Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Jurisdiction Research Agent": {
-      "main": [[{ "node": "Letter Drafting Agent", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Letter Drafting Agent", "type": "main", "index": 0 }]
+      ]
     },
     "GPT-4o Model for Drafting": {
-      "ai_languageModel": [[{ "node": "Letter Drafting Agent", "type": "ai_languageModel", "index": 0 }]]
+      "ai_languageModel": [
+        [
+          {
+            "node": "Letter Drafting Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Structure Letter Output": {
-      "ai_outputParser": [[{ "node": "Letter Drafting Agent", "type": "ai_outputParser", "index": 0 }]]
+      "ai_outputParser": [
+        [
+          {
+            "node": "Letter Drafting Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Letter Drafting Agent": {
-      "main": [[{ "node": "Save Generated Letter", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Save Generated Letter", "type": "main", "index": 0 }]
+      ]
     },
     "Save Generated Letter": {
-      "main": [[{ "node": "Return Success Response", "type": "main", "index": 0 }]]
+      "main": [
+        [{ "node": "Return Success Response", "type": "main", "index": 0 }]
+      ]
     }
   },
   "pinData": {},

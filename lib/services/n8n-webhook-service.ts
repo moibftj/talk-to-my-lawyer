@@ -10,7 +10,7 @@
  * IMPORTANT: The n8n workflow expects a nested payload format:
  * { letterType: "Demand Letter", letterId: "uuid", intakeData: { senderName, ... } }
  * n8n uses responseMode: "lastNode" so the response is the Supabase update result.
- * n8n saves directly to Supabase (letter_content, subject, statutes_cited, etc.)
+ * n8n saves directly to Supabase (ai_draft_content, subject, statutes_cited, etc.)
  */
 
 const LETTER_TYPE_MAP: Record<string, string> = {
@@ -34,9 +34,12 @@ export interface N8nLetterFormData {
 }
 
 export interface N8nGenerationResult {
+  success: boolean;
   letterId: string;
   status: string;
   supabaseUpdated: boolean;
+  message?: string;
+  error?: string;
 }
 
 interface N8nConfig {
@@ -157,12 +160,29 @@ export async function generateLetterViaN8n(
 
       console.log("[n8n] Letter generation completed for:", formData.letterId, {
         responseKeys: Object.keys(responseData),
+        success: responseData.success,
+        supabaseUpdated: responseData.supabaseUpdated,
       });
 
+      // The improved workflow returns:
+      // { success: true, letterId, status, supabaseUpdated, message, letterContent?, subject? }
+      // or { success: false, error, letterId }
+      if (responseData.success === false) {
+        return {
+          success: false,
+          letterId: formData.letterId,
+          status: "failed",
+          supabaseUpdated: false,
+          error: responseData.error || "n8n workflow reported failure",
+        };
+      }
+
       return {
-        letterId: formData.letterId,
-        status: "pending_review",
-        supabaseUpdated: true,
+        success: true,
+        letterId: responseData.letterId || formData.letterId,
+        status: responseData.status || "pending_review",
+        supabaseUpdated: responseData.supabaseUpdated ?? true,
+        message: responseData.message,
       };
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
