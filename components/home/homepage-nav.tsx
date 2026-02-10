@@ -128,7 +128,8 @@ export default function HomepageNav() {
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="right" className="w-[280px] bg-white">
+        <SheetContent side="right" className="
+         bg-white">
           <SheetHeader>
             <SheetTitle className="text-left text-lg font-bold text-gray-900">
               Menu
