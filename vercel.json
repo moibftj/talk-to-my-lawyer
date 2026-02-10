@@ -25,6 +25,10 @@
     {
       "path": "/api/cron/weekly-cleanup",
       "schedule": "0 2 * * 0"
+    },
+    {
+      "path": "/api/subscriptions/reset-monthly",
+      "schedule": "0 0 1 * *"
     }
   ],
   "headers": [

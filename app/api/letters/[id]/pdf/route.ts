@@ -1,133 +1,146 @@
-import { jsPDF } from 'jspdf'
-import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth } from '@/lib/auth/authenticate-user'
-import { errorResponses, handleApiError } from '@/lib/api/api-error-handler'
-import { createClient } from '@supabase/supabase-js'
+import { jsPDF } from "jspdf";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth/authenticate-user";
+import { errorResponses, handleApiError } from "@/lib/api/api-error-handler";
+import { createClient } from "@supabase/supabase-js";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = await params
+    const { id } = await params;
 
-    const { user, supabase } = await requireAuth()
+    const { user, supabase } = await requireAuth();
 
     const { data: letter, error: letterError } = await supabase
-      .from('letters')
-      .select('*, profiles(full_name)')
-      .eq('id', id)
-      .single()
+      .from("letters")
+      .select("*, profiles(full_name)")
+      .eq("id", id)
+      .single();
 
     if (letterError || !letter) {
-      return errorResponses.notFound('Letter')
+      return errorResponses.notFound("Letter");
     }
 
     const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-    if (letter.status !== 'approved') {
-      return errorResponses.forbidden('Only approved letters can be downloaded as PDF')
+    if (letter.status !== "approved" && letter.status !== "completed") {
+      return errorResponses.forbidden(
+        "Only approved or completed letters can be downloaded as PDF",
+      );
     }
 
-    if (letter.user_id !== user.id && profile?.role !== 'admin') {
-      return errorResponses.forbidden()
+    if (letter.user_id !== user.id && profile?.role !== "admin") {
+      return errorResponses.forbidden();
     }
 
-    const safeTitle = letter.title?.trim() || 'letter'
-    const fileName = `${safeTitle.replace(/[^a-z0-9]/gi, '_') || 'letter'}.pdf`
+    const safeTitle = letter.title?.trim() || "letter";
+    const fileName = `${safeTitle.replace(/[^a-z0-9]/gi, "_") || "letter"}.pdf`;
 
     if (letter.pdf_storage_path && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       try {
         const serviceClient = createClient(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY
-        )
-        const { data: fileData, error: downloadError } = await serviceClient
-          .storage
-          .from('letters')
-          .download(letter.pdf_storage_path)
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+        );
+        const { data: fileData, error: downloadError } =
+          await serviceClient.storage
+            .from("letters")
+            .download(letter.pdf_storage_path);
 
         if (!downloadError && fileData) {
-          const buffer = Buffer.from(await fileData.arrayBuffer())
+          const buffer = Buffer.from(await fileData.arrayBuffer());
           return new NextResponse(buffer, {
             headers: {
-              'Content-Type': 'application/pdf',
-              'Content-Disposition': `inline; filename="${fileName}"`,
-              'Cache-Control': 'no-cache',
-            }
-          })
+              "Content-Type": "application/pdf",
+              "Content-Disposition": `inline; filename="${fileName}"`,
+              "Cache-Control": "no-cache",
+            },
+          });
         }
-        console.warn(`[PDF] Failed to download from storage, falling back to jsPDF:`, downloadError)
+        console.warn(
+          `[PDF] Failed to download from storage, falling back to jsPDF:`,
+          downloadError,
+        );
       } catch (storageError) {
-        console.warn(`[PDF] Storage download error, falling back to jsPDF:`, storageError)
+        console.warn(
+          `[PDF] Storage download error, falling back to jsPDF:`,
+          storageError,
+        );
       }
     }
 
-    const content = letter.final_content || letter.ai_draft_content || ''
+    const content = letter.final_content || letter.ai_draft_content || "";
 
     // Determine footer text based on reviewer qualification
-    let footerReviewText = 'This document has been reviewed and approved for professional formatting and clarity.'
-    let footerDisclaimer = 'This is not legal advice. Consult a licensed attorney for legal matters.'
+    let footerReviewText =
+      "This document has been reviewed and approved for professional formatting and clarity.";
+    let footerDisclaimer =
+      "This is not legal advice. Consult a licensed attorney for legal matters.";
 
     if (letter.reviewed_by) {
-       const { data: reviewer } = await supabase
-        .from('profiles')
-        .select('is_licensed_attorney')
-        .eq('id', letter.reviewed_by)
-        .single()
-      
+      const { data: reviewer } = await supabase
+        .from("profiles")
+        .select("is_licensed_attorney")
+        .eq("id", letter.reviewed_by)
+        .single();
+
       if (reviewer?.is_licensed_attorney) {
-        footerReviewText = 'This document has been reviewed by a licensed attorney.'
-        footerDisclaimer = 'This does not constitute an attorney-client relationship.'
+        footerReviewText =
+          "This document has been reviewed by a licensed attorney.";
+        footerDisclaimer =
+          "This does not constitute an attorney-client relationship.";
       }
     }
 
-    const doc = new jsPDF({ unit: 'pt', format: 'letter' })
-    const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
-    const margin = 50
+    const doc = new jsPDF({ unit: "pt", format: "letter" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 50;
 
-    doc.setFont('Times', 'normal')
-    doc.setFontSize(14)
-    doc.text(safeTitle, pageWidth - margin, margin, { align: 'right' })
-    doc.setFontSize(12)
+    doc.setFont("Times", "normal");
+    doc.setFontSize(14);
+    doc.text(safeTitle, pageWidth - margin, margin, { align: "right" });
+    doc.setFontSize(12);
     doc.text(
       `Date: ${new Date(letter.created_at).toLocaleDateString()}`,
       pageWidth - margin,
       margin + 18,
-      { align: 'right' }
-    )
+      { align: "right" },
+    );
 
-    const bodyYStart = margin + 40
-    const availableWidth = pageWidth - margin * 2
-    const bodyLines = doc.splitTextToSize(content || ' ', availableWidth)
-    doc.text(bodyLines, margin, bodyYStart, { maxWidth: availableWidth })
+    const bodyYStart = margin + 40;
+    const availableWidth = pageWidth - margin * 2;
+    const bodyLines = doc.splitTextToSize(content || " ", availableWidth);
+    doc.text(bodyLines, margin, bodyYStart, { maxWidth: availableWidth });
 
     const footerText = [
-      'Generated by Talk-To-My-Lawyer',
+      "Generated by Talk-To-My-Lawyer",
       footerReviewText,
-      footerDisclaimer
-    ]
+      footerDisclaimer,
+    ];
 
-    const footerYStart = pageHeight - margin - footerText.length * 14
+    const footerYStart = pageHeight - margin - footerText.length * 14;
     footerText.forEach((line, index) => {
-      doc.text(line, margin, footerYStart + index * 14, { maxWidth: availableWidth })
-    })
+      doc.text(line, margin, footerYStart + index * 14, {
+        maxWidth: availableWidth,
+      });
+    });
 
-    const pdfBytes = doc.output('arraybuffer')
+    const pdfBytes = doc.output("arraybuffer");
 
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${fileName}"`
-      }
-    })
-
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${fileName}"`,
+      },
+    });
   } catch (error) {
-    return handleApiError(error, 'PDF Generation')
+    return handleApiError(error, "PDF Generation");
   }
 }
