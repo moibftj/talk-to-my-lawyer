@@ -1,56 +1,62 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
-import { requireSuperAdminAuth } from '@/lib/auth/admin-session'
-import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
-import { validateSystemAdminAction } from '@/lib/admin/letter-actions'
-import { getRateLimitTuple } from '@/lib/config'
+import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireSuperAdminAuth } from "@/lib/auth/admin-session";
+import { adminRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis";
+import { validateSystemAdminAction } from "@/lib/admin/letter-actions";
+import { getRateLimitTuple } from "@/lib/config";
+import { handleApiError } from "@/lib/api/api-error-handler";
 
-export const runtime = 'nodejs'
+export const runtime = "nodejs";
 
 // GET - Fetch email queue status and items
 export async function GET(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_READ'))
-    if (rateLimitResponse) return rateLimitResponse
+    const rateLimitResponse = await safeApplyRateLimit(
+      request,
+      adminRateLimit,
+      ...getRateLimitTuple("ADMIN_READ"),
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
-    const authError = await requireSuperAdminAuth()
-    if (authError) return authError
+    const authError = await requireSuperAdminAuth();
+    if (authError) return authError;
 
-    const supabase = (await createClient()) as any
-    const searchParams = request.nextUrl.searchParams
-    const status = searchParams.get('status') || 'all'
-    const limit = parseInt(searchParams.get('limit') || '50')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const supabase = (await createClient()) as any;
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get("status") || "all";
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = parseInt(searchParams.get("offset") || "0");
 
     // Build query
     let query = supabase
-      .from('email_queue')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .from("email_queue")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    if (status !== 'all') {
-      query = query.eq('status', status)
+    if (status !== "all") {
+      query = query.eq("status", status);
     }
 
-    const { data: emails, error, count } = await query
+    const { data: emails, error, count } = await query;
 
     if (error) {
-      console.error('[EmailQueue] Fetch error:', error)
-      return NextResponse.json({ error: 'Failed to fetch email queue' }, { status: 500 })
+      console.error("[EmailQueue] Fetch error:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch email queue" },
+        { status: 500 },
+      );
     }
 
     // Get stats
-    const { data: stats } = await supabase
-      .from('email_queue')
-      .select('status')
+    const { data: stats } = await supabase.from("email_queue").select("status");
 
     const statusCounts = {
-      pending: stats?.filter((e: any) => e.status === 'pending').length || 0,
-      sent: stats?.filter((e: any) => e.status === 'sent').length || 0,
-      failed: stats?.filter((e: any) => e.status === 'failed').length || 0,
-      total: stats?.length || 0
-    }
+      pending: stats?.filter((e: any) => e.status === "pending").length || 0,
+      sent: stats?.filter((e: any) => e.status === "sent").length || 0,
+      failed: stats?.filter((e: any) => e.status === "failed").length || 0,
+      total: stats?.length || 0,
+    };
 
     return NextResponse.json({
       success: true,
@@ -60,175 +66,192 @@ export async function GET(request: NextRequest) {
           total: count || 0,
           limit,
           offset,
-          hasMore: (offset + limit) < (count || 0)
+          hasMore: offset + limit < (count || 0),
         },
-        stats: statusCounts
-      }
-    })
-  } catch (error: any) {
-    console.error('[EmailQueue] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+        stats: statusCounts,
+      },
+    });
+  } catch (error) {
+    return handleApiError(error, "EmailQueue");
   }
 }
 
 // POST - Trigger email queue processing or retry failed emails
 export async function POST(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
-    if (rateLimitResponse) return rateLimitResponse
+    const rateLimitResponse = await safeApplyRateLimit(
+      request,
+      adminRateLimit,
+      ...getRateLimitTuple("ADMIN_WRITE"),
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
-    const validationError = await validateSystemAdminAction(request)
-    if (validationError) return validationError
+    const validationError = await validateSystemAdminAction(request);
+    if (validationError) return validationError;
 
-    const body = await request.json()
-    const { action, emailId } = body
+    const body = await request.json();
+    const { action, emailId } = body;
 
-    const supabase = (await createClient()) as any
+    const supabase = (await createClient()) as any;
 
-    if (action === 'process') {
+    if (action === "process") {
       // Trigger the Edge-based email processor for better performance
-      const processorUrl = `${process.env.VERCEL_URL || request.nextUrl.origin}/api/email/process-queue`
-      const cronSecret = process.env.CRON_SECRET
+      const processorUrl = `${process.env.VERCEL_URL || request.nextUrl.origin}/api/email/process-queue`;
+      const cronSecret = process.env.CRON_SECRET;
 
       try {
         const response = await fetch(processorUrl, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': cronSecret ? `Bearer ${cronSecret}` : '',
-            'Content-Type': 'application/json'
-          }
-        })
+            Authorization: cronSecret ? `Bearer ${cronSecret}` : "",
+            "Content-Type": "application/json",
+          },
+        });
 
-        const result = await response.json()
+        const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || 'Failed to trigger email processing')
+          throw new Error(result.error || "Failed to trigger email processing");
         }
 
         return NextResponse.json({
           success: true,
-          message: 'Email queue processing triggered via Edge runtime',
-          result
-        })
+          message: "Email queue processing triggered via Edge runtime",
+          result,
+        });
       } catch (fetchError: any) {
-        console.error('[EmailQueue] Edge processor failed, falling back to direct processing:', fetchError)
+        console.error(
+          "[EmailQueue] Edge processor failed, falling back to direct processing:",
+          fetchError,
+        );
 
         // Fallback to direct processing if Edge processor fails
         const { data: emails, error: fetchError2 } = await supabase
-          .from('email_queue')
-          .select('*')
-          .eq('status', 'pending')
-          .order('created_at', { ascending: true })
-          .limit(10)
+          .from("email_queue")
+          .select("*")
+          .eq("status", "pending")
+          .order("created_at", { ascending: true })
+          .limit(10);
 
         if (fetchError2 || !emails?.length) {
           return NextResponse.json({
             success: true,
-            message: 'No pending emails to process',
-            result: { processed: 0, sent: 0, failed: 0 }
-          })
+            message: "No pending emails to process",
+            result: { processed: 0, sent: 0, failed: 0 },
+          });
         }
 
         return NextResponse.json({
           success: false,
-          message: 'Edge processor unavailable. Use external email processor.',
+          message: "Edge processor unavailable. Use external email processor.",
           fallback: true,
-          pendingCount: emails.length
-        })
+          pendingCount: emails.length,
+        });
       }
     }
 
-    if (action === 'retry' && emailId) {
+    if (action === "retry" && emailId) {
       // Reset a specific failed email for retry
       const { data, error } = await supabase
-        .from('email_queue')
+        .from("email_queue")
         .update({
-          status: 'pending',
+          status: "pending",
           attempts: 0,
           next_retry_at: new Date().toISOString(),
-          error: null
+          error: null,
         })
-        .eq('id', emailId)
-        .eq('status', 'failed')
+        .eq("id", emailId)
+        .eq("status", "failed")
         .select()
-        .single()
+        .single();
 
       if (error) {
-        return NextResponse.json({ error: 'Failed to retry email' }, { status: 500 })
+        return NextResponse.json(
+          { error: "Failed to retry email" },
+          { status: 500 },
+        );
       }
 
       return NextResponse.json({
         success: true,
-        message: 'Email queued for retry',
-        email: data
-      })
+        message: "Email queued for retry",
+        email: data,
+      });
     }
 
-    if (action === 'retry_all_failed') {
+    if (action === "retry_all_failed") {
       // Reset all failed emails for retry
       const { data, error } = await supabase
-        .from('email_queue')
+        .from("email_queue")
         .update({
-          status: 'pending',
+          status: "pending",
           attempts: 0,
           next_retry_at: new Date().toISOString(),
-          error: null
+          error: null,
         })
-        .eq('status', 'failed')
-        .select()
+        .eq("status", "failed")
+        .select();
 
       if (error) {
-        return NextResponse.json({ error: 'Failed to retry emails' }, { status: 500 })
+        return NextResponse.json(
+          { error: "Failed to retry emails" },
+          { status: 500 },
+        );
       }
 
       return NextResponse.json({
         success: true,
-        message: `${data?.length || 0} failed emails queued for retry`
-      })
+        message: `${data?.length || 0} failed emails queued for retry`,
+      });
     }
 
-    if (action === 'delete' && emailId) {
+    if (action === "delete" && emailId) {
       // Delete a specific email from queue
       const { error } = await supabase
-        .from('email_queue')
+        .from("email_queue")
         .delete()
-        .eq('id', emailId)
+        .eq("id", emailId);
 
       if (error) {
-        return NextResponse.json({ error: 'Failed to delete email' }, { status: 500 })
+        return NextResponse.json(
+          { error: "Failed to delete email" },
+          { status: 500 },
+        );
       }
 
       return NextResponse.json({
         success: true,
-        message: 'Email deleted from queue'
-      })
+        message: "Email deleted from queue",
+      });
     }
 
-    if (action === 'clear_old') {
+    if (action === "clear_old") {
       // Clear emails older than 30 days that are sent
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data, error } = await supabase
-        .from('email_queue')
+        .from("email_queue")
         .delete()
-        .eq('status', 'sent')
-        .lt('created_at', thirtyDaysAgo.toISOString())
-        .select()
+        .eq("status", "sent")
+        .lt("created_at", thirtyDaysAgo.toISOString())
+        .select();
 
       if (error) {
-        return NextResponse.json({ error: 'Failed to clear old emails' }, { status: 500 })
+        return NextResponse.json(
+          { error: "Failed to clear old emails" },
+          { status: 500 },
+        );
       }
 
       return NextResponse.json({
         success: true,
-        message: `${data?.length || 0} old emails cleared`
-      })
+        message: `${data?.length || 0} old emails cleared`,
+      });
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-  } catch (error: any) {
-    console.error('[EmailQueue] Action error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (error) {
+    return handleApiError(error, "EmailQueueAction");
   }
 }

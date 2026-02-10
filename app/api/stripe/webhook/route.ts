@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { queueTemplateEmail } from "@/lib/email/service";
 import { getStripeClient } from "@/lib/stripe/client";
 import { getServiceRoleClient } from "@/lib/supabase/admin";
+import { COMMISSION_RATE } from "@/lib/constants/business";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
           p_discount_amount: discount,
           p_coupon_code: couponCode,
           p_employee_id: employeeId,
-          p_commission_rate: 0.05,
+          p_commission_rate: COMMISSION_RATE,
         });
 
         if (atomicError || !atomicResult || !atomicResult[0]?.success) {
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
               .single();
 
             if ((employeeProfile as any)?.email) {
-              const commissionAmount = finalPrice * 0.05;
+              const commissionAmount = finalPrice * COMMISSION_RATE;
               queueTemplateEmail(
                 "commission-earned",
                 (employeeProfile as any).email,

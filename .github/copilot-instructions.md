@@ -8,24 +8,28 @@ Next.js 16 App Router + React 19 | Supabase (Postgres + RLS) | Stripe payments |
 
 **4 roles**: Subscriber (generates letters), Employee (coupons/commissions, never sees letter content), Attorney Admin (reviews/edits/approves letters), Super Admin (full platform access). Role checks happen at the API route level, not in middleware.
 
-**Letter lifecycle**: `draft` → `pending_review` → `under_review` → `approved` | `rejected` | `needs_changes` → `completed` (terminal). The status machine is defined in `lib/constants/letter-statuses.ts`.
+**Letter lifecycle**: `draft` → `pending_review` → `under_review` → `approved` | `rejected` | `needs_changes` → `completed` (terminal). The status machine is defined in `lib/constants/statuses.ts`.
 
 ## Key Conventions
 
 ### API Routes (`app/api/*/route.ts`)
+
 Standard flow: **rate-limit → auth → validate → business logic → response**. Errors are caught via shared `handleApiError()` from `lib/api/api-error-handler.ts`. Use the custom error classes (`AuthenticationError`, `AuthorizationError`, `ValidationError`, `NotFoundError`, `RateLimitError`) — they auto-map to correct HTTP status codes. Auth is enforced with throw-based `require*()` functions from `lib/auth/`:
+
 ```ts
-const user = await requireAuth(request);           // any authenticated user
-const user = await requireSubscriber(request);      // subscriber role
+const user = await requireAuth(request); // any authenticated user
+const user = await requireSubscriber(request); // subscriber role
 const session = await requireAdminSession(request); // admin portal session
 ```
 
 ### Supabase Clients
+
 - **Server** (per-request, respects RLS): `createClient()` from `lib/supabase/server.ts` — use in server components and API routes
 - **Browser** (singleton): `createClient()` from `lib/supabase/client.ts` — use in `'use client'` components
 - **Admin/service-role** (bypasses RLS): only for system-level operations — never for user-facing queries
 
 ### Component Patterns
+
 - **Pages** are server components (async, fetch data with server Supabase client)
 - **Layouts and interactive shells** (e.g., `components/dashboard-layout.tsx`) are `'use client'`
 - Use `@/` path alias (maps to project root): `import { Button } from '@/components/ui/button'`
@@ -33,11 +37,13 @@ const session = await requireAdminSession(request); // admin portal session
 - Add shadcn components via: `pnpm dlx shadcn@latest add <component>`
 
 ### Types
+
 - Database types: auto-generated in `lib/database.types.ts`
 - API/letter/AI types: `lib/types/` (re-exported from `types/index.ts`)
 - Use `LETTER_STATUSES` and `USER_ROLES` constants from `lib/types/api.ts` — no magic strings
 
 ### Environment Variables
+
 `lib/env.ts` validates only Supabase keys at startup. Other vars (`OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, etc.) are accessed directly via `process.env`. Always add new vars to both `.env.local` and Vercel Dashboard. Validate with `pnpm validate-env`.
 
 ## Development Commands

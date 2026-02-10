@@ -107,13 +107,13 @@ function validateInput(body: CreateProfileBody): void {
 async function createProfile(userId: string, email: string, fullName: string) {
   const serviceClient = db.serviceRole();
 
-  const { data, error } = await serviceClient
+  const { data, error } = await (serviceClient as any)
     .from("profiles")
     .upsert(
       {
         id: userId,
         email: email.toLowerCase().trim(),
-        role: "subscriber" as const,
+        role: "subscriber",
         full_name: fullName.trim(),
       },
       { onConflict: "id", ignoreDuplicates: false },

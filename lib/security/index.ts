@@ -30,7 +30,7 @@ export const SECURITY_HEADERS = {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https:",
-    "connect-src 'self' https://nomiiqzxaxyxnxndvkbe.supabase.co https://api.stripe.com https://designtec.app.n8n.cloud",
+    "connect-src 'self' https://app.talk-to-my-lawyer.com https://api.stripe.com https://designtec.app.n8n.cloud",
     "frame-src 'self' https://js.stripe.com",
     "object-src 'none'",
     "base-uri 'self'",

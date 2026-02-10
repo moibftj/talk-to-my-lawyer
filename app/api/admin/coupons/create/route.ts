@@ -1,67 +1,72 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
-import { adminRateLimit, safeApplyRateLimit } from '@/lib/rate-limit-redis'
-import { validateSystemAdminAction } from '@/lib/admin/letter-actions'
-import { getRateLimitTuple } from '@/lib/config'
+import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { adminRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis";
+import { validateSystemAdminAction } from "@/lib/admin/letter-actions";
+import { getRateLimitTuple } from "@/lib/config";
+import { handleApiError } from "@/lib/api/api-error-handler";
 
-export const runtime = 'nodejs'
+export const runtime = "nodejs";
 
 interface CreateCouponRequest {
-  code?: string // Optional - will generate if not provided
-  discountPercent: number
-  maxUses?: number // Optional - unlimited if not set
-  expiresAt?: string // Optional - never expires if not set
-  description?: string
+  code?: string; // Optional - will generate if not provided
+  discountPercent: number;
+  maxUses?: number; // Optional - unlimited if not set
+  expiresAt?: string; // Optional - never expires if not set
+  description?: string;
 }
 
 function generateCouponCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Removed ambiguous characters
-  let code = 'PROMO'
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed ambiguous characters
+  let code = "PROMO";
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return code
+  return code;
 }
 
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
+    const rateLimitResponse = await safeApplyRateLimit(
+      request,
+      adminRateLimit,
+      ...getRateLimitTuple("ADMIN_WRITE"),
+    );
     if (rateLimitResponse) {
-      return rateLimitResponse
+      return rateLimitResponse;
     }
 
-    const validationError = await validateSystemAdminAction(request)
-    if (validationError) return validationError
+    const validationError = await validateSystemAdminAction(request);
+    if (validationError) return validationError;
 
-    const body: CreateCouponRequest = await request.json()
-    const { code, discountPercent, maxUses, expiresAt, description } = body
+    const body: CreateCouponRequest = await request.json();
+    const { code, discountPercent, maxUses, expiresAt, description } = body;
 
     // Validate discount percent
     if (!discountPercent || discountPercent < 1 || discountPercent > 100) {
       return NextResponse.json(
-        { error: 'discountPercent must be between 1 and 100' },
-        { status: 400 }
-      )
+        { error: "discountPercent must be between 1 and 100" },
+        { status: 400 },
+      );
     }
 
-    const supabase = await createClient()
-    const couponsTable = (supabase as any).from('employee_coupons')
+    const supabase = await createClient();
+    const couponsTable = (supabase as any).from("employee_coupons");
 
     // Generate or validate coupon code
-    const couponCode = code?.toUpperCase().trim() || generateCouponCode()
+    const couponCode = code?.toUpperCase().trim() || generateCouponCode();
 
     // Check if code already exists
     const { data: existing } = await couponsTable
-      .select('code')
-      .eq('code', couponCode)
-      .single()
+      .select("code")
+      .eq("code", couponCode)
+      .single();
 
     if (existing) {
       return NextResponse.json(
         { error: `Coupon code '${couponCode}' already exists` },
-        { status: 409 }
-      )
+        { status: 409 },
+      );
     }
 
     // Create the promo coupon (employee_id is NULL for promo codes)
@@ -74,27 +79,29 @@ export async function POST(request: NextRequest) {
         usage_count: 0,
         max_uses: maxUses || null,
         expires_at: expiresAt || null,
-        description: description || null
+        description: description || null,
       })
       .select()
-      .single()
+      .single();
 
     if (insertError) {
-      console.error('[CreateCoupon] Insert error:', insertError)
+      console.error("[CreateCoupon] Insert error:", insertError);
       return NextResponse.json(
-        { error: 'Failed to create coupon', details: insertError.message },
-        { status: 500 }
-      )
+        { error: "Failed to create coupon", details: insertError.message },
+        { status: 500 },
+      );
     }
 
     // Log admin action
-    await (supabase as any).from('admin_audit_log').insert({
-      admin_id: (await supabase.auth.getUser()).data.user?.id || 'system',
-      action: 'create_promo_coupon',
-      resource_type: 'coupon',
+    const { getAdminSession } = await import("@/lib/auth/admin-session");
+    const adminSession = await getAdminSession();
+    await (supabase as any).from("admin_audit_log").insert({
+      admin_id: adminSession?.userId || "system",
+      action: "create_promo_coupon",
+      resource_type: "coupon",
       resource_id: coupon.id,
-      changes: { code: couponCode, discountPercent, maxUses, expiresAt }
-    })
+      changes: { code: couponCode, discountPercent, maxUses, expiresAt },
+    });
 
     return NextResponse.json({
       success: true,
@@ -106,53 +113,58 @@ export async function POST(request: NextRequest) {
         max_uses: coupon.max_uses,
         expires_at: coupon.expires_at,
         is_active: coupon.is_active,
-        created_at: coupon.created_at
-      }
-    })
-  } catch (error: any) {
-    console.error('[CreateCoupon] Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create coupon', message: error.message },
-      { status: 500 }
-    )
+        created_at: coupon.created_at,
+      },
+    });
+  } catch (error) {
+    return handleApiError(error, "CreateCoupon");
   }
 }
 
 // Toggle coupon active status
 export async function PATCH(request: NextRequest) {
   try {
-    const rateLimitResponse = await safeApplyRateLimit(request, adminRateLimit, ...getRateLimitTuple('ADMIN_WRITE'))
-    if (rateLimitResponse) return rateLimitResponse
+    const rateLimitResponse = await safeApplyRateLimit(
+      request,
+      adminRateLimit,
+      ...getRateLimitTuple("ADMIN_WRITE"),
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
-    const validationError = await validateSystemAdminAction(request)
-    if (validationError) return validationError
+    const validationError = await validateSystemAdminAction(request);
+    if (validationError) return validationError;
 
-    const { couponId, isActive } = await request.json()
+    const { couponId, isActive } = await request.json();
 
     if (!couponId) {
-      return NextResponse.json({ error: 'couponId is required' }, { status: 400 })
+      return NextResponse.json(
+        { error: "couponId is required" },
+        { status: 400 },
+      );
     }
 
-    const supabase = await createClient()
+    const supabase = await createClient();
 
-    const couponsTable = (supabase as any).from('employee_coupons')
+    const couponsTable = (supabase as any).from("employee_coupons");
     const { data, error } = await couponsTable
       .update({ is_active: isActive })
-      .eq('id', couponId)
+      .eq("id", couponId)
       .select()
-      .single()
+      .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to update coupon' }, { status: 500 })
+      return NextResponse.json(
+        { error: "Failed to update coupon" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Coupon ${isActive ? 'activated' : 'deactivated'} successfully`,
-      coupon: data
-    })
-  } catch (error: any) {
-    console.error('[ToggleCoupon] Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+      message: `Coupon ${isActive ? "activated" : "deactivated"} successfully`,
+      coupon: data,
+    });
+  } catch (error) {
+    return handleApiError(error, "ToggleCoupon");
   }
 }

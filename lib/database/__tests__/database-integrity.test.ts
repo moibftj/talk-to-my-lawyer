@@ -39,7 +39,7 @@ let supabaseClient: SupabaseClient<any> | null = null
 
 function getSupabaseClient(): SupabaseClient<any> {
   if (!supabaseClient) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://app.talk-to-my-lawyer.com'
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
     if (!supabaseKey) {
@@ -460,7 +460,7 @@ describe('RLS Policy Enforcement', () => {
 
   beforeAll(() => {
     // Use anon key to test RLS policies (RLS blocks anon access)
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://app.talk-to-my-lawyer.com'
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbWlpcXp4YXh5eG54bmR2a2JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMzQwNzYsImV4cCI6MjA4MzY5NDA3Nn0.Wi5A7cHcx95-mDogBbxBzLQ9K7ACbJDrGx0hAhKOK1k'
     anonClient = createClient(url, key)
   })
@@ -508,7 +508,7 @@ describe('Data Validation', () => {
 
   beforeAll(() => {
     // Use service role key to bypass RLS for validation tests
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://nomiiqzxaxyxnxndvkbe.supabase.co'
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://app.talk-to-my-lawyer.com'
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5vbWlpcXp4YXh5eG54bmR2a2JlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODMzNDA3NiwiZXhwIjoyMDgzNjk0MDc2fQ.rT5YJKIBRiVEfFYzC8Cgfi49KfvQt6aDmIO9iSTF8RU'
     serviceClient = createClient(url, key)
   })
