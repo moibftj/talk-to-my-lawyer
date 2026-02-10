@@ -188,3 +188,4 @@ vercel-env.json
 *.note
 notes/
 .note_modules/
+.vercel
