@@ -50,7 +50,10 @@
       "glob": ">=10.5.0",
       "hono": ">=4.11.4",
       "tar": ">=7.5.3"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "msw"
+    ]
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.18",

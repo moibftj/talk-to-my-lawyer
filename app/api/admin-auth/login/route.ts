@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, intendedRole } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -46,6 +46,23 @@ export async function POST(request: NextRequest) {
     }
 
     const subRole: AdminSubRole = result.subRole || "super_admin";
+
+    // Validate intended role matches actual role
+    if (intendedRole && intendedRole !== subRole) {
+      console.warn("[AdminAuth] Role mismatch:", {
+        email,
+        intendedRole,
+        actualRole: subRole,
+        timestamp: new Date().toISOString(),
+      });
+
+      return NextResponse.json(
+        {
+          error: `You do not have ${intendedRole === "super_admin" ? "Super Admin" : "Attorney Admin"} access. Your role is ${subRole === "super_admin" ? "Super Admin" : "Attorney Admin"}.`,
+        },
+        { status: 403 },
+      );
+    }
 
     const secret = getJWTSecret();
     const token = createSessionToken(

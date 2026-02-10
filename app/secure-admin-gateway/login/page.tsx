@@ -13,11 +13,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
+import { Shield, Scale } from "lucide-react";
+
+type AdminRole = "super_admin" | "attorney_admin";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [adminRole, setAdminRole] = useState<AdminRole>("super_admin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -36,6 +47,7 @@ export default function AdminLoginPage() {
         body: JSON.stringify({
           email,
           password,
+          intendedRole: adminRole,
         }),
       });
 
@@ -45,7 +57,13 @@ export default function AdminLoginPage() {
         throw new Error(data.error || "Authentication failed");
       }
 
-      const redirectUrl = data.redirectUrl || "/secure-admin-gateway/dashboard";
+      // Route based on the verified role from server
+      const redirectUrl =
+        data.redirectUrl ||
+        (data.subRole === "attorney_admin"
+          ? "/attorney-portal/review"
+          : "/secure-admin-gateway/dashboard");
+
       const sessionUrl = `/api/admin-auth/session?token=${encodeURIComponent(data.token)}&redirect=${encodeURIComponent(redirectUrl)}`;
       window.location.href = sessionUrl;
     } catch (err: any) {
@@ -111,6 +129,41 @@ export default function AdminLoginPage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="role" className="text-slate-200">
+                Admin Type
+              </Label>
+              <Select
+                value={adminRole}
+                onValueChange={(value: AdminRole) => setAdminRole(value)}
+                disabled={loading}
+              >
+                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+                  <SelectValue placeholder="Select admin type" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-600">
+                  <SelectItem
+                    value="super_admin"
+                    className="text-white hover:bg-slate-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-red-400" />
+                      <span>Super Admin</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem
+                    value="attorney_admin"
+                    className="text-white hover:bg-slate-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Scale className="w-4 h-4 text-blue-400" />
+                      <span>Attorney Admin</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {error && (
               <div className="p-3 text-sm text-red-400 bg-red-900/20 border border-red-900/50 rounded-md flex items-center gap-2">
                 <svg
@@ -133,7 +186,11 @@ export default function AdminLoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-red-600 hover:bg-red-700 text-white"
+              className={`w-full text-white ${
+                adminRole === "attorney_admin"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
