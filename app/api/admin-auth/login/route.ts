@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  verifyAdminCredentials,
-  type AdminSubRole,
-} from "@/lib/auth/admin-session";
+import { createClient } from "@/lib/supabase/server";
 import { adminRateLimit, safeApplyRateLimit } from "@/lib/rate-limit-redis";
 import { getRateLimitTuple } from "@/lib/config";
-import { createSessionToken, getJWTSecret } from "@/lib/security/jwt";
-
-const SESSION_EXPIRY_MINUTES = 30;
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, password, intendedRole } = body;
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -30,56 +24,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await verifyAdminCredentials(email, password);
+    const supabase = await createClient();
 
-    if (!result.success) {
+    // Standard Supabase auth - no custom JWT, no portal ID, no session key
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+    if (authError || !authData.user) {
       console.warn("[AdminAuth] Failed login attempt:", {
         email,
         timestamp: new Date().toISOString(),
-        error: result.error,
+        error: authError?.message,
       });
-
       return NextResponse.json(
-        { error: result.error || "Authentication failed" },
+        { error: authError?.message || "Authentication failed" },
         { status: 401 },
       );
     }
 
-    const subRole: AdminSubRole = result.subRole || "super_admin";
+    // Verify admin role from profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, role, admin_sub_role, full_name")
+      .eq("id", authData.user.id)
+      .single();
 
-    // Validate intended role matches actual role
-    if (intendedRole && intendedRole !== subRole) {
-      console.warn("[AdminAuth] Role mismatch:", {
-        email,
-        intendedRole,
-        actualRole: subRole,
-        timestamp: new Date().toISOString(),
-      });
-
+    if (profileError || !profile) {
+      await supabase.auth.signOut();
       return NextResponse.json(
-        {
-          error: `You do not have ${intendedRole === "super_admin" ? "Super Admin" : "Attorney Admin"} access. Your role is ${subRole === "super_admin" ? "Super Admin" : "Attorney Admin"}.`,
-        },
+        { error: "User profile not found" },
+        { status: 404 },
+      );
+    }
+
+    if (profile.role !== "admin") {
+      await supabase.auth.signOut();
+      return NextResponse.json(
+        { error: "Access denied. Administrator privileges required." },
         { status: 403 },
       );
     }
 
-    const secret = getJWTSecret();
-    const token = createSessionToken(
-      result.userId!,
-      email,
-      subRole,
-      SESSION_EXPIRY_MINUTES,
-      secret,
-    );
-
+    const subRole = profile.admin_sub_role || "super_admin";
     const redirectUrl =
       subRole === "attorney_admin"
         ? "/attorney-portal/review"
         : "/secure-admin-gateway/dashboard";
 
-    console.log("[AdminAuth] Admin authenticated, issuing token:", {
-      userId: result.userId,
+    console.log("[AdminAuth] Admin authenticated:", {
+      userId: profile.id,
       email,
       subRole,
       timestamp: new Date().toISOString(),
@@ -90,7 +86,6 @@ export async function POST(request: NextRequest) {
       message: "Admin authentication successful",
       redirectUrl,
       subRole,
-      token,
     });
   } catch (error) {
     console.error("[AdminAuth] Login error:", error);

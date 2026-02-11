@@ -113,7 +113,7 @@ export default async function ReviewLayout({
               <span className="text-xs text-amber-500 font-semibold">Super Admin</span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Session expires in {Math.round((1800000 - (Date.now() - session.lastActivity)) / 60000)} min
+              Authenticated via Supabase
             </p>
           </div>
 

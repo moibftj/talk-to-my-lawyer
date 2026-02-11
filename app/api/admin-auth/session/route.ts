@@ -1,41 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySessionToken, getJWTSecret } from '@/lib/security/jwt'
+import { createClient } from '@/lib/supabase/server'
 
-const ADMIN_SESSION_COOKIE = 'admin_session'
-const SESSION_EXPIRY_MINUTES = 30
-
+/**
+ * Admin Session Route
+ * 
+ * With standard Supabase auth, this route simply checks if the user
+ * is authenticated and has admin role. No custom JWT token handling.
+ */
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('token')
-  const redirect = request.nextUrl.searchParams.get('redirect') || '/secure-admin-gateway/dashboard'
-
-  if (!token) {
-    return NextResponse.redirect(new URL('/secure-admin-gateway/login', request.url))
-  }
-
   try {
-    const secret = getJWTSecret()
-    const sessionData = verifySessionToken(token, secret)
-
-    if (!sessionData) {
-      console.warn('[AdminAuth] Invalid token in session setup')
+    const supabase = await createClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
       return NextResponse.redirect(new URL('/secure-admin-gateway/login', request.url))
     }
 
-    const response = NextResponse.redirect(new URL(redirect, request.url))
+    // Verify admin role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, admin_sub_role')
+      .eq('id', user.id)
+      .single()
 
-    response.cookies.set(ADMIN_SESSION_COOKIE, token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: SESSION_EXPIRY_MINUTES * 60,
-      path: '/'
-    })
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.redirect(new URL('/secure-admin-gateway/login', request.url))
+    }
 
-    console.log('[AdminAuth] Session cookie set via redirect for:', sessionData.email)
+    const subRole = profile.admin_sub_role || 'super_admin'
+    const redirect = subRole === 'attorney_admin'
+      ? '/attorney-portal/review'
+      : '/secure-admin-gateway/dashboard'
 
-    return response
+    return NextResponse.redirect(new URL(redirect, request.url))
   } catch (error) {
-    console.error('[AdminAuth] Session setup error:', error)
+    console.error('[AdminAuth] Session check error:', error)
     return NextResponse.redirect(new URL('/secure-admin-gateway/login', request.url))
   }
 }

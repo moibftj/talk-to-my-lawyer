@@ -1,11 +1,5 @@
-import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
-import { createSessionToken, verifySessionToken, getJWTSecret } from '@/lib/security/jwt'
-
-const ADMIN_SESSION_COOKIE = 'admin_session'
-const ADMIN_SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
-const SESSION_EXPIRY_MINUTES = 30 // JWT expiration in minutes
+import { NextResponse } from 'next/server'
 
 // Admin sub-role enum - matches database enum
 export type AdminSubRole = 'super_admin' | 'attorney_admin'
@@ -19,235 +13,68 @@ export interface AdminSession {
 }
 
 /**
- * Create an admin session after successful authentication
- *
- * Now uses JWT-signed cookies for security.
- * Sessions are tamper-proof and cannot be forged.
+ * Get admin session from Supabase auth
+ * 
+ * Uses standard Supabase auth session - no custom JWT, no portal ID, no session key.
+ * Checks the profiles table to verify admin role and sub-role.
  */
-export async function createAdminSession(
-  userId: string,
-  email: string,
-  subRole: AdminSubRole = 'super_admin'
-): Promise<void> {
-  const secret = getJWTSecret()
+export async function getAdminSession(): Promise<AdminSession | null> {
+  try {
+    const supabase = await createClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return null
+    }
 
-  // Create signed JWT token
-  const token = createSessionToken(
-    userId,
-    email,
-    subRole,
-    SESSION_EXPIRY_MINUTES,
-    secret
-  )
+    // Verify admin role from profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, role, admin_sub_role, full_name')
+      .eq('id', user.id)
+      .single()
 
-  const cookieStore = await cookies()
-  cookieStore.set(ADMIN_SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: SESSION_EXPIRY_MINUTES * 60,
-    path: '/'
-  })
+    if (profileError || !profile) {
+      return null
+    }
 
-  // Log admin login for audit trail
-  console.log('[AdminAuth] Admin session created:', {
-    userId,
-    email,
-    subRole,
-    timestamp: new Date().toISOString()
-  })
+    if (profile.role !== 'admin') {
+      return null
+    }
+
+    const subRole: AdminSubRole = (profile.admin_sub_role as AdminSubRole) || 'super_admin'
+
+    return {
+      userId: profile.id,
+      email: user.email || '',
+      subRole,
+      loginTime: new Date(user.last_sign_in_at || user.created_at).getTime(),
+      lastActivity: Date.now()
+    }
+  } catch (error) {
+    console.error('[AdminSession] Error getting session:', error)
+    return null
+  }
 }
 
 /**
- * Verify admin session from cookies
- *
- * Now verifies JWT signature and expiration.
- * Returns null if session is invalid, expired, or signature is wrong.
+ * Verify admin session (alias for getAdminSession for backward compatibility)
  */
 export async function verifyAdminSession(): Promise<AdminSession | null> {
-  const cookieStore = await cookies()
-  const sessionCookie = cookieStore.get(ADMIN_SESSION_COOKIE)
-
-  if (!sessionCookie) {
-    return null
-  }
-
-  try {
-    const secret = getJWTSecret()
-
-    // Verify JWT token
-    const sessionData = verifySessionToken(sessionCookie.value, secret)
-
-    if (!sessionData) {
-      console.warn('[AdminSession] Invalid or expired session token')
-      await destroyAdminSession()
-      return null
-    }
-
-    // Check if session has expired (30 minutes of inactivity)
-    const now = Date.now()
-    if (now - sessionData.lastActivity > ADMIN_SESSION_TIMEOUT) {
-      console.warn('[AdminSession] Session expired due to inactivity')
-      await destroyAdminSession()
-      return null
-    }
-
-    // Update last activity time by issuing new token
-    const session: AdminSession = {
-      userId: sessionData.userId,
-      email: sessionData.email,
-      subRole: sessionData.subRole as AdminSubRole,
-      loginTime: sessionData.loginTime,
-      lastActivity: now
-    }
-
-    // Re-issue token with updated activity
-    const newToken = createSessionToken(
-      session.userId,
-      session.email,
-      session.subRole,
-      SESSION_EXPIRY_MINUTES,
-      secret
-    )
-
-    cookieStore.set(ADMIN_SESSION_COOKIE, newToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'none',
-      maxAge: SESSION_EXPIRY_MINUTES * 60,
-      path: '/'
-    })
-
-    return session
-  } catch (error) {
-    console.error('[AdminSession] Error verifying session:', error)
-    await destroyAdminSession()
-    return null
-  }
+  return await getAdminSession()
 }
 
 /**
- * Verify admin session from request (for middleware)
- *
- * Verifies JWT signature without re-issuing token.
- * Used in middleware where we can't set cookies.
- */
-export function verifyAdminSessionFromRequest(request: NextRequest): AdminSession | null {
-  const sessionCookie = request.cookies.get(ADMIN_SESSION_COOKIE)
-
-  if (!sessionCookie) {
-    return null
-  }
-
-  try {
-    const secret = getJWTSecret()
-
-    // Verify JWT token
-    const sessionData = verifySessionToken(sessionCookie.value, secret)
-
-    if (!sessionData) {
-      return null
-    }
-
-    // Check if session has expired
-    const now = Date.now()
-    if (now - sessionData.lastActivity > ADMIN_SESSION_TIMEOUT) {
-      return null
-    }
-
-    // Return session data
-    return {
-      userId: sessionData.userId,
-      email: sessionData.email,
-      subRole: sessionData.subRole as AdminSubRole,
-      loginTime: sessionData.loginTime,
-      lastActivity: sessionData.lastActivity
-    }
-  } catch (error) {
-    console.error('[AdminSession] Error verifying session from request:', error)
-    return null
-  }
-}
-
-/**
- * Destroy admin session (logout)
+ * Destroy admin session (logout via Supabase)
  */
 export async function destroyAdminSession(): Promise<void> {
-  const cookieStore = await cookies()
-  cookieStore.delete(ADMIN_SESSION_COOKIE)
-}
-
-/**
- * Verify admin credentials (role-based authentication)
- * No shared secret required - each admin has their own account
- *
- * Security improvements:
- * - Individual accountability (each admin uses their own account)
- * - No shared secret to leak or rotate
- * - Deactivation is as simple as changing the user's role
- * - Full audit trail of which admin performed each action
- */
-export async function verifyAdminCredentials(
-  email: string,
-  password: string
-): Promise<{ success: boolean; userId?: string; subRole?: AdminSubRole; error?: string }> {
-  const supabase = await createClient()
-
-  // Authenticate with Supabase Auth (each admin has their own account)
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  })
-
-  if (authError || !authData.user) {
-    console.warn('[AdminAuth] Authentication failed:', {
-      email,
-      error: authError?.message
-    })
-    return { success: false, error: 'Invalid email or password' }
+  try {
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+  } catch (error) {
+    console.error('[AdminSession] Error destroying session:', error)
   }
-
-  // Verify user has admin role in profiles table
-  // This is the SINGLE source of truth for admin access
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id, role, admin_sub_role, full_name')
-    .eq('id', authData.user.id)
-    .single()
-
-  if (profileError || !profile) {
-    console.warn('[AdminAuth] Profile not found:', {
-      userId: authData.user.id,
-      email
-    })
-    return { success: false, error: 'User profile not found' }
-  }
-
-  if (profile.role !== 'admin') {
-    console.warn('[AdminAuth] User does not have admin role:', {
-      userId: authData.user.id,
-      email,
-      role: profile.role
-    })
-    return {
-      success: false,
-      error: 'Access denied. Administrator privileges required.'
-    }
-  }
-
-  // Default to super_admin if admin_sub_role is not set (for backward compatibility)
-  const subRole: AdminSubRole = (profile.admin_sub_role as AdminSubRole) || 'super_admin'
-
-  // Log successful authentication for audit trail
-  console.log('[AdminAuth] Admin authenticated successfully:', {
-    userId: profile.id,
-    email,
-    name: profile.full_name,
-    subRole,
-    timestamp: new Date().toISOString()
-  })
-
-  return { success: true, userId: profile.id, subRole }
 }
 
 /**
@@ -265,23 +92,11 @@ export async function verifyAdminRole(userId: string): Promise<boolean> {
 }
 
 /**
- * Get admin session info
- */
-export async function getAdminSession(): Promise<AdminSession | null> {
-  return await verifyAdminSession()
-}
-
-/**
  * Check if current user is authenticated admin
  */
 export async function isAdminAuthenticated(): Promise<boolean> {
-  const session = await verifyAdminSession()
-  if (!session) {
-    return false
-  }
-
-  // Double-check role in database
-  return await verifyAdminRole(session.userId)
+  const session = await getAdminSession()
+  return session !== null
 }
 
 /**
@@ -319,7 +134,7 @@ export async function getAdminSubRole(userId: string): Promise<AdminSubRole | nu
  * Get current admin's sub-role from session
  */
 export async function getCurrentAdminSubRole(): Promise<AdminSubRole | null> {
-  const session = await verifyAdminSession()
+  const session = await getAdminSession()
   if (!session) {
     return null
   }
@@ -336,7 +151,7 @@ export async function getCurrentAdminSubRole(): Promise<AdminSubRole | null> {
  * - Email queue management
  */
 export async function requireSuperAdminAuth(): Promise<NextResponse | undefined> {
-  const session = await verifyAdminSession()
+  const session = await getAdminSession()
   if (!session) {
     return NextResponse.json(
       { error: 'Admin authentication required' },
@@ -366,7 +181,7 @@ export async function requireSuperAdminAuth(): Promise<NextResponse | undefined>
  * - Letter approval/rejection
  */
 export async function requireAttorneyAdminAccess(): Promise<NextResponse | undefined> {
-  const session = await verifyAdminSession()
+  const session = await getAdminSession()
   if (!session) {
     return NextResponse.json(
       { error: 'Admin authentication required' },
@@ -375,8 +190,6 @@ export async function requireAttorneyAdminAccess(): Promise<NextResponse | undef
   }
 
   // Both attorney_admin and super_admin can access letter review
-  // The check is: session.subRole must be either 'attorney_admin' or 'super_admin'
-  // Since we only have these two types, all authenticated admins can access
   return undefined
 }
 
@@ -384,7 +197,7 @@ export async function requireAttorneyAdminAccess(): Promise<NextResponse | undef
  * Check if current user is a Super Admin
  */
 export async function isSuperAdmin(): Promise<boolean> {
-  const session = await verifyAdminSession()
+  const session = await getAdminSession()
   if (!session) {
     return false
   }
@@ -395,9 +208,51 @@ export async function isSuperAdmin(): Promise<boolean> {
  * Check if current user is an Attorney Admin
  */
 export async function isAttorneyAdmin(): Promise<boolean> {
-  const session = await verifyAdminSession()
+  const session = await getAdminSession()
   if (!session) {
     return false
   }
   return session.subRole === 'attorney_admin'
+}
+
+/**
+ * @deprecated - No longer needed with Supabase auth. Kept for backward compatibility.
+ * The verifyAdminCredentials function is no longer used since login is handled
+ * directly by Supabase auth on the client side.
+ */
+export async function verifyAdminCredentials(
+  email: string,
+  password: string
+): Promise<{ success: boolean; userId?: string; subRole?: AdminSubRole; error?: string }> {
+  const supabase = await createClient()
+
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  })
+
+  if (authError || !authData.user) {
+    return { success: false, error: 'Invalid email or password' }
+  }
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, role, admin_sub_role, full_name')
+    .eq('id', authData.user.id)
+    .single()
+
+  if (profileError || !profile) {
+    return { success: false, error: 'User profile not found' }
+  }
+
+  if (profile.role !== 'admin') {
+    return {
+      success: false,
+      error: 'Access denied. Administrator privileges required.'
+    }
+  }
+
+  const subRole: AdminSubRole = (profile.admin_sub_role as AdminSubRole) || 'super_admin'
+
+  return { success: true, userId: profile.id, subRole }
 }

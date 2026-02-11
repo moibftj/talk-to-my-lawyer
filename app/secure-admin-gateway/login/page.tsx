@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,22 +15,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
-import { Shield, Scale } from "lucide-react";
-
-type AdminRole = "super_admin" | "attorney_admin";
+import { Shield, Scale, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [adminRole, setAdminRole] = useState<AdminRole>("super_admin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -39,36 +32,76 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/admin-auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const supabase = createClient();
+
+      // Standard Supabase auth - no custom JWT, no portal ID, no session key
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
           email,
           password,
-          intendedRole: adminRole,
-        }),
-      });
+        });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Authentication failed");
+      if (authError) {
+        throw authError;
       }
 
-      // Route based on the verified role from server
-      const redirectUrl =
-        data.redirectUrl ||
-        (data.subRole === "attorney_admin"
-          ? "/attorney-portal/review"
-          : "/secure-admin-gateway/dashboard");
+      if (!authData.user) {
+        throw new Error("Authentication failed");
+      }
 
-      const sessionUrl = `/api/admin-auth/session?token=${encodeURIComponent(data.token)}&redirect=${encodeURIComponent(redirectUrl)}`;
-      window.location.href = sessionUrl;
+      // Verify admin role from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, admin_sub_role")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
+        throw new Error("User profile not found. Please contact support.");
+      }
+
+      if (profile.role !== "admin") {
+        await supabase.auth.signOut();
+        throw new Error(
+          "Access denied. Administrator privileges required. If you are a subscriber, please use the regular login page."
+        );
+      }
+
+      // Determine redirect based on admin sub-role
+      const subRole = profile.admin_sub_role || "super_admin";
+
+      if (subRole === "attorney_admin") {
+        router.push("/attorney-portal/review");
+      } else {
+        router.push("/secure-admin-gateway/dashboard");
+      }
+      router.refresh();
     } catch (err: any) {
       console.error("[AdminLogin] Error:", err);
-      setError(err.message || "Failed to authenticate");
+
+      const errorMessage = err?.message || "";
+      let friendlyError = "Failed to sign in";
+
+      if (errorMessage.includes("Invalid login credentials")) {
+        friendlyError =
+          "Incorrect email or password. Please check your credentials and try again.";
+      } else if (errorMessage.includes("Email not confirmed")) {
+        friendlyError =
+          "Please confirm your email address before signing in.";
+      } else if (errorMessage.includes("Too many requests")) {
+        friendlyError =
+          "Too many sign-in attempts. Please wait a moment and try again.";
+      } else if (errorMessage.includes("Access denied")) {
+        friendlyError = errorMessage;
+      } else if (errorMessage.includes("User profile not found")) {
+        friendlyError = errorMessage;
+      } else if (err instanceof Error) {
+        friendlyError = err.message;
+      }
+
+      setError(friendlyError);
+      toast.error(friendlyError);
     } finally {
       setLoading(false);
     }
@@ -93,8 +126,19 @@ export default function AdminLoginPage() {
             Admin Portal
           </CardTitle>
           <CardDescription className="text-center text-slate-400">
-            Sign in with your admin account
+            Sign in with your admin credentials
           </CardDescription>
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <div className="flex items-center gap-1 text-xs text-red-400">
+              <Shield className="w-3 h-3" />
+              <span>Super Admin</span>
+            </div>
+            <div className="text-slate-600">|</div>
+            <div className="flex items-center gap-1 text-xs text-blue-400">
+              <Scale className="w-3 h-3" />
+              <span>Attorney Admin</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -115,9 +159,17 @@ export default function AdminLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-200">
-                Password
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-slate-200">
+                  Password
+                </Label>
+                <Link
+                  href="/secure-admin-gateway/forgot-password"
+                  className="text-sm text-blue-400 hover:text-blue-300 hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -127,41 +179,6 @@ export default function AdminLoginPage() {
                 disabled={loading}
                 className="bg-slate-700/50 border-slate-600 text-white"
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="role" className="text-slate-200">
-                Admin Type
-              </Label>
-              <Select
-                value={adminRole}
-                onValueChange={(value: AdminRole) => setAdminRole(value)}
-                disabled={loading}
-              >
-                <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-                  <SelectValue placeholder="Select admin type" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
-                  <SelectItem
-                    value="super_admin"
-                    className="text-white hover:bg-slate-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-red-400" />
-                      <span>Super Admin</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem
-                    value="attorney_admin"
-                    className="text-white hover:bg-slate-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Scale className="w-4 h-4 text-blue-400" />
-                      <span>Attorney Admin</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             {error && (
@@ -186,11 +203,7 @@ export default function AdminLoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className={`w-full text-white ${
-                adminRole === "attorney_admin"
-                  ? "bg-blue-600 hover:bg-blue-700"
-                  : "bg-red-600 hover:bg-red-700"
-              }`}
+              className="w-full text-white bg-blue-600 hover:bg-blue-700"
             >
               {loading ? (
                 <span className="flex items-center gap-2">
@@ -220,7 +233,16 @@ export default function AdminLoginPage() {
               )}
             </Button>
 
-            <div className="pt-4 border-t border-slate-700">
+            <div className="mt-4 text-center">
+              <Link
+                href="/"
+                className="text-sm text-slate-400 hover:text-slate-300 inline-flex items-center gap-1"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                Back to Home
+              </Link>
+            </div>
+            <div className="pt-4 border-t border-slate-700 mt-4">
               <p className="text-xs text-center text-slate-500 flex items-center justify-center gap-2">
                 <svg
                   className="w-4 h-4"

@@ -34,9 +34,7 @@ import { createClient } from '@/lib/supabase/server'
 const mockCreateClient = createClient as ReturnType<typeof vi.fn>
 
 import {
-  createAdminSession,
   verifyAdminSession,
-  verifyAdminSessionFromRequest,
   destroyAdminSession,
   verifyAdminCredentials,
   verifyAdminRole,
@@ -88,63 +86,7 @@ describe('Admin Session Management', () => {
     process.env = originalEnv
   })
 
-  describe('createAdminSession', () => {
-    it('should create session with correct cookie settings in production', async () => {
-      await createAdminSession('user-123', 'admin@example.com', 'super_admin')
-
-      expect(mockCookieStore.set).toHaveBeenCalledWith(
-        'admin_session',
-        expect.any(String),
-        expect.objectContaining({
-          httpOnly: true,
-          secure: true,
-          sameSite: 'none',
-          maxAge: 1800,
-          path: '/',
-        })
-      )
-
-      const tokenValue = mockCookieStore.set.mock.calls[0][1]
-      const sessionData = verifySessionToken(tokenValue, TEST_JWT_SECRET)
-      expect(sessionData).not.toBeNull()
-      expect(sessionData!.userId).toBe('user-123')
-      expect(sessionData!.email).toBe('admin@example.com')
-      expect(sessionData!.subRole).toBe('super_admin')
-      expect(sessionData!.loginTime).toBeDefined()
-      expect(sessionData!.lastActivity).toBeDefined()
-    })
-
-    it('should create session with secure=true in all environments', async () => {
-      process.env = { ...process.env, NODE_ENV: 'development' }
-
-      await createAdminSession('user-123', 'admin@example.com', 'super_admin')
-
-      expect(mockCookieStore.set).toHaveBeenCalledWith(
-        'admin_session',
-        expect.any(String),
-        expect.objectContaining({
-          secure: true,
-          sameSite: 'none',
-        })
-      )
-    })
-
-    it('should default to super_admin if subRole not provided', async () => {
-      await createAdminSession('user-123', 'admin@example.com')
-
-      const tokenValue = mockCookieStore.set.mock.calls[0][1]
-      const sessionData = verifySessionToken(tokenValue, TEST_JWT_SECRET)
-      expect(sessionData!.subRole).toBe('super_admin')
-    })
-
-    it('should set attorney_admin subRole correctly', async () => {
-      await createAdminSession('user-456', 'attorney@example.com', 'attorney_admin')
-
-      const tokenValue = mockCookieStore.set.mock.calls[0][1]
-      const sessionData = verifySessionToken(tokenValue, TEST_JWT_SECRET)
-      expect(sessionData!.subRole).toBe('attorney_admin')
-    })
-  })
+  // Note: createAdminSession was removed - admin auth now uses standard Supabase auth
 
   describe('verifyAdminSession', () => {
     it('should return null when no session cookie exists', async () => {
@@ -224,64 +166,7 @@ describe('Admin Session Management', () => {
     })
   })
 
-  describe('verifyAdminSessionFromRequest', () => {
-    it('should return null when no session cookie in request', () => {
-      const mockRequest = {
-        cookies: {
-          get: vi.fn().mockReturnValue(undefined),
-        },
-      } as any
-
-      const session = verifyAdminSessionFromRequest(mockRequest)
-
-      expect(session).toBeNull()
-    })
-
-    it('should return session from request cookies', () => {
-      const validSession: AdminSession = {
-        userId: 'user-123',
-        email: 'admin@example.com',
-        subRole: 'attorney_admin',
-        loginTime: Date.now(),
-        lastActivity: Date.now(),
-      }
-
-      const token = createTestToken(validSession)
-
-      const mockRequest = {
-        cookies: {
-          get: vi.fn().mockReturnValue({ value: token }),
-        },
-      } as any
-
-      const session = verifyAdminSessionFromRequest(mockRequest)
-
-      expect(session).not.toBeNull()
-      expect(session?.subRole).toBe('attorney_admin')
-    })
-
-    it('should return null for expired session in request', () => {
-      const expiredSession: AdminSession = {
-        userId: 'user-123',
-        email: 'admin@example.com',
-        subRole: 'super_admin',
-        loginTime: Date.now() - 60 * 60 * 1000,
-        lastActivity: Date.now() - 35 * 60 * 1000,
-      }
-
-      const token = createExpiredToken(expiredSession)
-
-      const mockRequest = {
-        cookies: {
-          get: vi.fn().mockReturnValue({ value: token }),
-        },
-      } as any
-
-      const session = verifyAdminSessionFromRequest(mockRequest)
-
-      expect(session).toBeNull()
-    })
-  })
+  // Note: verifyAdminSessionFromRequest was removed - middleware now uses Supabase auth directly
 
   describe('destroyAdminSession', () => {
     it('should delete the session cookie', async () => {

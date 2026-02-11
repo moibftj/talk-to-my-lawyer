@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { verifyAdminSessionFromRequest } from '@/lib/auth/admin-session'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -52,74 +51,112 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser()
 
-    // Get user role for route protection
-    let userRole = null
+    // Get user role and admin sub-role for route protection
+    let userRole: string | null = null
+    let adminSubRole: string | null = null
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, admin_sub_role')
         .eq('id', user.id)
         .single()
       
-      userRole = profile?.role
+      userRole = profile?.role || null
+      adminSubRole = profile?.admin_sub_role || null
     }
 
     const pathname = request.nextUrl.pathname
 
-    // Attorney Admin Portal Protection
-    // Attorney admins have their own dedicated portal
+    // ============================================================
+    // ATTORNEY ADMIN PORTAL PROTECTION
+    // Uses standard Supabase auth + role check (no custom JWT)
+    // ============================================================
     if (pathname.startsWith('/attorney-portal')) {
-      // Allow login page without auth
+      // Allow login page without auth (redirects to unified admin login)
       if (pathname === '/attorney-portal/login') {
-        return NextResponse.next({ request })
+        // If already authenticated as attorney_admin, redirect to review
+        if (user && userRole === 'admin' && adminSubRole === 'attorney_admin') {
+          const url = request.nextUrl.clone()
+          url.pathname = '/attorney-portal/review'
+          return NextResponse.redirect(url)
+        }
+        return supabaseResponse
       }
 
-      // Verify admin session and check sub-role
-      const adminSession = verifyAdminSessionFromRequest(request)
-      if (!adminSession) {
+      // Must be authenticated
+      if (!user) {
         const url = request.nextUrl.clone()
-        url.pathname = '/attorney-portal/login'
+        url.pathname = '/secure-admin-gateway/login'
+        return NextResponse.redirect(url)
+      }
+
+      // Must be an admin
+      if (userRole !== 'admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth/login'
         return NextResponse.redirect(url)
       }
 
       // Only attorney admins can access attorney portal
-      if (adminSession.subRole !== 'attorney_admin') {
+      if (adminSubRole !== 'attorney_admin') {
         // Super admins trying to access attorney portal are redirected to super admin portal
         const url = request.nextUrl.clone()
         url.pathname = '/secure-admin-gateway/dashboard'
         return NextResponse.redirect(url)
       }
 
-      return NextResponse.next({ request })
+      return supabaseResponse
     }
 
-    // Super Admin Portal Protection (BEFORE regular auth checks)
-    // Super admin uses separate authentication, skip Supabase auth for admin routes
+    // ============================================================
+    // SUPER ADMIN PORTAL PROTECTION
+    // Uses standard Supabase auth + role check (no custom JWT)
+    // ============================================================
     const adminPortalRoute = process.env.ADMIN_PORTAL_ROUTE || 'secure-admin-gateway'
     if (pathname.startsWith(`/${adminPortalRoute}`)) {
-      // Allow login page without auth
-      if (pathname === `/${adminPortalRoute}/login`) {
-        return NextResponse.next({ request })
+      // Allow login and forgot-password pages without auth
+      if (
+        pathname === `/${adminPortalRoute}/login` ||
+        pathname === `/${adminPortalRoute}/forgot-password`
+      ) {
+        // If already authenticated as super_admin, redirect to dashboard
+        if (user && userRole === 'admin' && adminSubRole === 'super_admin') {
+          const url = request.nextUrl.clone()
+          url.pathname = `/${adminPortalRoute}/dashboard`
+          return NextResponse.redirect(url)
+        }
+        // If already authenticated as attorney_admin, redirect to attorney portal
+        if (user && userRole === 'admin' && adminSubRole === 'attorney_admin') {
+          const url = request.nextUrl.clone()
+          url.pathname = '/attorney-portal/review'
+          return NextResponse.redirect(url)
+        }
+        return supabaseResponse
       }
 
-      // Verify admin session for all other admin portal routes
-      const adminSession = verifyAdminSessionFromRequest(request)
-      if (!adminSession) {
+      // Must be authenticated
+      if (!user) {
         const url = request.nextUrl.clone()
         url.pathname = `/${adminPortalRoute}/login`
         return NextResponse.redirect(url)
       }
 
+      // Must be an admin
+      if (userRole !== 'admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/auth/login'
+        return NextResponse.redirect(url)
+      }
+
       // Only super admins can access super admin portal
-      // Note: Review center is accessible to both, handled separately below
-      if (adminSession.subRole !== 'super_admin') {
+      if (adminSubRole !== 'super_admin') {
         // Attorney admins trying to access super admin portal are redirected to attorney portal
         const url = request.nextUrl.clone()
         url.pathname = '/attorney-portal/review'
         return NextResponse.redirect(url)
       }
 
-      return NextResponse.next({ request })
+      return supabaseResponse
     }
 
     // Block access to old admin routes completely
@@ -141,8 +178,19 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // Role-based routing
+    // Role-based routing for dashboard
     if (user && userRole) {
+      // Admins who somehow land on /dashboard should go to their portal
+      if (userRole === 'admin' && pathname.startsWith('/dashboard')) {
+        const url = request.nextUrl.clone()
+        if (adminSubRole === 'attorney_admin') {
+          url.pathname = '/attorney-portal/review'
+        } else {
+          url.pathname = '/secure-admin-gateway/dashboard'
+        }
+        return NextResponse.redirect(url)
+      }
+
       if (userRole === 'employee' && (pathname.startsWith('/dashboard/letters') || pathname.startsWith('/dashboard/subscription'))) {
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard/commissions'

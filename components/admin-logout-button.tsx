@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
 import { useState } from 'react'
@@ -12,14 +13,10 @@ export function AdminLogoutButton() {
   const handleLogout = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/admin-auth/logout', {
-        method: 'POST',
-      })
-
-      if (response.ok) {
-        router.push('/secure-admin-gateway/login')
-        router.refresh()
-      }
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/secure-admin-gateway/login')
+      router.refresh()
     } catch (error) {
       console.error('[AdminLogout] Error:', error)
     } finally {

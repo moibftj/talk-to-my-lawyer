@@ -1,24 +1,24 @@
 /**
  * Next.js Middleware (Node.js Runtime)
  *
- * Uses Node.js runtime (not Edge) because admin session verification
- * requires crypto.createHmac for JWT signature validation.
+ * All authentication uses standard Supabase auth - no custom JWT,
+ * no portal IDs, no session keys, no 3FA for any user type.
  *
- * In Next.js 16.x App Router, this middleware file handles:
- * - Session refresh for authenticated users
- * - Route protection based on user roles
- * - Admin portal authentication (separate from Supabase auth)
- * - Role-based redirects
+ * In Next.js App Router, this middleware file handles:
+ * - Session refresh for all authenticated users (via Supabase)
+ * - Route protection based on user roles (from profiles table)
+ * - Role-based redirects for admin sub-roles
  *
  * ARCHITECTURE:
  * - Root `middleware.ts` → calls `lib/supabase/proxy.ts` (updateSession function)
- * - Handles both Supabase auth (subscribers) and admin sessions (admins/attorneys)
+ * - All users (subscribers, employees, admins) use Supabase auth
+ * - Admin role and sub-role checked from profiles table
  *
  * PROTECTED ROUTES:
- * - `/dashboard/*` → Supabase authenticated users only
- * - `/secure-admin-gateway/dashboard/*` → Super Admin only (admin_session cookie)
- * - `/secure-admin-gateway/review/*` → Super Admin only (admin_session cookie)
- * - `/attorney-portal/review/*` → Attorney Admin only (admin_session cookie)
+ * - `/dashboard/*` → Supabase authenticated subscribers/employees
+ * - `/secure-admin-gateway/dashboard/*` → Super Admin only (Supabase auth + role check)
+ * - `/secure-admin-gateway/review/*` → Super Admin only (Supabase auth + role check)
+ * - `/attorney-portal/review/*` → Attorney Admin only (Supabase auth + role check)
  *
  * ENV VARIABLES:
  * - NEXT_PUBLIC_SUPABASE_URL - Supabase project URL
@@ -30,7 +30,7 @@ import { type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/proxy'
 import * as Sentry from '@sentry/nextjs'
 
-// Use Node.js runtime for crypto.createHmac (JWT verification)
+// Use Node.js runtime for Supabase SSR cookie handling
 export const runtime = 'nodejs'
 
 export async function middleware(request: NextRequest) {

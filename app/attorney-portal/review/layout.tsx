@@ -56,7 +56,7 @@ export default async function AttorneyReviewLayout({
               <span className="text-xs text-blue-400 font-semibold">Attorney Admin</span>
             </div>
             <p className="text-xs text-blue-400 mt-1">
-              Session expires in {Math.round((1800000 - (Date.now() - session.lastActivity)) / 60000)} min
+              Authenticated via Supabase
             </p>
           </div>
 
