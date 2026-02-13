@@ -87,7 +87,8 @@ async function verifyDatabase() {
   const testId = '00000000-0000-0000-0000-000000000000';
 
   const rpcChecks = [
-    { name: 'check_and_deduct_allowance', params: { u_id: testId } },
+    // Auth-scoped RPC: no parameters, uses auth.uid() internally
+    { name: 'check_and_deduct_allowance', params: {} },
     // Auth-scoped RPC: only accepts amount, uses auth.uid() internally
     { name: 'refund_letter_allowance', params: { amount: 1 } },
     { name: 'check_letter_allowance', params: { u_id: testId } },

@@ -209,24 +209,20 @@ async function markLetterAsFailed(
       })
     })
 
-    // Try to refund the user's allowance (non-critical)
-    const { data: letter } = await serviceClient
-      .from("letters")
-      .select("user_id")
-      .eq("id", letterId)
-      .single()
-
-    if (letter?.user_id) {
-      // Note: refund_letter_allowance uses auth.uid() internally via service role
-      // We need to create an authenticated client context for the user
-      // For now, this is a known limitation - cron uses service role which bypasses auth.uid()
-      // TODO: Consider alternative refund mechanism for automated cleanup
-      await serviceClient.rpc("refund_letter_allowance", {
-        amount: 1
-      }).catch((err: unknown) => {
-        console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
-      })
-    }
+    // LIMITATION: Cannot refund allowance in cron context
+    // The refund_letter_allowance RPC now uses auth.uid() internally for security,
+    // but service role clients don't have an auth.uid() context (returns NULL).
+    // This means automated refunds for stuck letters won't work with the current implementation.
+    // 
+    // Options to fix:
+    // 1. Create a separate admin_refund_letter_allowance(user_id, amount) RPC function
+    //    that requires service role and explicitly accepts user_id parameter
+    // 2. Accept that stuck letters don't get automatic refunds (requires manual intervention)
+    // 3. Use a different refund mechanism that doesn't rely on RLS/auth.uid()
+    //
+    // For now, we skip the refund. The letter is marked as failed, which prevents
+    // user confusion, and admins can manually refund if needed.
+    console.log(`[StuckLetters] Note: Automatic refund skipped - requires manual intervention for user`)
 
     console.log(`[StuckLetters] Marked letter ${letterId} as failed: ${reason}`)
 
