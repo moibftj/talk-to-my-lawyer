@@ -217,7 +217,8 @@ async function markLetterAsFailed(
       .single()
 
     if (letter?.user_id) {
-      await serviceClient.rpc("refund_letter_allowance", {
+      // Use service-role version that accepts user_id parameter
+      await serviceClient.rpc("refund_letter_allowance_service", {
         p_user_id: letter.user_id,
         p_amount: 1
       }).catch((err: unknown) => {
