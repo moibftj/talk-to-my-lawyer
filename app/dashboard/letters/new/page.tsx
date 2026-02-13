@@ -208,17 +208,19 @@ export default function NewLetterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if user has subscription before generating
-    if (!hasSubscription) {
-      toast.info('Subscription required to generate letters');
-      setShowSubscriptionModal(true);
-      return;
-    }
-
+    // ALWAYS start generation (free trial or subscription)
     setLoading(true);
     setError(null);
     setShowTrackerModal(true);
     setTrackerStatus("generating");
+
+    // Show paywall modal immediately for free trial users
+    if (!hasSubscription) {
+      // Delay paywall slightly so timeline appears first
+      setTimeout(() => {
+        setShowSubscriptionModal(true);
+      }, 500);
+    }
 
     try {
       // Prepare uploaded files data for the API
@@ -329,7 +331,7 @@ export default function NewLetterPage() {
       <SubscriptionModal
         show={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
-        message="To generate and submit attorney drafts, please choose a subscription plan:"
+        message="Your free letter is being generated! Subscribe now to generate unlimited attorney-approved letters:"
       />
       <h1 className="text-3xl font-bold text-foreground mb-4">
         Create New Letter
