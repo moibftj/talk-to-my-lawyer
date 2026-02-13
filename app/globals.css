@@ -56,6 +56,12 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Custom Legal Colors */
+  --color-legal-navy: #0a2540;
+  --color-legal-blue: #199df4;
+  --color-legal-gold: #ca8a04;
+  --color-legal-gold-light: #fefce8;
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -112,12 +118,6 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Custom Legal Colors */
-    --legal-navy: 210 100% 15%;
-    --legal-blue: 201 96% 53%;
-    --legal-gold: 45 93% 47%;
-    --legal-gold-light: 45 93% 95%;
   }
 
   .dark {
@@ -169,13 +169,8 @@
 }
 
 @layer utilities {
-  .text-legal-navy { color: hsl(var(--legal-navy)); }
-  .bg-legal-navy { background-color: hsl(var(--legal-navy)); }
-  .text-legal-gold { color: hsl(var(--legal-gold)); }
-  .bg-legal-gold { background-color: hsl(var(--legal-gold)); }
-  
   .legal-gradient-navy {
-    background: linear-gradient(135deg, hsl(var(--legal-navy)) 0%, #0d3a5c 100%);
+    background: linear-gradient(135deg, #0a2540 0%, #0d3a5c 100%);
   }
   
   .legal-gradient-gold {
@@ -228,7 +223,7 @@
 
 /* Logo Badge Enhancement */
 .logo-badge {
-  @apply border-2 border-legal-blue/20 p-1 bg-white shadow-sm;
+  @apply border-2 border-legal-navy/20 p-1 bg-white shadow-sm;
 }
 
 /* Section Spacing */
