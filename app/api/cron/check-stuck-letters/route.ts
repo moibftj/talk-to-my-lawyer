@@ -209,7 +209,6 @@ async function markLetterAsFailed(
       })
     })
 
-<<<<<<< HEAD
     // Try to refund the user's allowance (non-critical)
     const { data: letter } = await serviceClient
       .from("letters")
@@ -226,24 +225,6 @@ async function markLetterAsFailed(
         console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
       })
     }
-=======
-    // Try to refund the user's allowance (non-critical)
-    const { data: letter } = await serviceClient
-      .from("letters")
-      .select("user_id")
-      .eq("id", letterId)
-      .single()
-
-    if (letter?.user_id) {
-      // Use service-role refund function for cron operations
-      await serviceClient.rpc("refund_letter_allowance_for_user", {
-        p_user_id: letter.user_id,
-        p_amount: 1
-      }).catch((err: unknown) => {
-        console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
-      })
-    }
->>>>>>> 241d90a (Complete follow-up improvements to MVP critical security fixes)
 
     console.log(`[StuckLetters] Marked letter ${letterId} as failed: ${reason}`)
 
