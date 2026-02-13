@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
   let isFreeTrial = false;
   let isSuperAdmin = false;
   let supabaseClient: any = null;
+  let user: any = null;
 
   try {
     recordSpanEvent("letter_generation_started");
@@ -63,8 +64,9 @@ export async function POST(request: NextRequest) {
       return rateLimitResponse;
     }
 
-    const { user, supabase } = await requireSubscriber();
-    supabaseClient = supabase;
+    const auth = await requireSubscriber();
+    user = auth.user;
+    supabaseClient = auth.supabase;
 
     addSpanAttributes({
       "user.id": user.id,
