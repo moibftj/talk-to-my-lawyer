@@ -63,6 +63,18 @@ const requiredEnvVars = {
       description: "Upstash Redis token (server-only)",
     },
   ],
+  n8n: [
+    {
+      name: "N8N_WEBHOOK_URL",
+      description: "n8n webhook URL for AI letter generation",
+    },
+  ],
+  security: [
+    {
+      name: "CSRF_SECRET",
+      description: "Secret for CSRF token generation (server-only)",
+    },
+  ],
   optional: [
     {
       name: "NEXT_PUBLIC_APP_URL",
@@ -227,6 +239,68 @@ function validateEnv() {
         console.log(`  [OK] ${name}: ${masked}`);
       }
     });
+  }
+
+  // n8n webhook configuration (required for letter generation)
+  const hasN8nConfig = requiredEnvVars.n8n.every(
+    ({ name }) => process.env[name],
+  );
+  if (isProduction && !testMode && !hasN8nConfig) {
+    console.log(
+      "\n[ERROR] n8n Configuration: N8N_WEBHOOK_URL is required for letter generation in production",
+    );
+    hasErrors = true;
+  } else if (hasN8nConfig) {
+    console.log("\nn8n Webhook Configuration:");
+    requiredEnvVars.n8n.forEach(({ name, description }) => {
+      const value = process.env[name];
+      if (!value) {
+        console.log(`  [WARN] ${name}: Not set - ${description}`);
+        hasWarnings = true;
+      } else {
+        const masked = value.substring(0, 20) + "...";
+        console.log(`  [OK] ${name}: ${masked}`);
+      }
+    });
+    const authKey = process.env.N8N_WEBHOOK_AUTH_KEY;
+    if (!authKey) {
+      console.log(
+        "  [WARN] N8N_WEBHOOK_AUTH_KEY: Not set - Webhook authentication is disabled",
+      );
+      hasWarnings = true;
+    } else {
+      console.log(`  [OK] N8N_WEBHOOK_AUTH_KEY: ${authKey.substring(0, 8)}...`);
+    }
+  } else {
+    console.log(
+      "\nn8n Configuration: N8N_WEBHOOK_URL not configured (letter generation will fail)",
+    );
+    hasWarnings = true;
+  }
+
+  // Security secrets (required for production)
+  const hasCsrfSecret = !!process.env.CSRF_SECRET;
+  if (isProduction && !testMode && !hasCsrfSecret) {
+    console.log(
+      "\n[ERROR] Security: CSRF_SECRET is required in production for CSRF protection and admin sessions",
+    );
+    hasErrors = true;
+  } else if (hasCsrfSecret) {
+    console.log("\nSecurity Configuration:");
+    console.log(`  [OK] CSRF_SECRET: ${process.env.CSRF_SECRET.substring(0, 8)}...`);
+    const adminSessionSecret = process.env.ADMIN_SESSION_SECRET;
+    if (adminSessionSecret) {
+      console.log(`  [OK] ADMIN_SESSION_SECRET: ${adminSessionSecret.substring(0, 8)}...`);
+    } else {
+      console.log(
+        "  [INFO] ADMIN_SESSION_SECRET: Not set (falling back to CSRF_SECRET for admin sessions)",
+      );
+    }
+  } else {
+    console.log(
+      "\nSecurity Configuration: CSRF_SECRET not configured (CSRF protection and admin sessions may fail)",
+    );
+    hasWarnings = true;
   }
 
   console.log("\nOptional Variables:");

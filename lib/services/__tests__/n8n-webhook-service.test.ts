@@ -453,7 +453,7 @@ describe("n8n Webhook Service", () => {
           method: "POST",
           headers: expect.objectContaining({
             "X-Webhook-Event": "letter.generation.completed",
-            Authorization: "Bearer test-auth-key",
+            "N8N_WEBHOOK_AUTH_KEY": "test-auth-key",
           }),
         }),
       );
