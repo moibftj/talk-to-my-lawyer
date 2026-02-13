@@ -132,8 +132,8 @@ export const platform = {
  * Rate limiting configuration
  */
 export const rateLimit = {
-  redisUrl: optional("UPSTASH_REDIS_REST_URL"),
-  redisToken: optional("UPSTASH_REDIS_REST_TOKEN"),
+  redisUrl: optional("KV_REST_API_URL"),
+  redisToken: optional("KV_REST_API_TOKEN"),
 } as const;
 
 /**
