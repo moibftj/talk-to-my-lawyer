@@ -91,11 +91,15 @@ Database types are auto-generated in `lib/database.types.ts`. Import types from 
 
 All API routes follow this structure:
 
+Add `export const runtime = "nodejs"` to routes that need longer timeouts (AI: 60s, cron: 120s, PDF: 30s per `vercel.json` function configs).
+
 ```typescript
 import { type NextRequest } from "next/server"
 import { safeApplyRateLimit } from '@/lib/rate-limit-redis'
 import { requireSubscriber, requireAuth } from '@/lib/auth/authenticate-user'
 import { successResponse, errorResponses, handleApiError } from '@/lib/api/api-error-handler'
+
+export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   try {
@@ -131,7 +135,12 @@ Use custom error classes from `lib/api/api-error-handler.ts`:
 
 ### Authentication & Authorization
 
-**Subscriber routes:** `requireSubscriber()` - ensures user has `role = 'subscriber'`
+All auth helpers are in `lib/auth/authenticate-user.ts` and return `{ user, supabase }` or throw an appropriate error class:
+
+- `requireSubscriber()` - allows subscriber role (and above)
+- `requireAuth()` - any authenticated user
+- `requireAdmin()` - admin/super_admin only
+- `requireEmployee()` - employee role only
 
 **Admin portal routes:** `requireAdminSession(request)` - uses JWT-signed cookies, valid for 30 minutes. Returns `AdminSession` with `subRole` (`'super_admin'` | `'attorney_admin'`)
 
@@ -169,8 +178,36 @@ Configured in `vercel.json`:
 - `/api/cron/daily-analytics` - Daily at 1 AM
 - `/api/cron/weekly-cleanup` - Weekly on Sunday 2 AM
 - `/api/subscriptions/reset-monthly` - Monthly on 1st
+- `/api/cron/check-stuck-letters` - Every 2 hours
 
-All cron routes are protected by `CRON_SECRET` header.
+All cron routes are protected by `CRON_SECRET` header (`Authorization: Bearer ${CRON_SECRET}`).
+
+### Middleware & Route Protection
+
+`middleware.ts` runs on every request (excluding static assets). It:
+1. Refreshes Supabase session via `updateSession()` from `lib/supabase/proxy.ts`
+2. Reads `role` and `admin_sub_role` from the profiles table
+3. Redirects unauthenticated users to login
+4. Redirects users to role-appropriate portals:
+   - Subscribers → `/dashboard/letters`
+   - Employees → `/dashboard/commissions` (never to letters)
+   - Attorney admins → `/attorney-portal/review`
+   - Super admins → `/secure-admin-gateway/dashboard`
+5. Blocks cross-portal access (attorney admin accessing super admin portal is redirected back)
+
+Role enforcement at middleware level handles **redirects only**. API-level `requireSubscriber()` / `requireAdmin()` handle **authorization**.
+
+### Services
+
+`lib/services/` contains reusable business logic called from API routes:
+
+| Service | Purpose |
+|---------|---------|
+| `letter-generation-service.ts` | Orchestrates AI letter generation end-to-end |
+| `n8n-webhook-service.ts` | Calls n8n webhook which invokes OpenAI |
+| `allowance-service.ts` | Checks/deducts subscription letter credits |
+| `audit-service.ts` | Logs all letter status changes with full trail |
+| `notification-service.ts` | Sends admin alerts for new letters / status changes |
 
 ### Component Patterns
 
@@ -245,7 +282,7 @@ span.setStatus({ code: 1, message: 'Success' })
 
 ## Admin Roles
 
-- **Super Admin** - Full platform access, can review/appve letters
+- **Super Admin** - Full platform access, can review/approve letters
 - **Attorney Admin** - Access to Letter Review Center, can edit/approve/reject letters
 - **Employee** - Coupons, commissions, customer support (never sees letter content)
 - **Subscriber** - Generates letters, views own history
