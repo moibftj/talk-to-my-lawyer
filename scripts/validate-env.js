@@ -269,7 +269,7 @@ function validateEnv() {
       );
       hasWarnings = true;
     } else {
-      console.log(`  [OK] N8N_WEBHOOK_AUTH_KEY: ${authKey.substring(0, 8)}...`);
+      console.log(`  [OK] N8N_WEBHOOK_AUTH_KEY: ${authKey.substring(0, Math.min(8, authKey.length))}...`);
     }
   } else {
     console.log(
@@ -287,10 +287,10 @@ function validateEnv() {
     hasErrors = true;
   } else if (hasCsrfSecret) {
     console.log("\nSecurity Configuration:");
-    console.log(`  [OK] CSRF_SECRET: ${process.env.CSRF_SECRET.substring(0, 8)}...`);
+    console.log(`  [OK] CSRF_SECRET: ${process.env.CSRF_SECRET.substring(0, Math.min(8, process.env.CSRF_SECRET.length))}...`);
     const adminSessionSecret = process.env.ADMIN_SESSION_SECRET;
     if (adminSessionSecret) {
-      console.log(`  [OK] ADMIN_SESSION_SECRET: ${adminSessionSecret.substring(0, 8)}...`);
+      console.log(`  [OK] ADMIN_SESSION_SECRET: ${adminSessionSecret.substring(0, Math.min(8, adminSessionSecret.length))}...`);
     } else {
       console.log(
         "  [INFO] ADMIN_SESSION_SECRET: Not set (falling back to CSRF_SECRET for admin sessions)",
