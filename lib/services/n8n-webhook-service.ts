@@ -64,7 +64,9 @@ export const n8nConfig: N8nConfig = {
   get isConfigured() {
     return Boolean(process.env.N8N_WEBHOOK_URL);
   },
-  timeout: 90000,
+  // CRITICAL FIX: Vercel serverless function timeout is 60 seconds (see vercel.json runtime config)
+  // Set to 55 seconds to allow 5-second buffer for graceful cleanup before hard timeout
+  timeout: 55000,
   maxRetries: 2,
 };
 
@@ -178,11 +180,19 @@ export async function generateLetterViaN8n(
         };
       }
 
+      // SECURITY: Verify that n8n successfully updated the database
+      // If n8n fails to update letter status in Supabase, we must not return success
+      if (responseData.supabaseUpdated !== true) {
+        throw new Error(
+          `n8n failed to update letter status in database: ${responseData.error || 'unknown error'}`
+        );
+      }
+
       return {
         success: true,
         letterId: responseData.letterId || formData.letterId,
         status: responseData.status || "pending_review",
-        supabaseUpdated: responseData.supabaseUpdated ?? true,
+        supabaseUpdated: true,
         message: responseData.message,
       };
     } catch (error) {

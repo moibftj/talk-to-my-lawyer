@@ -86,6 +86,9 @@ export async function checkAndDeductAllowance(userId: string): Promise<AtomicDed
 /**
  * Refund letter allowance (e.g., after failed generation)
  * Uses atomic database operation
+ *
+ * SECURITY: Function now uses auth.uid() internally (see migration 20260213000003)
+ * No longer accepts userId parameter to prevent privilege escalation
  */
 export async function refundLetterAllowance(
   userId: string,
@@ -93,8 +96,10 @@ export async function refundLetterAllowance(
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
 
+  // Note: userId parameter is kept for backwards compatibility in the service layer
+  // but is NOT passed to the RPC function. The RPC uses auth.uid() internally.
+  // This ensures we can only refund the authenticated user's credits.
   const { data, error } = await supabase.rpc('refund_letter_allowance', {
-    u_id: userId,
     amount,
   })
 
