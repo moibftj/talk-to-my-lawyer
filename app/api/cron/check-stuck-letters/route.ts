@@ -209,20 +209,41 @@ async function markLetterAsFailed(
       })
     })
 
-    // LIMITATION: Cannot refund allowance in cron context
-    // The refund_letter_allowance RPC now uses auth.uid() internally for security,
-    // but service role clients don't have an auth.uid() context (returns NULL).
-    // This means automated refunds for stuck letters won't work with the current implementation.
-    // 
-    // Options to fix:
-    // 1. Create a separate admin_refund_letter_allowance(user_id, amount) RPC function
-    //    that requires service role and explicitly accepts user_id parameter
-    // 2. Accept that stuck letters don't get automatic refunds (requires manual intervention)
-    // 3. Use a different refund mechanism that doesn't rely on RLS/auth.uid()
-    //
-    // For now, we skip the refund. The letter is marked as failed, which prevents
-    // user confusion, and admins can manually refund if needed.
-    console.log(`[StuckLetters] Note: Automatic refund skipped - requires manual intervention for user`)
+<<<<<<< HEAD
+    // Try to refund the user's allowance (non-critical)
+    const { data: letter } = await serviceClient
+      .from("letters")
+      .select("user_id")
+      .eq("id", letterId)
+      .single()
+
+    if (letter?.user_id) {
+      // Use service-role refund function for cron operations
+      await serviceClient.rpc("refund_letter_allowance_for_user", {
+        p_user_id: letter.user_id,
+        p_amount: 1
+      }).catch((err: unknown) => {
+        console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
+      })
+    }
+=======
+    // Try to refund the user's allowance (non-critical)
+    const { data: letter } = await serviceClient
+      .from("letters")
+      .select("user_id")
+      .eq("id", letterId)
+      .single()
+
+    if (letter?.user_id) {
+      // Use service-role refund function for cron operations
+      await serviceClient.rpc("refund_letter_allowance_for_user", {
+        p_user_id: letter.user_id,
+        p_amount: 1
+      }).catch((err: unknown) => {
+        console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
+      })
+    }
+>>>>>>> 241d90a (Complete follow-up improvements to MVP critical security fixes)
 
     console.log(`[StuckLetters] Marked letter ${letterId} as failed: ${reason}`)
 

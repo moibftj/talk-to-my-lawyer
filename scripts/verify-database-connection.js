@@ -87,14 +87,18 @@ async function verifyDatabase() {
   const testId = '00000000-0000-0000-0000-000000000000';
 
   const rpcChecks = [
-    // Auth-scoped RPC: no parameters, uses auth.uid() internally
+    // SECURITY: check_and_deduct_allowance now uses auth.uid() internally (no parameters)
     { name: 'check_and_deduct_allowance', params: {} },
-    // Auth-scoped RPC: only accepts amount, uses auth.uid() internally
+    // SECURITY: refund_letter_allowance now uses auth.uid() internally (only amount parameter)
     { name: 'refund_letter_allowance', params: { amount: 1 } },
+    // NEW: Service-role refund function for cron jobs (accepts p_user_id and p_amount)
+    { name: 'refund_letter_allowance_for_user', params: { p_user_id: testId, p_amount: 1 } },
     { name: 'check_letter_allowance', params: { u_id: testId } },
     { name: 'increment_total_letters', params: { p_user_id: testId } },
     { name: 'reset_monthly_allowances', params: {} },
-    { name: 'get_admin_dashboard_stats', params: {} }
+    { name: 'get_admin_dashboard_stats', params: {} },
+    // NEW: Atomic letter status update RPC (prevents race conditions)
+    { name: 'update_letter_status_atomic', params: { p_letter_id: testId, p_expected_current_status: 'draft', p_new_status: 'draft' } }
   ];
 
   for (const { name, params } of rpcChecks) {
