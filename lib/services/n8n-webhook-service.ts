@@ -65,9 +65,10 @@ export const n8nConfig: N8nConfig = {
     return Boolean(process.env.N8N_WEBHOOK_URL);
   },
   // CRITICAL FIX: Vercel serverless function timeout is 60 seconds (see vercel.json runtime config)
-  // Set to 55 seconds to allow 5-second buffer for graceful cleanup before hard timeout
+  // Set to 55 seconds to allow 5-second buffer for graceful cleanup before hard timeout.
+  // Retries are disabled here to ensure a single generateLetterViaN8n call cannot exceed the route's maxDuration.
   timeout: 55000,
-  maxRetries: 2,
+  maxRetries: 0,
 };
 
 export function isN8nConfigured(): boolean {
