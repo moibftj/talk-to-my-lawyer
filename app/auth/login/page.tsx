@@ -13,7 +13,9 @@ import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
 import { toast } from "sonner";
 import { Gavel, ShieldCheck, Scale, ArrowLeft, Lock } from "lucide-react";
 
-export default function LoginPage() {
+import { Suspense } from "react";
+
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -270,5 +272,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-legal-navy"></div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }
