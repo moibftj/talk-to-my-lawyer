@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
     const auth = await requireSubscriber();
     user = auth.user;
     supabaseClient = auth.supabase;
+    const supabase = auth.supabase;
 
     addSpanAttributes({
       "user.id": user.id,
