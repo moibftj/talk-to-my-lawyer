@@ -303,8 +303,12 @@ export async function POST(request: NextRequest) {
         .catch(() => {});
 
       if (!isFreeTrial && !isSuperAdmin) {
-        await refundLetterAllowance(user.id, 1).catch(() => {
-          console.error("[GenerateLetter] Failed to refund allowance for user:", user.id);
+        await refundLetterAllowance(user.id, 1).catch((refundError) => {
+          console.error(
+            "[GenerateLetter] Failed to refund allowance for user:",
+            user.id,
+            refundError
+          );
         });
       }
     }
