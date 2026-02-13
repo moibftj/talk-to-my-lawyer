@@ -109,7 +109,7 @@ export default function SignUpPage() {
         router.push("/auth/check-email");
       }
     } catch (err: any) {
-      let errorMessage = err.message || "Failed to create account. Please try again.";
+      const errorMessage = err.message || "Failed to create account. Please try again.";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
