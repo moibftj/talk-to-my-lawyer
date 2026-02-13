@@ -1,6 +1,21 @@
 import type { Metadata } from "next"
 import { Toaster } from 'sonner'
+import { Playfair_Display, Inter } from 'next/font/google'
 import "./globals.css"
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  display: 'swap',
+  weight: ['400', '500', '600', '700', '800', '900'],
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+  weight: ['300', '400', '500', '600', '700', '800'],
+})
 
 const DEFAULT_APP_URL = 'https://www.talk-to-my-lawyer.com'
 
@@ -38,12 +53,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${playfair.variable} ${inter.variable}`}>
       <head>
         <link rel="icon" href={LOGO_URL} type="image/png" />
         <link rel="apple-touch-icon" href={LOGO_URL} />
       </head>
-      <body className="antialiased" suppressHydrationWarning>
+      <body className="antialiased font-sans" suppressHydrationWarning>
         {children}
         <Toaster richColors position="top-right" />
       </body>
