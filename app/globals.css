@@ -59,7 +59,7 @@
   /* Custom Legal Colors */
   --color-legal-navy: #0a2540;
   --color-legal-blue: #199df4;
-  --color-legal-gold: #ca8a04;
+  --color-legal-gold: #199df4;
   --color-legal-gold-light: #fefce8;
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -174,7 +174,7 @@
   }
   
   .legal-gradient-gold {
-    background: linear-gradient(135deg, #f5d061 0%, #ca8a04 100%);
+    background: linear-gradient(135deg, #0d8ae0 0%, #199df4 100%);
   }
 
   .animate-fade-in {

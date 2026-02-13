@@ -27,8 +27,9 @@ export async function createClient(): Promise<any> {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             )
-          } catch {
+          } catch (error) {
             // Server Component - ignored, proxy handles session refresh
+            console.error("[Supabase Server] Error setting cookies:", error);
           }
         },
       },
