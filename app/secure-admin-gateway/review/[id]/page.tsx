@@ -17,6 +17,8 @@ import {
 import { format } from "date-fns";
 import { LetterReviewEditor } from "@/components/letter-review-editor";
 
+export const dynamic = 'force-dynamic';
+
 async function getCSRFToken(): Promise<string> {
   try {
     const { generateAdminCSRF } = await import("@/lib/security/csrf");

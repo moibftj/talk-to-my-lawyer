@@ -18,6 +18,8 @@ import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
 import { ArrowLeft, Mail, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);

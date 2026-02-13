@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Plus, FileText, Clock, CheckCircle, AlertCircle, ArrowRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const { profile } = await getUser()
 

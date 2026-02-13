@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Clock, FileText, User } from 'lucide-react'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic';
+
 export default async function ReviewCenterPage() {
   const supabase = await createClient()
 

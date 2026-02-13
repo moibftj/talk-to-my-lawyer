@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { isAdminAuthenticated } from '@/lib/auth/admin-session'
 import { redirect } from 'next/navigation'
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboardPage() {
   // Verify admin session
   const authenticated = await isAdminAuthenticated()

@@ -45,6 +45,8 @@ import {
 } from 'recharts'
 import { getAdminCsrfToken } from '@/lib/admin/csrf-client'
 
+export const dynamic = 'force-dynamic';
+
 interface CouponData {
   id: string
   code: string

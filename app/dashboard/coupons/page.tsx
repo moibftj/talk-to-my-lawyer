@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { CouponInsightsCard } from '@/components/coupon-insights-card'
 
+export const dynamic = 'force-dynamic';
+
 export default async function CouponsPage() {
   const { profile } = await getUser()
 

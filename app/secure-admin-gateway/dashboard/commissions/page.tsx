@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { DollarSign, Users, Clock, CheckCircle } from 'lucide-react'
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminCommissionsPage() {
   // Verify admin session
   const authenticated = await isAdminAuthenticated()

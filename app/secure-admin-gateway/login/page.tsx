@@ -19,6 +19,8 @@ import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from "@/lib/constants";
 import { Shield, Scale, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

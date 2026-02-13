@@ -8,6 +8,8 @@ import { format } from 'date-fns'
 import { Suspense } from 'react'
 import SuccessMessage from '@/components/success-message'
 
+export const dynamic = 'force-dynamic';
+
 export default async function SubscriptionPage() {
   const { profile } = await getUser()
   

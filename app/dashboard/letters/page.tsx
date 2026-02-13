@@ -7,6 +7,8 @@ import { DashboardLayout } from '@/components/dashboard-layout'
 import { GenerateButton } from '@/components/generate-button'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic';
+
 export default async function MyLettersPage() {
   const { profile } = await getUser()
 

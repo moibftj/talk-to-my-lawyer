@@ -7,6 +7,8 @@ import { Users, UserCheck, Briefcase, Shield, Mail, Calendar, FileText, Scale } 
 import { format } from 'date-fns'
 import { CreateAdminForm } from '@/components/admin/create-admin-form'
 
+export const dynamic = 'force-dynamic';
+
 export default async function UsersManagementPage() {
   const authenticated = await isAdminAuthenticated()
   if (!authenticated) {

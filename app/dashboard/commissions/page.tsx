@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic';
+
 export default async function CommissionsPage() {
   const { profile } = await getUser()
 

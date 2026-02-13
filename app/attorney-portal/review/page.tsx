@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { Clock, FileText, User, LogOut, Scale, UserCheck } from 'lucide-react'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic';
+
 export default async function AttorneyReviewPage() {
   const supabase = await createClient()
   const session = await getAdminSession()

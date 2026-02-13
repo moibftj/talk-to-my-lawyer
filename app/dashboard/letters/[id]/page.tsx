@@ -11,6 +11,8 @@ import {
   type LetterStatus,
 } from "@/components/generation-tracker-modal";
 
+export const dynamic = 'force-dynamic';
+
 export default async function LetterDetailPage({
   params,
   searchParams,

@@ -23,6 +23,8 @@ import {
   LogOut
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic';
+
 export default function SubscriberSettingsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)

@@ -20,6 +20,8 @@ import { createClient } from "@/lib/supabase/client";
 import { US_STATES } from "@/lib/validation/letter-schema";
 import { toast } from "sonner";
 
+export const dynamic = 'force-dynamic';
+
 const FORM_STEPS = [
   { label: 'Select Type', description: 'Choose your letter type' },
   { label: 'Fill Details', description: 'Provide case information' },

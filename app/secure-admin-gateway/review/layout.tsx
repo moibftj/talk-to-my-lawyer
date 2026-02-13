@@ -6,6 +6,8 @@ import { FileText, DollarSign, BarChart3, Shield, Gavel, LayoutDashboard, FileSt
 import { AdminLogoutButton } from '@/components/admin-logout-button'
 import { DEFAULT_LOGO_ALT, DEFAULT_LOGO_SRC } from '@/lib/constants'
 
+export const dynamic = 'force-dynamic';
+
 export default async function ReviewLayout({
   children,
 }: {

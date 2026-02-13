@@ -6,6 +6,8 @@ import { ReviewLetterModal } from '@/components/review-modal'
 import { LetterAssignDropdown } from '@/components/admin/letter-assign-dropdown'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminLettersPage() {
   const { profile } = await getUser()
 
