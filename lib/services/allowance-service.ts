@@ -39,13 +39,16 @@ export interface AtomicDeductionResult {
  * and all deduct, resulting in over-generation.
  *
  * Uses the database-level SELECT FOR UPDATE lock to ensure atomicity.
+ * 
+ * SECURITY: The function now uses auth.uid() internally, so no userId parameter is needed.
+ * This prevents privilege escalation attacks where a malicious user could deduct
+ * credits from another user's account.
  */
 export async function checkAndDeductAllowance(userId: string): Promise<AtomicDeductionResult> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.rpc('check_and_deduct_allowance', {
-    u_id: userId,
-  })
+  // SECURITY: No longer passing userId - the RPC function uses auth.uid() internally
+  const { data, error } = await supabase.rpc('check_and_deduct_allowance')
 
   if (error) {
     console.error('[Allowance] check_and_deduct_allowance RPC failed:', error)

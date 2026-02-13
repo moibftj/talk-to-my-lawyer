@@ -244,6 +244,9 @@ export async function notifyLetterOwner(params: {
 
 /**
  * Sanitize and validate review notes and content
+ * 
+ * SECURITY: Now includes enhanced audit note sanitization to prevent
+ * accidental exposure of sensitive admin-only information.
  */
 export function sanitizeReviewData(data: {
   finalContent?: string
@@ -252,29 +255,10 @@ export function sanitizeReviewData(data: {
 }): {
   valid: boolean
   sanitized: Record<string, string | null>
+  warnings?: string[]
   error?: string
 } {
-  const result: Record<string, string | null> = {}
-
-  if (data.finalContent !== undefined) {
-    const sanitized = sanitizeString(data.finalContent, 10000)
-    if (!sanitized) {
-      return { valid: false, sanitized: {}, error: 'Invalid final content provided' }
-    }
-    result.finalContent = sanitized
-  }
-
-  if (data.reviewNotes !== undefined) {
-    result.reviewNotes = data.reviewNotes ? sanitizeString(data.reviewNotes, 2000) : null
-  }
-
-  if (data.rejectionReason !== undefined) {
-    const sanitized = sanitizeString(data.rejectionReason, 1000)
-    if (!sanitized) {
-      return { valid: false, sanitized: {}, error: 'Invalid rejection reason provided' }
-    }
-    result.rejectionReason = sanitized
-  }
-
-  return { valid: true, sanitized: result }
+  // Use enhanced sanitization with audit note checking
+  const { sanitizeReviewDataWithAuditCheck } = require('@/lib/security/audit-note-sanitizer')
+  return sanitizeReviewDataWithAuditCheck(data)
 }
