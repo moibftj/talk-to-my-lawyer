@@ -66,7 +66,7 @@ export const n8nConfig: N8nConfig = {
   },
   // CRITICAL FIX: Vercel serverless function timeout is 60 seconds (see vercel.json runtime config)
   // Set to 55 seconds to allow 5-second buffer for graceful cleanup before hard timeout.
-  // Retries are disabled to ensure a single generateLetterViaN8n call cannot exceed the route's maxDuration.
+  // Retries are disabled here to ensure a single generateLetterViaN8n call cannot exceed the route's maxDuration.
   timeout: 55000,
   maxRetries: 0,
 };
