@@ -217,9 +217,12 @@ async function markLetterAsFailed(
       .single()
 
     if (letter?.user_id) {
+      // Note: refund_letter_allowance uses auth.uid() internally via service role
+      // We need to create an authenticated client context for the user
+      // For now, this is a known limitation - cron uses service role which bypasses auth.uid()
+      // TODO: Consider alternative refund mechanism for automated cleanup
       await serviceClient.rpc("refund_letter_allowance", {
-        p_user_id: letter.user_id,
-        p_amount: 1
+        amount: 1
       }).catch((err: unknown) => {
         console.error(`[StuckLetters] Failed to refund allowance for ${letter.user_id}:`, err)
       })

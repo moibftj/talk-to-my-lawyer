@@ -196,9 +196,8 @@ describe('Allowance Service', () => {
 
       await checkAndDeductAllowance('user-123')
 
-      expect(mockRpc).toHaveBeenCalledWith('check_and_deduct_allowance', {
-        u_id: 'user-123',
-      })
+      // Auth-scoped RPC: no parameters needed, uses auth.uid() internally
+      expect(mockRpc).toHaveBeenCalledWith('check_and_deduct_allowance')
     })
   })
 
@@ -224,8 +223,8 @@ describe('Allowance Service', () => {
       const result = await refundLetterAllowance('user-123', 3)
 
       expect(result.success).toBe(true)
+      // Auth-scoped RPC: only amount is passed, user ID comes from auth.uid()
       expect(mockRpc).toHaveBeenCalledWith('refund_letter_allowance', {
-        u_id: 'user-123',
         amount: 3,
       })
     })
@@ -238,8 +237,8 @@ describe('Allowance Service', () => {
 
       await refundLetterAllowance('user-123')
 
+      // Auth-scoped RPC: only amount is passed, user ID comes from auth.uid()
       expect(mockRpc).toHaveBeenCalledWith('refund_letter_allowance', {
-        u_id: 'user-123',
         amount: 1,
       })
     })

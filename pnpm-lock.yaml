@@ -6,7 +6,7 @@ settings:
 
 overrides:
   qs: ^6.14.1
-  '@modelcontextprotocol/sdk': ^1.25.2
+  '@modelcontextprotocol/sdk': 1.25.2
   undici: '>=5.29.0'
   esbuild: '>=0.25.0'
   glob: '>=10.5.0'
@@ -24,8 +24,8 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.71.1(react@19.2.3))
       '@modelcontextprotocol/sdk':
-        specifier: ^1.25.2
-        version: 1.25.3(hono@4.11.4)(zod@4.3.6)
+        specifier: 1.25.2
+        version: 1.25.2(hono@4.11.4)(zod@4.3.6)
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.0
@@ -963,8 +963,8 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@modelcontextprotocol/sdk@1.25.3':
-    resolution: {integrity: sha512-vsAMBMERybvYgKbg/l4L1rhS7VXV1c0CtyJg72vwxONVX0l4ZfKVAnZEWTQixJGTzKnELjQ59e4NbdFDALRiAQ==}
+  '@modelcontextprotocol/sdk@1.25.2':
+    resolution: {integrity: sha512-LZFeo4F9M5qOhC/Uc1aQSrBHxMrvxett+9KLHt7OhcExtoiRN9DKgbZffMP/nxjutWDQpfMDfP3nkHI4X9ijww==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -7526,7 +7526,7 @@ snapshots:
       - encoding
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.25.3(hono@4.11.4)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.25.2(hono@4.11.4)(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 1.19.9(hono@4.11.4)
       ajv: 8.17.1
@@ -7548,7 +7548,7 @@ snapshots:
       - hono
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.25.3(hono@4.11.4)(zod@4.3.6)':
+  '@modelcontextprotocol/sdk@1.25.2(hono@4.11.4)(zod@4.3.6)':
     dependencies:
       '@hono/node-server': 1.19.9(hono@4.11.4)
       ajv: 8.17.1
@@ -7572,7 +7572,7 @@ snapshots:
 
   '@modelcontextprotocol/server-filesystem@2025.12.18(hono@4.11.4)(zod@4.3.6)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.25.3(hono@4.11.4)(zod@4.3.6)
+      '@modelcontextprotocol/sdk': 1.25.2(hono@4.11.4)(zod@4.3.6)
       diff: 5.2.2
       glob: 13.0.0
       minimatch: 10.1.1
@@ -10096,7 +10096,7 @@ snapshots:
 
   '@vercel/sdk@1.18.7(hono@4.11.4)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.25.3(hono@4.11.4)(zod@4.3.6)
+      '@modelcontextprotocol/sdk': 1.25.2(hono@4.11.4)(zod@4.3.6)
       zod: 4.3.6
     transitivePeerDependencies:
       - '@cfworker/json-schema'
@@ -12215,7 +12215,7 @@ snapshots:
 
   mcp-server-code-runner@0.1.8(hono@4.11.4):
     dependencies:
-      '@modelcontextprotocol/sdk': 1.25.3(hono@4.11.4)(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.25.2(hono@4.11.4)(zod@3.25.76)
       commander: 13.1.0
       express: 5.2.1
       zod: 3.25.76
