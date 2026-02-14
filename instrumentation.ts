@@ -14,6 +14,20 @@ export async function register() {
 
     console.log("[Instrumentation] Initializing server instrumentation...");
 
+    // Fail fast on missing required environment variables
+    const { validateEnv } = await import("./lib/config/env");
+    const { valid, missing } = validateEnv();
+    if (!valid) {
+      console.error(
+        `[Instrumentation] Missing required environment variables: ${missing.join(", ")}`,
+      );
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          `Server startup aborted: missing required environment variables: ${missing.join(", ")}`,
+        );
+      }
+    }
+
     const { getShutdownManager } =
       await import("./lib/server/graceful-shutdown");
     const shutdownManager = getShutdownManager();
