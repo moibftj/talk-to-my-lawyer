@@ -97,7 +97,9 @@ BEGIN
   END IF;
 
   -- Apply additional fields if provided (e.g., final_content, rejected_at, approved_at)
-  IF p_additional_data IS NOT NULL AND jsonb_array_length(p_additional_data) > 0 THEN
+  IF p_additional_data IS NOT NULL
+     AND jsonb_typeof(p_additional_data) = 'object'
+     AND jsonb_object_length(p_additional_data) > 0 THEN
     DECLARE
       v_set_clause TEXT;
     BEGIN
