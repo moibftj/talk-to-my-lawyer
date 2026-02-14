@@ -164,17 +164,40 @@ export async function generateLetterViaN8n(
         );
       }
 
-      const responseData = await response.json();
+      // Parse response - handle both JSON and non-JSON responses
+      let responseData: any;
+      const responseText = await response.text();
+
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        // n8n may return non-JSON (e.g., Supabase row data directly)
+        console.warn(
+          "[n8n] Response is not valid JSON, treating as raw text:",
+          responseText.substring(0, 200),
+        );
+        // If we got a 200 OK with non-JSON, the workflow likely completed
+        // but the Respond to Webhook node is misconfigured
+        responseData = { rawResponse: responseText };
+      }
+
+      // Handle array responses (n8n sometimes returns arrays from Supabase nodes)
+      if (Array.isArray(responseData)) {
+        console.log("[n8n] Response is an array, extracting first element");
+        responseData = responseData[0] || {};
+      }
 
       console.log("[n8n] Letter generation completed for:", formData.letterId, {
         responseKeys: Object.keys(responseData),
         success: responseData.success,
         supabaseUpdated: responseData.supabaseUpdated,
+        status: responseData.status,
       });
 
       // The improved workflow returns:
       // { success: true, letterId, status, supabaseUpdated, message, letterContent?, subject? }
       // or { success: false, error, letterId }
+      // But some workflows return the Supabase row directly (e.g., { id, status, ai_draft_content })
       if (responseData.success === false) {
         return {
           success: false,
@@ -185,21 +208,34 @@ export async function generateLetterViaN8n(
         };
       }
 
-      // SECURITY: Verify that n8n successfully updated the database
-      // If n8n fails to update letter status in Supabase, we must not return success
-      if (responseData.supabaseUpdated !== true) {
-        throw new Error(
-          `n8n failed to update letter status in database: ${responseData.error || 'unknown error'}`
-        );
+      // Check if n8n returned the Supabase row directly (common with responseMode: lastNode)
+      // In this case, the presence of ai_draft_content or status=pending_review means success
+      const isSupabaseRowResponse = responseData.id && responseData.status;
+      const isExplicitSuccess = responseData.supabaseUpdated === true;
+      const isImplicitSuccess =
+        isSupabaseRowResponse &&
+        (responseData.status === "pending_review" ||
+          responseData.ai_draft_content);
+
+      if (isExplicitSuccess || isImplicitSuccess) {
+        return {
+          success: true,
+          letterId: responseData.letterId || responseData.id || formData.letterId,
+          status: responseData.status || "pending_review",
+          supabaseUpdated: true,
+          message: responseData.message || "Letter generated successfully",
+        };
       }
 
-      return {
-        success: true,
-        letterId: responseData.letterId || formData.letterId,
-        status: responseData.status || "pending_review",
-        supabaseUpdated: true,
-        message: responseData.message,
-      };
+      // If we got a 200 OK but can't determine success, log details and throw
+      // This will trigger the OpenAI fallback in the calling code
+      console.warn(
+        "[n8n] Got 200 OK but response doesn't indicate success:",
+        JSON.stringify(responseData).substring(0, 500),
+      );
+      throw new Error(
+        `n8n response unclear (no supabaseUpdated flag or recognizable status): ${JSON.stringify(responseData).substring(0, 200)}`
+      );
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         console.warn(
