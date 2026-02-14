@@ -1,13 +1,14 @@
 # n8n Workflow Update Guide
 
-## Issue Identified
+## Issue
 
-The **Letter Generation Workflow** (`fRWD4L9r7WH4m81HlAkhV`) is missing a "Respond to Webhook" node.
+The **Letter Generation Workflow** (`fRWD4L9r7WH4m81HlAkhV`) is missing a "Respond to Webhook" node at the end.
 
 **Current workflow ends at:** "Save Generated Letter" (Supabase node)
-**Expected:** Should return a response to the webhook caller
 
-## Solution: Add Respond to Webhook Node
+**Expected:** Should return a JSON response to the webhook caller.
+
+## Solution
 
 ### Step 1: Open Workflow in n8n
 
@@ -17,10 +18,10 @@ The **Letter Generation Workflow** (`fRWD4L9r7WH4m81HlAkhV`) is missing a "Respo
 
 ### Step 2: Add Respond to Webhook Node
 
-1. Click the **+** button at the end of the workflow (after "Save Generated Letter")
+1. Click **+** button at the end of the workflow (after "Save Generated Letter")
 2. Search for **Respond to Webhook** node
 3. Drag it to the canvas after "Save Generated Letter"
-4. Connect them: **Save Generated Letter** → **Respond to Webhook**
+4. Connect them: drag from **Save Generated Letter** to **Respond to Webhook**
 
 ### Step 3: Configure Response Node
 
@@ -29,6 +30,7 @@ Click on the **Respond to Webhook** node and configure:
 **Response Code:** `200`
 
 **Response Body (JSON):**
+
 ```json
 {
   "success": true,
@@ -39,9 +41,7 @@ Click on the **Respond to Webhook** node and configure:
 }
 ```
 
-**Using the Respond to Webhook Node:**
-- ✅ Respond to Webhook
-- ❌ Last Node (default - must be changed)
+**Important:** Make sure "Respond to Webhook" is selected (NOT "Last Node" which is the default)
 
 ### Step 4: Save and Activate
 
@@ -50,7 +50,7 @@ Click on the **Respond to Webhook** node and configure:
 
 ## Verification
 
-After updating, test the webhook:
+Test the webhook with curl:
 
 ```bash
 curl -X POST https://designtec.app.n8n.cloud/webhook/legal-letter-submission \
@@ -74,6 +74,7 @@ curl -X POST https://designtec.app.n8n.cloud/webhook/legal-letter-submission \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -86,11 +87,9 @@ curl -X POST https://designtec.app.n8n.cloud/webhook/legal-letter-submission \
 
 ## PDF Workflow Status
 
-The **PDF Generator Workflow** (`YleWYMCqBS2JRa0yGN_8Q`) is **already properly configured** with a "Return Success Response" node at the end. No changes needed for this workflow.
+The **PDF Generator Workflow** (`YleWYMCqBS2JRa0yGN_8Q`) already has a "Return Success Response" node (Respond to Webhook) at the end. No changes needed for this workflow.
 
 ## Next Steps
-
-After updating the letter generation workflow:
 
 1. Configure environment variables in `.env.local` (see `.env.local` file)
 2. Run database migrations: `pnpm db:migrate`
