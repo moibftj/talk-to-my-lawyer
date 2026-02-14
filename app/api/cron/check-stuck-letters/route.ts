@@ -217,7 +217,8 @@ async function markLetterAsFailed(
       .single()
 
     if (letter?.user_id) {
-      await serviceClient.rpc("refund_letter_allowance", {
+      // Use service-role refund function for cron operations
+      await serviceClient.rpc("refund_letter_allowance_for_user", {
         p_user_id: letter.user_id,
         p_amount: 1
       }).catch((err: unknown) => {

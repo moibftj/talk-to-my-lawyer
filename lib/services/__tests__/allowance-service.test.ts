@@ -188,7 +188,7 @@ describe('Allowance Service', () => {
       expect(result.errorMessage).toBe('Connection failed')
     })
 
-    it('should call correct RPC function', async () => {
+    it('should call correct RPC function with no parameters (uses auth.uid() internally)', async () => {
       mockRpc.mockResolvedValue({
         data: [{ success: true, remaining: 4, error_message: null, is_free_trial: false, is_super_admin: false }],
         error: null,
@@ -196,9 +196,8 @@ describe('Allowance Service', () => {
 
       await checkAndDeductAllowance('user-123')
 
-      expect(mockRpc).toHaveBeenCalledWith('check_and_deduct_allowance', {
-        u_id: 'user-123',
-      })
+      // SECURITY: Function now uses auth.uid() internally, no parameters passed
+      expect(mockRpc).toHaveBeenCalledWith('check_and_deduct_allowance')
     })
   })
 
@@ -224,8 +223,8 @@ describe('Allowance Service', () => {
       const result = await refundLetterAllowance('user-123', 3)
 
       expect(result.success).toBe(true)
+      // SECURITY: Function now uses auth.uid() internally, only amount is passed
       expect(mockRpc).toHaveBeenCalledWith('refund_letter_allowance', {
-        u_id: 'user-123',
         amount: 3,
       })
     })
@@ -238,8 +237,8 @@ describe('Allowance Service', () => {
 
       await refundLetterAllowance('user-123')
 
+      // SECURITY: Function now uses auth.uid() internally, only amount is passed
       expect(mockRpc).toHaveBeenCalledWith('refund_letter_allowance', {
-        u_id: 'user-123',
         amount: 1,
       })
     })
