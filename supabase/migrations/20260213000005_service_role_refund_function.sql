@@ -26,8 +26,11 @@ AS $$
 DECLARE
   v_sub RECORD;
 BEGIN
-  -- SECURITY: This function requires super_admin override in application code
-  -- It is NOT granted to authenticated users, only to service role
+  -- SECURITY: Defense in depth - verify caller is service_role
+  IF auth.role() != 'service_role' THEN
+    RETURN QUERY SELECT false, 'Unauthorized: service_role only'::TEXT;
+    RETURN;
+  END IF;
 
   IF p_user_id IS NULL THEN
     RETURN QUERY SELECT false, 'User ID required'::TEXT;
@@ -64,9 +67,14 @@ BEGIN
 END;
 $$;
 
--- DO NOT GRANT to authenticated users - this is for service role only
--- The service role will use this via the Supabase client with service key
+-- Explicitly revoke execute from all non-service roles
+REVOKE ALL ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) FROM anon;
+REVOKE ALL ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) FROM authenticated;
+
+-- Grant execute only to service_role
+GRANT EXECUTE ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) TO service_role;
 
 -- Add documentation
 COMMENT ON FUNCTION public.refund_letter_allowance_for_user IS
-  'SERVICE ROLE ONLY: Refunds letter allowance for a specific user. Used by cron jobs and background operations that cannot authenticate as users. Takes user_id as parameter. Do not grant to authenticated users.';
+  'SERVICE ROLE ONLY: Refunds letter allowance for a specific user. Used by cron jobs and background operations that cannot authenticate as users. Takes user_id as parameter. Protected by explicit REVOKE/GRANT and in-function auth.role() check.';
