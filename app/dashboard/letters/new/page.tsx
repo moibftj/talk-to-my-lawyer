@@ -16,6 +16,7 @@ import {
 } from "@/components/generation-tracker-modal";
 import { FileUpload, type UploadedFile } from "@/components/ui/file-upload";
 import { FormStepper } from "@/components/ui/form-stepper";
+import { LetterTypeSelector, LETTER_TYPES } from "@/components/letter-type-selector";
 import { createClient } from "@/lib/supabase/client";
 import { US_STATES } from "@/lib/validation/letter-schema";
 import { toast } from "sonner";
@@ -28,92 +29,7 @@ const FORM_STEPS = [
   { label: 'Review & Submit', description: 'Review and send for approval' },
 ];
 
-const LETTER_TYPES = [
-  {
-    value: "demand_letter",
-    label: "Demand Letter",
-    description: "Formal demand for payment or action",
-    icon: (
-      <svg
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M20 9V5H4V9H20ZM20 11H4V19H20V11ZM3 3H21C21.5523 3 22 3.44772 22 4V20C22 20.5523 21.5523 21 21 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3ZM5 12H8V17H5V12ZM5 6H7V8H5V6ZM9 6H11V8H9V6Z" />
-      </svg>
-    ),
-  },
-  {
-    value: "cease_desist",
-    label: "Cease and Desist",
-    description: "Stop harmful or illegal activity",
-    icon: (
-      <svg
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-      </svg>
-    ),
-  },
-  {
-    value: "contract_breach",
-    label: "Contract Breach Notice",
-    description: "Notify of contract violation",
-    icon: (
-      <svg
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 14H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-      </svg>
-    ),
-  },
-  {
-    value: "eviction_notice",
-    label: "Eviction Notice",
-    description: "Legal notice to vacate property",
-    icon: (
-      <svg
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-      </svg>
-    ),
-  },
-  {
-    value: "employment_dispute",
-    label: "Employment Dispute",
-    description: "Workplace issue resolution",
-    icon: (
-      <svg
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-      </svg>
-    ),
-  },
-  {
-    value: "consumer_complaint",
-    label: "Consumer Complaint",
-    description: "Product or service complaint",
-    icon: (
-      <svg
-        fill="currentColor"
-        viewBox="0 0 24 24"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
-      </svg>
-    ),
-  },
-];
+
 
 export default function NewLetterPage() {
   const router = useRouter();
@@ -342,39 +258,11 @@ export default function NewLetterPage() {
       />
       <div className="mb-4" />
       {!selectedType ? (
-        <div className="bg-card rounded-lg shadow-sm border p-6">
-          <h2 className="text-2xl font-bold mb-8 text-center text-slate-900">
-            Select Letter Type
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {LETTER_TYPES.map((type) => {
-              const cardClass = type.value.includes("demand")
-                ? "demand"
-                : type.value.includes("cease")
-                  ? "cease"
-                  : type.value.includes("contract")
-                    ? "contract"
-                    : type.value.includes("eviction")
-                      ? "eviction"
-                      : type.value.includes("employment")
-                        ? "employment"
-                        : "consumer";
-
-              return (
-                <button
-                  key={type.value}
-                  onClick={() => setSelectedType(type.value)}
-                  className={`letter-card ${cardClass}`}
-                >
-                  <div className="content">
-                    {type.icon}
-                    <p className="para">{type.label}</p>
-                    <p className="description">{type.description}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        <div className="bg-card rounded-lg shadow-sm border p-8">
+          <LetterTypeSelector
+            onSelect={setSelectedType}
+            selectedType={selectedType}
+          />
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
