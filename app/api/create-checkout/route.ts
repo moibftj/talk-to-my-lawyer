@@ -16,16 +16,18 @@ import {
   handleApiError,
 } from "@/lib/api/api-error-handler";
 
-const TEST_MODE = process.env.ENABLE_TEST_MODE === "true";
-
-// Production guard: prevent test mode from being enabled in production
-if (TEST_MODE && process.env.NODE_ENV === "production") {
-  throw new Error(
-    "[CRITICAL] Test mode is not allowed in production environment. Set ENABLE_TEST_MODE=false.",
-  );
-}
-
 export async function POST(request: NextRequest) {
+  // Check test mode at runtime, not during module evaluation
+  const TEST_MODE = process.env.ENABLE_TEST_MODE === "true";
+  
+  // Production guard: prevent test mode from being enabled in production
+  if (TEST_MODE && process.env.NODE_ENV === "production") {
+    console.error("[CRITICAL] Test mode is not allowed in production environment");
+    return errorResponses.serverError(
+      "Invalid server configuration. Please contact support."
+    );
+  }
+  
   console.log("[Checkout] Request received, TEST_MODE:", TEST_MODE);
 
   try {
