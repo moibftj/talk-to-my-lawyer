@@ -32,7 +32,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_current_status TEXT;
+  v_current_status letter_status;
   v_updated_count INT;
   v_user_id UUID;
   v_user_role TEXT;
