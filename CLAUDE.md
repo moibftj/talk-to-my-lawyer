@@ -471,7 +471,7 @@ import { COMMISSION_RATE, LETTER_LIMITS, COUPON_LIMITS } from '@/lib/constants/b
 - **Employee** — Coupons, commissions, payouts, customer support (never sees letter content)
 - **Subscriber** — Generates letters, views own history, manages subscription/billing
 
-Admin sub-roles are stored as `admin_sub_role` enum on profiles table. Admin sessions use JWT-signed cookies with 30-minute expiry. Admin auth API routes are under `/api/admin-auth/`.
+Admin sub-roles are stored as `admin_sub_role` enum in the profiles table. Admin sessions use JWT-signed cookies with 30-minute expiry. Admin auth API routes are under `/api/admin-auth/`.
 
 ## Production Readiness
 
