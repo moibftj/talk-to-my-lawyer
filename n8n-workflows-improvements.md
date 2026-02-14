@@ -12,6 +12,7 @@ Two improved workflow JSON files have been created alongside the originals. Thes
 | Issue | Original | Fixed |
 |-------|----------|-------|
 | **Status** | Set to `completed` | ✅ Now `pending_review` (requires attorney approval) |
+| **Connection** | Broken webhook link | ✅ Fixed: Webhook now connected to Extract Data |
 | **Error Handling** | None | ✅ Added `Return Error Response` node |
 | **Response Format** | Missing | ✅ Returns `{success, letterId, status, supabaseUpdated}` |
 | **Data References** | Mixed/confusing | ✅ Simplified with consistent `$('Extract Form Data')` references |
@@ -51,9 +52,28 @@ Two improved workflow JSON files have been created alongside the originals. Thes
 
 ### Environment Variables Needed
 - `N8N_WEBHOOK_URL` - Webhook endpoint URL
-- `N8N_WEBHOOK_AUTH_KEY` - Header auth key
+- `N8N_WEBHOOK_AUTH_USER` - Basic Auth username
+- `N8N_WEBHOOK_AUTH_PASSWORD` - Basic Auth password
 - `OPENAI_API_KEY` - For GPT-4o model
 - `PERPLEXITY_API_KEY` - For legal research
+
+---
+
+## OpenAI Fallback Architecture
+
+To ensure 99.9% availability, the application implements a **Resilience Pattern** for letter generation.
+
+### How it works
+1. **Primary Path**: The app attempts to call the n8n workflow for jurisdiction-aware drafting.
+2. **Detection**: If n8n returns an error, times out, or is unreachable, the app catches the exception.
+3. **Fallback Path**: The app immediately triggers a direct call to the OpenAI SDK using the internal `letter-generation-service.ts`.
+4. **Consistency**: The fallback path uses the same prompts and updates the same Supabase records, ensuring the attorney review process remains identical.
+5. **Audit**: The `generation_metadata` field in the database records whether the letter was generated via `n8n` or `openai_fallback`.
+
+### Benefits
+- **Zero Downtime**: Users never see "Generation Failed" due to external workflow issues.
+- **Cost Efficiency**: Credits are only refunded if *both* paths fail.
+- **Observability**: Admins can monitor fallback rates to identify n8n stability issues.
 
 ---
 

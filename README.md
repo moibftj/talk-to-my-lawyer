@@ -79,7 +79,7 @@ A dedicated, role-gated admin workspace for attorney oversight and compliance.
 ## Tech stack
 - **Frontend/SSR**: Next.js 16 (App Router), React 19, Tailwind + shadcn/ui
 - **Backend**: Supabase (Postgres + RLS), Stripe, Resend, Upstash Redis
-- **AI**: **OpenAI SDK** (`openai`), model configured via environment variables
+- **AI**: **OpenAI SDK** (`openai`) + **n8n Workflow Integration** for jurisdiction-aware drafting with automatic fallback.
 - **Observability**: OpenTelemetry tracing hooks
 - **Tooling**: TypeScript, ESLint, Vitest, pnpm (only)
 
@@ -88,7 +88,7 @@ A dedicated, role-gated admin workspace for attorney oversight and compliance.
 ## Getting started (local)
 1) Prereqs: Node 20+ and pnpm (`packageManager=pnpm@10.28.0`).
 2) Install deps: `pnpm install`
-3) Configure env: copy `.env.example` → `.env.local`, fill required keys (Supabase, Stripe, OpenAI, Resend). Validate with `pnpm validate-env`.
+3) Configure env: copy `.env.example` → `.env.local`, fill required keys (Supabase, Stripe, OpenAI, Resend, N8N). Validate with `pnpm validate-env`.
 4) Run dev server: `pnpm dev` (http://localhost:3000)
 5) Optional: apply Supabase migrations to your project before hitting APIs: `pnpm db:migrate`.
 
@@ -97,7 +97,7 @@ A dedicated, role-gated admin workspace for attorney oversight and compliance.
 ---
 
 ## Core workflows (high level)
-- **Letter generation**: `/api/generate-letter` enforces rate limit → auth (subscriber) → allowance check/deduct → **OpenAI SDK draft generation** → status `pending_review` (draft visible in **Letter Review Center**).
+- **Letter generation**: `/api/generate-letter` enforces rate limit → auth (subscriber) → allowance check/deduct → **n8n Workflow** (Primary) or **OpenAI SDK** (Fallback) → status `pending_review` (draft visible in **Letter Review Center**).
 - **Attorney review + editing**: Admin portal (`/secure-admin-gateway`) opens a letter → reviewer moves it to `under_review` → **edits the draft in the Review Center editor** → saves changes (versioned) → approves/rejects/requests changes → audit logging + emails.
 - **Payments**: `/api/create-checkout` for Stripe sessions, coupons/commissions, webhooks for fulfillment; allowance resets per subscription period.
 - **Email**: templated notifications + queue processor at `/api/cron/process-email-queue`; confirmation emails handled by Supabase Auth SMTP.
