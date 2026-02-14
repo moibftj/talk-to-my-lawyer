@@ -51,10 +51,16 @@ describe("n8n Webhook Service", () => {
       );
     });
 
-    it("should return authKey from environment", () => {
-      process.env.N8N_WEBHOOK_AUTH_KEY = "test-auth-key-123";
+    it("should return authUser from environment", () => {
+      process.env.N8N_WEBHOOK_AUTH_USER = "test-user";
 
-      expect(n8nConfig.authKey).toBe("test-auth-key-123");
+      expect(n8nConfig.authUser).toBe("test-user");
+    });
+
+    it("should return authPassword from environment", () => {
+      process.env.N8N_WEBHOOK_AUTH_PASSWORD = "test-password-123";
+
+      expect(n8nConfig.authPassword).toBe("test-password-123");
     });
 
     it("should return isConfigured true when URL is set", () => {

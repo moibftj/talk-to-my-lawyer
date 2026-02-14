@@ -44,8 +44,8 @@ export interface N8nGenerationResult {
 
 interface N8nConfig {
   webhookUrl: string | undefined;
-  authKey: string | undefined;
-  authHeaderName: string;
+  authUser: string | undefined;
+  authPassword: string | undefined;
   isConfigured: boolean;
   timeout: number;
   maxRetries: number;
@@ -55,20 +55,20 @@ export const n8nConfig: N8nConfig = {
   get webhookUrl() {
     return process.env.N8N_WEBHOOK_URL;
   },
-  get authKey() {
-    return process.env.N8N_WEBHOOK_AUTH_KEY;
+  get authUser() {
+    return process.env.N8N_WEBHOOK_AUTH_USER;
   },
-  get authHeaderName() {
-    return process.env.N8N_WEBHOOK_AUTH_HEADER || "N8N_WEBHOOK_AUTH_KEY";
+  get authPassword() {
+    return process.env.N8N_WEBHOOK_AUTH_PASSWORD;
   },
   get isConfigured() {
     return Boolean(process.env.N8N_WEBHOOK_URL);
   },
   // CRITICAL FIX: Vercel serverless function timeout is 60 seconds (see vercel.json runtime config)
   // Set to 55 seconds to allow 5-second buffer for graceful cleanup before hard timeout.
-  // Retries are disabled here to ensure a single generateLetterViaN8n call cannot exceed the route's maxDuration.
+  // maxRetries=1 means a single attempt (no retries). The for loop uses attempt <= maxRetries.
   timeout: 55000,
-  maxRetries: 0,
+  maxRetries: 1,
 };
 
 export function isN8nConfigured(): boolean {
@@ -110,8 +110,12 @@ export async function generateLetterViaN8n(
         "X-Letter-Id": formData.letterId,
       };
 
-      if (n8nConfig.authKey) {
-        headers[n8nConfig.authHeaderName] = n8nConfig.authKey;
+      // Add Basic Auth header if credentials are configured
+      if (n8nConfig.authUser && n8nConfig.authPassword) {
+        const credentials = Buffer.from(
+          `${n8nConfig.authUser}:${n8nConfig.authPassword}`
+        ).toString("base64");
+        headers["Authorization"] = `Basic ${credentials}`;
       }
 
       console.log(
@@ -139,7 +143,7 @@ export async function generateLetterViaN8n(
 
         if (response.status === 401 || response.status === 403) {
           throw new Error(
-            "n8n webhook authentication failed. Check N8N_WEBHOOK_AUTH_KEY.",
+            "n8n webhook authentication failed. Check N8N_WEBHOOK_AUTH_USER and N8N_WEBHOOK_AUTH_PASSWORD.",
           );
         }
 
@@ -272,8 +276,12 @@ export async function sendN8nEvent(payload: N8nEventPayload): Promise<boolean> {
       "X-Webhook-Event": payload.event,
     };
 
-    if (n8nConfig.authKey) {
-      headers[n8nConfig.authHeaderName] = n8nConfig.authKey;
+    // Add Basic Auth header if credentials are configured
+    if (n8nConfig.authUser && n8nConfig.authPassword) {
+      const credentials = Buffer.from(
+        `${n8nConfig.authUser}:${n8nConfig.authPassword}`
+      ).toString("base64");
+      headers["Authorization"] = `Basic ${credentials}`;
     }
 
     const response = await fetch(eventsWebhookUrl, {
@@ -338,13 +346,11 @@ export const n8nPdfConfig = {
   get webhookUrl() {
     return process.env.N8N_PDF_WEBHOOK_URL;
   },
-  get authKey() {
-    return process.env.N8N_PDF_WEBHOOK_AUTH_KEY;
+  get authUser() {
+    return process.env.N8N_WEBHOOK_AUTH_USER;
   },
-  get authHeaderName() {
-    return (
-      process.env.N8N_PDF_WEBHOOK_AUTH_HEADER || "N8N_PDF_WEBHOOK_AUTH_KEY"
-    );
+  get authPassword() {
+    return process.env.N8N_WEBHOOK_AUTH_PASSWORD;
   },
   get isConfigured() {
     return Boolean(process.env.N8N_PDF_WEBHOOK_URL);
@@ -388,8 +394,12 @@ export async function generatePdfViaN8n(
         "X-Letter-Id": params.letterId,
       };
 
-      if (n8nPdfConfig.authKey) {
-        headers[n8nPdfConfig.authHeaderName] = n8nPdfConfig.authKey;
+      // Add Basic Auth header if credentials are configured
+      if (n8nPdfConfig.authUser && n8nPdfConfig.authPassword) {
+        const credentials = Buffer.from(
+          `${n8nPdfConfig.authUser}:${n8nPdfConfig.authPassword}`
+        ).toString("base64");
+        headers["Authorization"] = `Basic ${credentials}`;
       }
 
       const response = await fetch(webhookUrl, {
@@ -415,7 +425,7 @@ export async function generatePdfViaN8n(
 
         if (response.status === 401 || response.status === 403) {
           throw new Error(
-            "n8n PDF webhook authentication failed. Check N8N_PDF_WEBHOOK_AUTH_KEY.",
+            "n8n PDF webhook authentication failed. Check N8N_WEBHOOK_AUTH_USER and N8N_WEBHOOK_AUTH_PASSWORD.",
           );
         }
 

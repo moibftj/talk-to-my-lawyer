@@ -15,7 +15,7 @@ export function SubscriptionModal({ show, onClose, message }: SubscriptionModalP
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="bg-card border rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 space-y-6">
           <div className="text-center">

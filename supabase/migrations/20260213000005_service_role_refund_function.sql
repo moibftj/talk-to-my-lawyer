@@ -27,12 +27,9 @@ DECLARE
   v_sub RECORD;
   v_auth_role TEXT;
 BEGIN
-  -- SECURITY: This function requires service_role authentication
-  -- Defense in depth: verify auth.role() is 'service_role'
-  SELECT auth.role() INTO v_auth_role;
-  
-  IF v_auth_role IS NULL OR v_auth_role != 'service_role' THEN
-    RETURN QUERY SELECT false, 'Service role authentication required'::TEXT;
+  -- SECURITY: Defense in depth - verify caller is service_role
+  IF auth.role() != 'service_role' THEN
+    RETURN QUERY SELECT false, 'Unauthorized: service_role only'::TEXT;
     RETURN;
   END IF;
 
@@ -71,15 +68,14 @@ BEGIN
 END;
 $$;
 
--- SECURITY: Explicitly revoke default PUBLIC execute permission
--- By default, PostgreSQL grants EXECUTE on functions to PUBLIC
+-- Explicitly revoke execute from all non-service roles
 REVOKE ALL ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) FROM anon;
 REVOKE ALL ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) FROM authenticated;
 
--- SECURITY: Grant execute permission ONLY to service_role
+-- Grant execute only to service_role
 GRANT EXECUTE ON FUNCTION public.refund_letter_allowance_for_user(UUID, INT) TO service_role;
 
 -- Add documentation
 COMMENT ON FUNCTION public.refund_letter_allowance_for_user IS
-  'SERVICE ROLE ONLY: Refunds letter allowance for a specific user. Used by cron jobs and background operations that cannot authenticate as users. Takes user_id as parameter. This function is SECURITY DEFINER and accepts arbitrary user_id, so it is restricted to service_role only. Contains defense-in-depth check for auth.role() = service_role. Do NOT grant to authenticated users.';
+  'SERVICE ROLE ONLY: Refunds letter allowance for a specific user. Used by cron jobs and background operations that cannot authenticate as users. Takes user_id as parameter. Protected by explicit REVOKE/GRANT and in-function auth.role() check.';

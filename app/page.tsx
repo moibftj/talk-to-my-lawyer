@@ -15,10 +15,6 @@ import {
   Zap,
   Briefcase,
   AlertCircle,
-  Gavel,
-  Clock,
-  Award,
-  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,7 +63,7 @@ const jsonLd = {
 
 export default function Page() {
   return (
-    <div className="min-h-screen bg-white text-slate-900 selection:bg-legal-gold/30">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-sky-50/40 to-blue-50/30 text-gray-900">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -78,137 +74,153 @@ export default function Page() {
       <HomepageNav />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-40 px-6 lg:px-12 overflow-hidden bg-slate-50">
-        {/* Subtle Background Elements */}
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-sky-50/50 to-transparent pointer-events-none" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-legal-gold/5 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="text-left animate-fade-in">
-              <Badge className="bg-legal-gold/10 text-legal-gold border-legal-gold/20 mb-6 px-4 py-1.5 text-sm font-semibold tracking-wide uppercase">
-                Attorney-Reviewed Legal Letters
-              </Badge>
-              
-              <h1 className="legal-heading-xl mb-8">
-                Professional <span className="text-legal-gold italic">Legal Authority</span> at Your Fingertips.
-              </h1>
-              
-              <p className="legal-body-lg mb-10 max-w-xl">
-                Resolve disputes, collect payments, and protect your rights with attorney-drafted letters. Professional results in under 48 hours, starting at <span className="text-legal-navy font-bold">$50</span>.
-              </p>
+      <section className="pt-20 pb-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div
+            className="absolute w-200 h-200 rounded-full opacity-20 blur-3xl bg-gradient-animated"
+            style={{
+              background:
+                "radial-gradient(circle, #199df4 0%, #0d8ae0 40%, #0066cc 100%)",
+              top: "-20%",
+              left: "-10%",
+              animation: "float 40s ease-in-out infinite",
+            }}
+          />
+          <div
+            className="absolute w-150 h-150 rounded-full opacity-15 blur-3xl bg-gradient-animated"
+            style={{
+              background:
+                "radial-gradient(circle, #199df4 0%, #4facfe 50%, #00f2fe 100%)",
+              top: "40%",
+              right: "-10%",
+              animation: "float 35s ease-in-out infinite reverse",
+            }}
+          />
+        </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 mb-12">
-                <Link href="/auth/signup">
-                  <Button className="btn-premium h-14 px-8 text-lg shadow-xl shadow-legal-navy/10">
-                    Get Started Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link href="#how-it-works">
-                  <Button variant="outline" className="h-14 px-8 text-lg border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all">
-                    How It Works
-                  </Button>
-                </Link>
-              </div>
+        <div className="max-w-7xl mx-auto text-center relative z-10">
+          <div className="text-center mb-16 animate-fade-in">
+            <h1
+              className="text-5xl md:text-7xl font-bold mb-4 animate-slide-up"
+              style={{
+                background:
+                  "linear-gradient(135deg, #0a2540 0%, #199df4 35%, #00d4ff 65%, #0a2540 100%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Get Professional Lawyer-Drafted Letters For:
+            </h1>
 
-              <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-legal-gold" />
-                  <span>Licensed Attorneys</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-legal-gold" />
-                  <span>48h Turnaround</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-legal-gold" />
-                  <span>PDF Delivery</span>
-                </div>
-              </div>
+            <div
+              className="flex flex-wrap justify-center gap-3 mb-8 animate-slide-up"
+              style={{ animationDelay: "0.2s" }}
+            >
+              {[
+                "Breach of Contract",
+                "Demand for Payment",
+                "Cease and Desist",
+                "Pre-Litigation Settlement",
+                "Debt Collection",
+                "And more",
+              ].map((service) => (
+                <Link href="/auth/signup" key={service}>
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-linear-to-r from-sky-100 to-blue-100 border border-[#199df4]/30 text-[#0d8ae0] font-medium text-sm cursor-pointer tag-hover">
+                    {service}
+                  </span>
+                </Link>
+              ))}
             </div>
 
-            <div className="relative hidden lg:block animate-fade-in-up animation-delay-200">
-              <div className="relative z-10 bg-white p-8 rounded-2xl shadow-2xl border border-slate-100">
-                <div className="absolute -top-6 -right-6 bg-legal-gold text-white p-4 rounded-xl shadow-lg animate-bounce duration-[3000ms]">
-                  <Award className="h-8 w-8" />
-                </div>
-                
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
-                    <div className="h-12 w-12 rounded-full bg-sky-50 flex items-center justify-center">
-                      <Gavel className="h-6 w-6 text-legal-navy" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-lg">Demand for Payment</h3>
-                      <p className="text-sm text-slate-500">Drafted by Senior Counsel</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-legal-gold w-3/4" />
-                    </div>
-                    <div className="h-2 w-5/6 bg-slate-100 rounded-full" />
-                    <div className="h-2 w-4/6 bg-slate-100 rounded-full" />
-                  </div>
-
-                  <div className="pt-4 flex justify-between items-center">
-                    <div className="flex -space-x-2">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
-                          <Image src={`https://i.pravatar.cc/150?u=${i}`} alt="User" width={32} height={32} />
-                        </div>
-                      ))}
-                    </div>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">10k+ Letters Sent</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Decorative Elements */}
-              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-sky-100 rounded-full blur-3xl opacity-50 -z-10" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border border-slate-100 rounded-full -z-20" />
-            </div>
+            <p
+              className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium animate-slide-up"
+              style={{ animationDelay: "0.4s" }}
+            >
+              Resolve conflicts quickly and affordably — starting at{" "}
+              <span className="text-[#199df4] font-bold">$50 per letter</span>{" "}
+              with membership.
+            </p>
           </div>
-        </div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="py-20 bg-legal-navy text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent" />
-        </div>
-        
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+          <div
+            className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16 animate-slide-up"
+            style={{ animationDelay: "0.6s" }}
+          >
+            <Link href="/auth/signup">
+              <Button
+                variant="running_border"
+                className="px-14 py-6 text-xl font-bold rounded-xl glow-enhanced cta-aurora primary-pulse"
+              >
+                <Play className="h-6 w-6 mr-3" />
+                Get Your Letter Now
+              </Button>
+            </Link>
+
+            <Link href="/faq">
+              <Button
+                variant="outline"
+                className="px-12 py-5 text-lg font-semibold rounded-xl border-2 border-[#199df4]/30 text-[#199df4] bg-white/80 backdrop-blur-sm hover:bg-sky-50 hover:border-[#199df4]/50 hover:shadow-xl transition-all duration-300 group"
+              >
+                <FileText className="h-5 w-5 mr-3" />
+                View FAQs
+                <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-600">
             {[
-              { label: "Letters Delivered", value: "10,000+" },
-              { label: "Success Rate", value: "95%" },
-              { label: "Licensed Attorneys", value: "50+" },
-              { label: "Avg. Turnaround", value: "24-48h" },
-            ].map((stat, i) => (
-              <div key={i} className="reveal-on-scroll" style={{ transitionDelay: `${i * 100}ms` }}>
-                <div className="text-4xl md:text-5xl font-serif font-bold text-legal-gold mb-2">{stat.value}</div>
-                <div className="text-sky-200/70 font-medium uppercase tracking-widest text-xs">{stat.label}</div>
+              { text: "PDF Download" },
+              { text: "Up to 48 hours turnaround" },
+              { text: "Attorney approved" },
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                {item.text}
               </div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Stats Section */}
+      <section className="py-16 bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: "0ms" }}>
+              <div className="text-4xl font-bold mb-2">10,000+</div>
+              <div className="text-blue-200">Letters Delivered</div>
+            </div>
+            <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: "100ms" }}>
+              <div className="text-4xl font-bold mb-2">95%</div>
+              <div className="text-blue-200">Success Rate</div>
+            </div>
+            <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: "200ms" }}>
+              <div className="text-4xl font-bold mb-2">50+</div>
+              <div className="text-blue-200">Licensed Attorneys</div>
+            </div>
+            <div className="reveal-on-scroll stat-highlight" style={{ transitionDelay: "300ms" }}>
+              <div className="text-4xl font-bold mb-2">Up to 48 Hours</div>
+              <div className="text-blue-200">Turnaround Time</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Letter Types Section */}
-      <section id="letter-types" className="section-padding bg-white">
+      <section id="letter-types" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <Badge className="bg-sky-50 text-legal-navy border-sky-100 mb-4 px-4 py-1">
-              Our Expertise
+          <div className="text-center mb-16">
+            <Badge className="bg-sky-100 text-[#199df4] mb-4">
+              Most Popular
             </Badge>
-            <h2 className="legal-heading-lg mb-6">
-              Specialized Legal Correspondence
+            <h2 className="text-4xl font-bold mb-4">
+              Professional Legal Letters
             </h2>
-            <p className="legal-body-lg max-w-2xl mx-auto">
-              Select from our most requested letter types, each meticulously reviewed by licensed attorneys to ensure maximum legal impact.
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Custom made letters for your specific situation, sent by
+              lawyer&apos;s email.
             </p>
           </div>
 
@@ -217,38 +229,38 @@ export default function Page() {
               {
                 icon: AlertCircle,
                 title: "Breach of Contract",
-                desc: "Formal notice for contract violations, non-payment, or failure to deliver services.",
-                color: "bg-red-50 text-red-600",
+                desc: "Contract violations, non-payment, failure to deliver goods or services",
+                gradient: "from-[#ff6b6b] to-[#ee5a52]",
               },
               {
                 icon: FileText,
                 title: "Demand for Payment",
-                desc: "Professional collection letters to recover funds from clients or businesses.",
-                color: "bg-sky-50 text-sky-600",
+                desc: "Collect money owed to you from clients, customers, or businesses",
+                gradient: "from-[#199df4] to-[#0d8ae0]",
               },
               {
                 icon: Shield,
                 title: "Cease and Desist",
-                desc: "Immediate notice to stop harassment, defamation, or copyright infringement.",
-                color: "bg-amber-50 text-amber-600",
+                desc: "Stop harassment, defamation, copyright infringement, and more",
+                gradient: "from-[#ffa726] to-[#ff9800]",
               },
               {
                 icon: Scale,
                 title: "Pre-Litigation Settlement",
-                desc: "Strategic settlement demands to resolve disputes before filing a lawsuit.",
-                color: "bg-emerald-50 text-emerald-600",
+                desc: "Settlement demands before filing a lawsuit, negotiate disputes",
+                gradient: "from-[#00c9a7] to-[#00a383]",
               },
               {
                 icon: Users,
                 title: "Debt Collection",
-                desc: "Authoritative letters for outstanding payments and debt recovery.",
-                color: "bg-indigo-50 text-indigo-600",
+                desc: "Professional debt collection letters for outstanding payments",
+                gradient: "from-[#4facfe] to-[#199df4]",
               },
               {
                 icon: Briefcase,
-                title: "Custom Legal Notice",
-                desc: "Bespoke legal correspondence tailored to your unique professional needs.",
-                color: "bg-slate-50 text-slate-600",
+                title: "And More",
+                desc: "Contact us for any other legal letter needs you may have",
+                gradient: "from-[#0d8ae0] to-[#0066cc]",
               },
             ].map((type, index) => (
               <div
@@ -256,20 +268,30 @@ export default function Page() {
                 className="reveal-on-scroll"
                 style={{ transitionDelay: `${index * 80}ms` }}
               >
-                <Card className="legal-card h-full group">
+                <Card className="h-full glass-card card-hover-lift group">
                   <CardHeader>
-                    <div className={`w-14 h-14 rounded-xl ${type.color} flex items-center justify-center mb-6 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}>
-                      <type.icon className="h-7 w-7" />
+                    <div
+                      className={`w-14 h-14 rounded-xl bg-linear-to-br ${type.gradient} flex items-center justify-center mb-4 shadow-lg icon-float-on-hover`}
+                    >
+                      <type.icon className="h-7 w-7 text-white" />
                     </div>
-                    <CardTitle className="text-2xl mb-3">{type.title}</CardTitle>
-                    <CardDescription className="text-slate-500 text-base leading-relaxed">
+                    <CardTitle className="text-xl font-semibold mb-2 text-gray-900 group-hover:text-[#199df4] transition-colors duration-300">
+                      {type.title}
+                    </CardTitle>
+                    <CardDescription className="text-gray-600 leading-relaxed">
                       {type.desc}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Link href="/auth/signup" className="inline-flex items-center text-sm font-bold text-legal-navy hover:text-legal-gold transition-colors group/link">
-                      Start Draft
-                      <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover/link:translate-x-1" />
+                    <Link href="/auth/signup">
+                      <Button
+                        variant="running_border"
+                        size="lg"
+                        className="w-full cta-aurora"
+                      >
+                        Select This Type
+                        <ChevronRight className="h-5 w-5 ml-2" />
+                      </Button>
                     </Link>
                   </CardContent>
                 </Card>
@@ -279,160 +301,112 @@ export default function Page() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="section-padding bg-slate-50">
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* Pricing Section */}
+      <PricingSection />
+
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-20 items-center">
-            <div className="order-2 lg:order-1">
-              <div className="space-y-12">
-                {[
-                  {
-                    step: "01",
-                    title: "Submit Your Details",
-                    desc: "Provide the facts of your situation through our secure, intuitive form. Our AI assistant helps you capture all necessary legal details.",
-                  },
-                  {
-                    step: "02",
-                    title: "Attorney Review",
-                    desc: "A licensed attorney reviews your draft, ensuring legal accuracy, proper jurisdiction, and maximum professional impact.",
-                  },
-                  {
-                    step: "03",
-                    title: "Instant Delivery",
-                    desc: "Receive your finalized, attorney-approved letter as a professional PDF, ready to be sent via email or certified mail.",
-                  },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-8 reveal-on-scroll" style={{ transitionDelay: `${i * 150}ms` }}>
-                    <div className="text-4xl font-serif font-black text-legal-gold/20 leading-none">{item.step}</div>
-                    <div>
-                      <h3 className="text-2xl font-bold mb-3 text-legal-navy">{item.title}</h3>
-                      <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Zap,
+                title: "Lightning Fast",
+                desc: "Professional legal letters in minutes, not hours",
+              },
+              {
+                icon: Users,
+                title: "Attorney Approved",
+                desc: "Every letter is approved by qualified legal professionals",
+              },
+              {
+                icon: Shield,
+                title: "Secure & Confidential",
+                desc: "Bank-level encryption protects your information",
+              },
+            ].map((feature, index) => (
+              <div
+                key={feature.title}
+                className="reveal-on-scroll"
+                style={{ transitionDelay: `${index * 120}ms` }}
+              >
+                <Card className="glass-card card-hover-lift group h-full">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-sky-100 flex items-center justify-center mb-4 icon-float-on-hover">
+                      <feature.icon className="h-6 w-6 text-[#199df4]" />
                     </div>
-                  </div>
-                ))}
+                    <CardTitle className="text-xl font-semibold mb-2 group-hover:text-[#199df4] transition-colors duration-300">
+                      {feature.title}
+                    </CardTitle>
+                    <CardDescription className="text-gray-600">
+                      {feature.desc}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
               </div>
-            </div>
-            
-            <div className="order-1 lg:order-2">
-              <Badge className="bg-legal-gold/10 text-legal-gold border-legal-gold/20 mb-6">The Process</Badge>
-              <h2 className="legal-heading-lg mb-8">Seamless Legal Solutions.</h2>
-              <p className="legal-body-lg mb-10">
-                We've combined advanced AI with human legal expertise to provide a service that is faster than a traditional firm and more reliable than a generic template.
-              </p>
-              <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-bl-full -z-10" />
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                    <Lock className="h-5 w-5 text-green-600" />
-                  </div>
-                  <span className="font-bold text-slate-800">Secure & Confidential</span>
-                </div>
-                <p className="text-slate-500 text-sm italic">
-                  "Your data is protected by bank-grade encryption and strict attorney-client confidentiality protocols."
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      <PricingSection />
-      <TestimonialsSection />
+      {/* FAQ Section */}
       <FAQSection />
 
-      {/* CTA Section */}
-      <section className="section-padding bg-legal-navy text-white text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 pointer-events-none" />
-        <div className="max-w-4xl mx-auto relative z-10">
-          <h2 className="legal-heading-lg text-white mb-8">Ready to Resolve Your Dispute?</h2>
-          <p className="text-xl text-sky-100/80 mb-12 max-w-2xl mx-auto">
-            Join thousands of individuals and businesses who have successfully resolved their legal issues with our professional letters.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Link href="/auth/signup">
-              <Button className="btn-premium h-16 px-12 text-xl bg-legal-gold hover:bg-legal-gold/90 text-white border-none shadow-2xl shadow-legal-gold/20">
-                Get Started Now
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button variant="outline" className="h-16 px-12 text-xl border-white/20 text-white hover:bg-white/10 transition-all">
-                Contact Support
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="bg-slate-950 text-slate-400 py-20 px-6 lg:px-12 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
-            <div className="col-span-1 lg:col-span-1">
-              <Link href="/" className="flex items-center gap-3 mb-8">
-                <Image
-                  src="/logo.png"
-                  alt="Talk-to-my-Lawyer"
-                  width={40}
-                  height={40}
-                  className="rounded-full logo-badge"
-                />
-                <span className="text-xl font-serif font-bold text-white tracking-tight">Talk-to-my-Lawyer</span>
+      <footer className="bg-linear-to-r from-[#0a2540] via-[#0d3a5c] to-[#0a2540] text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <Link href="/" className="flex items-center space-x-3 mb-4">
+                <Scale className="h-10 w-10 text-[#199df4]" />
+                <span className="text-2xl font-bold text-white">
+                  Talk-to-my-Lawyer
+                </span>
               </Link>
-              <p className="text-sm leading-relaxed mb-8">
-                Professional legal letter generation powered by AI and perfected by licensed attorneys. Affordable, fast, and authoritative.
+              <p className="text-sky-200 mb-4">
+                Professional legal assistance without the legal bill.
               </p>
-              <div className="flex gap-4">
-                {/* Social icons could go here */}
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Services</h3>
+              <ul className="space-y-2 text-blue-200">
+                <li className="footer-link cursor-pointer">Cease and Desist</li>
+                <li className="footer-link cursor-pointer">Breach of Contract</li>
+                <li className="footer-link cursor-pointer">Demand for Payment</li>
+                <li className="footer-link cursor-pointer">Debt Collection</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Company</h3>
+              <ul className="space-y-2 text-blue-200">
+                <li className="footer-link cursor-pointer">About Us</li>
+                <li className="footer-link cursor-pointer">Legal Blog</li>
+                <li className="footer-link cursor-pointer">Careers</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-4">Contact</h3>
+              <div className="space-y-2 text-blue-200">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  support@legalletters.com
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  800-110-0012
+                </div>
               </div>
             </div>
-
-            <div>
-              <h4 className="text-white font-bold mb-8 uppercase tracking-widest text-xs">Services</h4>
-              <ul className="space-y-4 text-sm">
-                <li><Link href="/auth/signup" className="hover:text-legal-gold transition-colors">Breach of Contract</Link></li>
-                <li><Link href="/auth/signup" className="hover:text-legal-gold transition-colors">Demand for Payment</Link></li>
-                <li><Link href="/auth/signup" className="hover:text-legal-gold transition-colors">Cease and Desist</Link></li>
-                <li><Link href="/auth/signup" className="hover:text-legal-gold transition-colors">Settlement Demands</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-bold mb-8 uppercase tracking-widest text-xs">Company</h4>
-              <ul className="space-y-4 text-sm">
-                <li><Link href="/about" className="hover:text-legal-gold transition-colors">About Us</Link></li>
-                <li><Link href="/faq" className="hover:text-legal-gold transition-colors">FAQs</Link></li>
-                <li><Link href="/contact" className="hover:text-legal-gold transition-colors">Contact</Link></li>
-                <li><Link href="/dashboard/commissions" className="hover:text-legal-gold transition-colors">Affiliate Program</Link></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="text-white font-bold mb-8 uppercase tracking-widest text-xs">Contact</h4>
-              <ul className="space-y-4 text-sm">
-                <li className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-legal-gold" />
-                  <span>support@talk-to-my-lawyer.com</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-legal-gold" />
-                  <span>1-800-LEGAL-AI</span>
-                </li>
-              </ul>
-            </div>
           </div>
 
-          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 text-xs uppercase tracking-widest font-medium">
-            <p>© {new Date().getFullYear()} Talk-to-my-Lawyer. All rights reserved.</p>
-            <div className="flex gap-8">
-              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-              <Link href="/disclaimer" className="hover:text-white transition-colors">Legal Disclaimer</Link>
-            </div>
-          </div>
-          
-          <div className="mt-12 p-6 bg-white/5 rounded-xl border border-white/5 text-[10px] leading-relaxed text-center max-w-4xl mx-auto">
-            <span className="text-legal-gold font-bold uppercase mr-2">Disclaimer:</span>
-            Talk-to-my-Lawyer is a technology platform that facilitates legal document preparation. We are not a law firm and do not provide legal advice. Use of this site does not create an attorney-client relationship. All letters are reviewed by independent licensed attorneys.
+          <div className="border-t border-blue-700 mt-12 pt-8 text-center text-blue-200">
+            <p>&copy; 2025 Talk-to-my-Lawyer. All rights reserved.</p>
           </div>
         </div>
       </footer>
