@@ -32,7 +32,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_current_status TEXT;
+  v_current_status letter_status;
   v_updated_count INT;
   v_user_id UUID;
   v_user_role TEXT;
@@ -41,7 +41,7 @@ BEGIN
   v_user_id := auth.uid();
 
   IF v_user_id IS NULL THEN
-    RETURN QUERY SELECT false, 'Authentication required'::TEXT, p_letter_id, NULL::TEXT;
+    RETURN QUERY SELECT false, 'Authentication required'::TEXT, p_letter_id, NULL::letter_status;
     RETURN;
   END IF;
 
@@ -51,7 +51,7 @@ BEGIN
   WHERE id = v_user_id;
 
   IF v_user_role != 'admin' THEN
-    RETURN QUERY SELECT false, 'Admin authorization required'::TEXT, p_letter_id, NULL::TEXT;
+    RETURN QUERY SELECT false, 'Admin authorization required'::TEXT, p_letter_id, NULL::letter_status;
     RETURN;
   END IF;
 
@@ -119,7 +119,7 @@ BEGIN
     END;
   END IF;
 
-  RETURN QUERY SELECT true, NULL::TEXT, p_letter_id, p_new_status;
+  RETURN QUERY SELECT true, NULL::TEXT, p_letter_id, p_new_status::letter_status;
 END;
 $$;
 
