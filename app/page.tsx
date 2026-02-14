@@ -155,9 +155,18 @@ export default function Page() {
 
                   <div className="pt-4 flex justify-between items-center">
                     <div className="flex -space-x-2">
-                      {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
-                          <Image src={`https://i.pravatar.cc/150?u=${i}`} alt="User" width={32} height={32} />
+                      {[
+                        { name: "JD", color: "bg-blue-100 text-blue-600" },
+                        { name: "AS", color: "bg-amber-100 text-amber-600" },
+                        { name: "MK", color: "bg-emerald-100 text-emerald-600" },
+                        { name: "RL", color: "bg-purple-100 text-purple-600" },
+                      ].map((user, i) => (
+                        <div 
+                          key={i} 
+                          className={`h-8 w-8 rounded-full border-2 border-white ${user.color} flex items-center justify-center text-[10px] font-bold shadow-sm`}
+                          title="Verified User"
+                        >
+                          {user.name}
                         </div>
                       ))}
                     </div>

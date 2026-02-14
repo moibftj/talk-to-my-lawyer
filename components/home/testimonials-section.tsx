@@ -9,21 +9,24 @@ const testimonials = [
     role: "Small Business Owner",
     quote: "I was owed $15,000 from a client who refused to pay. Within a week of sending the demand letter, they agreed to a payment plan. Worth every penny.",
     rating: 5,
-    image: "https://i.pravatar.cc/150?u=sarah",
+    initials: "SM",
+    color: "bg-blue-100 text-blue-600",
   },
   {
     name: "James T.",
     role: "Freelance Contractor",
     quote: "The cease and desist letter stopped my former employer from violating my non-compete. Professional, fast, and far cheaper than hiring a lawyer directly.",
     rating: 5,
-    image: "https://i.pravatar.cc/150?u=james",
+    initials: "JT",
+    color: "bg-amber-100 text-amber-600",
   },
   {
     name: "Maria L.",
     role: "Property Manager",
     quote: "I've used Talk-to-my-Lawyer for multiple tenant disputes. The membership pays for itself after just one letter. The attorneys are thorough and responsive.",
     rating: 5,
-    image: "https://i.pravatar.cc/150?u=maria",
+    initials: "ML",
+    color: "bg-emerald-100 text-emerald-600",
   },
 ]
 
@@ -53,14 +56,8 @@ export default function TestimonialsSection() {
               <Card className="legal-card h-full border-none shadow-xl shadow-slate-200/50 group">
                 <CardContent className="pt-12 pb-10 px-8 relative">
                   <div className="absolute -top-6 left-8">
-                    <div className="h-12 w-12 rounded-full border-4 border-white shadow-lg overflow-hidden">
-                      <Image 
-                        src={testimonial.image} 
-                        alt={testimonial.name} 
-                        width={48} 
-                        height={48} 
-                        className="object-cover"
-                      />
+                    <div className={`h-12 w-12 rounded-full border-4 border-white shadow-lg flex items-center justify-center text-sm font-bold ${testimonial.color}`}>
+                      {testimonial.initials}
                     </div>
                   </div>
                   
@@ -95,9 +92,15 @@ export default function TestimonialsSection() {
         <div className="mt-20 text-center">
           <div className="inline-flex items-center gap-8 p-4 bg-slate-50 rounded-full border border-slate-100">
             <div className="flex -space-x-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
-                  <Image src={`https://i.pravatar.cc/150?u=user${i}`} alt="User" width={40} height={40} />
+              {[
+                { n: "JD", c: "bg-blue-100 text-blue-600" },
+                { n: "AS", c: "bg-amber-100 text-amber-600" },
+                { n: "MK", c: "bg-emerald-100 text-emerald-600" },
+                { n: "RL", c: "bg-purple-100 text-purple-600" },
+                { n: "BW", c: "bg-indigo-100 text-indigo-600" },
+              ].map((user, i) => (
+                <div key={i} className={`h-10 w-10 rounded-full border-2 border-white ${user.c} flex items-center justify-center text-xs font-bold shadow-sm`}>
+                  {user.n}
                 </div>
               ))}
             </div>
