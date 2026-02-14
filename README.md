@@ -67,19 +67,22 @@ A dedicated, role-gated admin workspace for attorney oversight and compliance.
 ---
 
 ## Key features
-- **Direct OpenAI SDK integration** for letter generation; drafts are automatically posted to the **Letter Review Center**
+- **n8n Workflow Integration** (primary) with **OpenAI SDK fallback** for letter generation; drafts are automatically posted to the **Letter Review Center**
+- **Modern UI with Framer Motion animations**: Professional letter type selector with glassmorphic cards, gradient backgrounds, and smooth micro-interactions
 - **Letter Review Center editor**: attorneys can **edit the AI draft inline**, then approve/reject with audit logs
 - Subscription + credit allowance system with Stripe Checkout, coupons, and employee commissions
 - Production email stack (Resend primary, queue with cron processor, templated notifications)
 - Upstash Redis rate limiting, Supabase RLS, and role-scoped access everywhere
 - Admin analytics dashboards and PDF export for approved letters
+- **Mobile-optimized responsive design** across all subscriber-facing screens
 
 ---
 
 ## Tech stack
-- **Frontend/SSR**: Next.js 16 (App Router), React 19, Tailwind + shadcn/ui
+- **Frontend/SSR**: Next.js 16 (App Router), React 19, Tailwind + shadcn/ui + **Framer Motion** for animations
 - **Backend**: Supabase (Postgres + RLS), Stripe, Resend, Upstash Redis
-- **AI**: **OpenAI SDK** (`openai`) + **n8n Workflow Integration** for jurisdiction-aware drafting with automatic fallback.
+- **AI**: **n8n Workflow** (primary) + **OpenAI SDK** (fallback) for jurisdiction-aware letter drafting with automatic failover
+- **Icons**: Lucide React for modern, consistent iconography
 - **Observability**: OpenTelemetry tracing hooks
 - **Tooling**: TypeScript, ESLint, Vitest, pnpm (only)
 

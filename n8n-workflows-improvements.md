@@ -1,5 +1,17 @@
 # n8n Workflows - Improvements Summary
 
+## ✅ Status: PRODUCTION READY (Updated Feb 14, 2026)
+
+**Latest Fix**: The critical "Receive Form Submission → Extract Form Data" connection has been **programmatically repaired** via the n8n REST API. The workflow is now fully functional and deployed to production.
+
+### What Was Fixed (Feb 14, 2026)
+- ✅ **Missing webhook connection**: Programmatically added the connection from "Receive Form Submission" to "Extract Form Data" via n8n API
+- ✅ **OpenAI fallback**: Implemented automatic fallback to OpenAI SDK in `/api/generate-letter` when n8n fails
+- ✅ **Environment variables**: Documented `N8N_WEBHOOK_AUTH_USER` and `N8N_WEBHOOK_AUTH_PASSWORD` for Vercel deployment
+- ✅ **Test fixes**: Updated n8n webhook service tests to use new auth pattern
+
+---
+
 ## Overview
 Two improved workflow JSON files have been created alongside the originals. These fix critical bugs, add missing functionality, and align with the current codebase implementation.
 
@@ -50,12 +62,20 @@ Two improved workflow JSON files have been created alongside the originals. Thes
    }
    ```
 
-### Environment Variables Needed
-- `N8N_WEBHOOK_URL` - Webhook endpoint URL
-- `N8N_WEBHOOK_AUTH_USER` - Basic Auth username
-- `N8N_WEBHOOK_AUTH_PASSWORD` - Basic Auth password
-- `OPENAI_API_KEY` - For GPT-4o model
-- `PERPLEXITY_API_KEY` - For legal research
+### Environment Variables Needed (Application Side)
+
+**Required for Vercel Deployment:**
+```env
+N8N_WEBHOOK_URL=https://designtec.app.n8n.cloud/webhook/legal-letter-submission
+N8N_WEBHOOK_AUTH_USER=talk-to-my-lawyer
+N8N_WEBHOOK_AUTH_PASSWORD=ttml-n8n-secure-2024
+```
+
+**Optional (for enhanced features):**
+```env
+OPENAI_API_KEY=sk-...  # For OpenAI fallback
+PERPLEXITY_API_KEY=pplx-...  # For legal research in n8n workflow
+```
 
 ---
 
