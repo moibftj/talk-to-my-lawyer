@@ -25,6 +25,7 @@ SET search_path = public
 AS $$
 DECLARE
   v_sub RECORD;
+  v_auth_role TEXT;
 BEGIN
   -- SECURITY: Defense in depth - verify caller is service_role
   IF auth.role() != 'service_role' THEN
