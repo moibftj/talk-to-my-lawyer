@@ -94,6 +94,15 @@ draft → generating → pending_review → under_review → approved → comple
 4. **Verify**: No race conditions
 5. **Verify**: Correct billing for both
 
+#### Edge 5.4: N8N Workflow Failure (Resilience Test)
+1. Temporarily disable n8n or provide invalid `N8N_WEBHOOK_URL`
+2. Submit a letter request
+3. **Verify**: Application catches the error and triggers OpenAI fallback
+4. **Verify**: Letter is still generated successfully
+5. **Verify**: Status becomes `pending_review`
+6. **Verify**: Database `generation_metadata` shows `method: 'openai_fallback'`
+7. **Verify**: No credit refund (since generation succeeded)
+
 ### Ask/Verify Questions
 
 **Q: Where are letters stored?**
