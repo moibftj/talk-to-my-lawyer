@@ -129,6 +129,30 @@ export const platform = {
 } as const;
 
 /**
+ * n8n Webhook Configuration
+ */
+export const n8n = {
+  get webhookUrl() {
+    return process.env.N8N_WEBHOOK_URL;
+  },
+  get pdfWebhookUrl() {
+    return process.env.N8N_PDF_WEBHOOK_URL;
+  },
+  get authUser() {
+    return process.env.N8N_WEBHOOK_AUTH_USER;
+  },
+  get authPassword() {
+    return process.env.N8N_WEBHOOK_AUTH_PASSWORD;
+  },
+  get isConfigured() {
+    return Boolean(process.env.N8N_WEBHOOK_URL);
+  },
+  get isPdfConfigured() {
+    return Boolean(process.env.N8N_PDF_WEBHOOK_URL);
+  },
+} as const;
+
+/**
  * Rate limiting configuration
  */
 export const rateLimit = {
@@ -207,11 +231,15 @@ export function validateEnv(): { valid: boolean; missing: string[] } {
   const requiredVars = [
     "NEXT_PUBLIC_SUPABASE_URL",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "N8N_WEBHOOK_URL",
+    "N8N_WEBHOOK_AUTH_USER",
+    "N8N_WEBHOOK_AUTH_PASSWORD",
   ];
 
   const conditionalVars: Array<{ keys: string[]; label: string }> = [
     { keys: ["OPENAI_API_KEY"], label: "OpenAI API Key (OPENAI_API_KEY)" },
     { keys: ["STRIPE_SECRET_KEY"], label: "Stripe (STRIPE_SECRET_KEY)" },
+    { keys: ["N8N_PDF_WEBHOOK_URL"], label: "n8n PDF Webhook URL (N8N_PDF_WEBHOOK_URL)" },
   ];
 
   const productionVars = [

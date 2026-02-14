@@ -9,9 +9,11 @@
  *
  * IMPORTANT: The n8n workflow expects a nested payload format:
  * { letterType: "Demand Letter", letterId: "uuid", intakeData: { senderName, ... } }
- * n8n uses responseMode: "lastNode" so the response is the Supabase update result.
+ * n8n must have a Respond to Webhook node that returns:
+ * { success: true, letterId, status: "pending_review", supabaseUpdated: true, message }
  * n8n saves directly to Supabase (ai_draft_content, subject, statutes_cited, etc.)
  */
+import { n8n } from '@/lib/config/env'
 
 const LETTER_TYPE_MAP: Record<string, string> = {
   demand_letter: "Demand Letter",
@@ -53,16 +55,16 @@ interface N8nConfig {
 
 export const n8nConfig: N8nConfig = {
   get webhookUrl() {
-    return process.env.N8N_WEBHOOK_URL;
+    return n8n.webhookUrl;
   },
   get authUser() {
-    return process.env.N8N_WEBHOOK_AUTH_USER;
+    return n8n.authUser;
   },
   get authPassword() {
-    return process.env.N8N_WEBHOOK_AUTH_PASSWORD;
+    return n8n.authPassword;
   },
   get isConfigured() {
-    return Boolean(process.env.N8N_WEBHOOK_URL);
+    return n8n.isConfigured;
   },
   // CRITICAL FIX: Vercel serverless function timeout is 60 seconds (see vercel.json runtime config)
   // Set to 55 seconds to allow 5-second buffer for graceful cleanup before hard timeout.
@@ -344,16 +346,16 @@ export function notifyN8nLetterFailed(
 
 export const n8nPdfConfig = {
   get webhookUrl() {
-    return process.env.N8N_PDF_WEBHOOK_URL;
+    return n8n.pdfWebhookUrl;
   },
   get authUser() {
-    return process.env.N8N_WEBHOOK_AUTH_USER;
+    return n8n.authUser;
   },
   get authPassword() {
-    return process.env.N8N_WEBHOOK_AUTH_PASSWORD;
+    return n8n.authPassword;
   },
   get isConfigured() {
-    return Boolean(process.env.N8N_PDF_WEBHOOK_URL);
+    return n8n.isPdfConfigured;
   },
   timeout: 120000,
   maxRetries: 2,
