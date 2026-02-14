@@ -473,6 +473,45 @@ import { COMMISSION_RATE, LETTER_LIMITS, COUPON_LIMITS } from '@/lib/constants/b
 
 Admin sub-roles are stored as `admin_sub_role` enum on profiles table. Admin sessions use JWT-signed cookies with 30-minute expiry. Admin auth API routes are under `/api/admin-auth/`.
 
+## Production Readiness
+
+### Known Issues (Must Fix Before Launch)
+
+1. **Patch `path-to-regexp` ReDoS vulnerability** — Transitive dependency via `@vercel/node`. Run:
+   ```bash
+   pnpm update @vercel/node
+   pnpm audit --audit-level=high
+   ```
+
+2. **Expand rate limiting coverage** — Rate limit configs are defined in `lib/config/rate-limits.ts` but only applied to ~12 of 59 API routes. Prioritize admin routes, auth endpoints, and any expensive operations not yet protected.
+
+3. **Health check info exposure** — `/api/cron/health-check` returns specific missing env var names. In production this helps attackers; return a generic `"Configuration error"` instead of variable names.
+
+### Already Addressed
+
+- CSP `frame-ancestors` fixed to `'self'` (prevents clickjacking)
+- Startup env validation added in `instrumentation.ts` (fails fast on missing config in production)
+- No hardcoded secrets or credentials anywhere in the codebase
+- Employee data isolation enforced at both RLS and API layers
+- Stripe webhook signature verification with DB-level idempotency
+- Full GDPR Articles 15, 17, 20 compliance
+
+### Pre-Deployment Checklist
+
+```bash
+pnpm audit --audit-level=high   # Must show 0 high vulnerabilities
+CI=1 pnpm build                 # Must pass
+pnpm lint                       # Must pass
+pnpm test:run                   # 801+ tests must pass
+pnpm validate-env               # Must show all vars present
+```
+
+Verify in Vercel Dashboard before go-live:
+- All env vars set (see Critical env vars list above)
+- Sentry DSN configured
+- Stripe webhook endpoint registered with correct secret
+- Cron jobs scheduled (auto-configured via `vercel.json`)
+
 ## Database Migrations
 
 67+ SQL migration files in `supabase/migrations/` covering:
