@@ -290,7 +290,7 @@ Additional security features:
 - **Fraud Detection** (`lib/fraud-detection/coupon-fraud.ts`) — Velocity, distribution, timing, and behavior analysis for coupon fraud
 - **GDPR Compliance** — API routes for data export (`/api/gdpr/export-data`), account deletion (`/api/gdpr/delete-account`), and privacy policy acceptance
 - **Content Security Policy** — Configured in `next.config.mjs` with Stripe, Supabase, Resend allowlists
-- **Security Headers** — X-Content-Type-Options, X-Frame-Options, HSTS, Referrer-Policy via both `next.config.mjs` and `vercel.json`
+- **Security Headers** — X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy via `vercel.json`; HSTS (Strict-Transport-Security) configured in `next.config.mjs` for `/api/*`
 
 ### Environment Variables
 
