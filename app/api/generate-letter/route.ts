@@ -21,6 +21,8 @@ import {
   generateLetterViaN8n,
   transformIntakeToN8nFormat,
 } from "@/lib/services/n8n-webhook-service";
+import { generateLetterContent } from "@/lib/services/letter-generation-service";
+import { getStateName } from "@/lib/validation/letter-schema";
 import { notifyAdminsNewLetter } from "@/lib/services/notification-service";
 import type { LetterGenerationResponse } from "@/lib/types/letter.types";
 import {
@@ -222,24 +224,124 @@ export async function POST(request: NextRequest) {
       );
       recordSpanEvent("n8n_generation_failed", { error: n8nErrorMessage });
 
-      await supabase
-        .from("letters")
-        .update({
-          status: "failed",
-          generation_error: `Generation failed: ${n8nErrorMessage}`,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", letterId);
-
-      if (!isFreeTrial && !isSuperAdmin) {
-        await refundLetterAllowance(user.id, 1).catch((err) => {
-          console.error("[GenerateLetter] Failed to refund allowance:", err);
-        });
-      }
-
-      return errorResponses.serverError(
-        "Failed to generate letter. Your credit has been refunded. Please try again.",
+      // FALLBACK: Try OpenAI direct generation
+      console.log(
+        `[GenerateLetter] Falling back to OpenAI direct generation for letter: ${letterId}`,
       );
+      recordSpanEvent("openai_fallback_started");
+
+      try {
+        // Generate letter content using OpenAI
+        const aiDraftContent = await generateLetterContent(
+          sanitizedLetterType,
+          sanitizedIntakeData as Record<string, unknown>,
+        );
+
+        if (!aiDraftContent) {
+          throw new Error("OpenAI returned empty content");
+        }
+
+        // Update letter with AI draft content
+        const { error: updateError } = await supabase
+          .from("letters")
+          .update({
+            ai_draft_content: aiDraftContent,
+            status: "pending_review",
+            generated_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            generation_metadata: {
+              method: "openai_fallback",
+              n8n_error: n8nErrorMessage,
+              model: "gpt-4o",
+              timestamp: new Date().toISOString(),
+            },
+          })
+          .eq("id", letterId);
+
+        if (updateError) {
+          console.error(
+            "[GenerateLetter] Failed to update letter with OpenAI content:",
+            updateError,
+          );
+          throw updateError;
+        }
+
+        console.log(
+          `[GenerateLetter] OpenAI fallback successful for letter: ${letterId}`,
+        );
+        recordSpanEvent("openai_fallback_completed", { letter_id: letterId! });
+
+        // Log audit trail
+        await logLetterStatusChange(
+          supabase,
+          letterId!,
+          "generating",
+          "pending_review",
+          "created",
+          `Letter generated via OpenAI fallback (n8n unavailable)`,
+        ).catch((err) => {
+          console.warn(
+            "[GenerateLetter] Audit log failed (non-critical):",
+            err,
+          );
+        });
+
+        // Notify admins
+        notifyAdminsNewLetter(
+          letterId!,
+          letterTitle,
+          sanitizedLetterType,
+        ).catch((err) => {
+          console.warn(
+            "[GenerateLetter] Admin notification failed (non-critical):",
+            err,
+          );
+        });
+
+        recordSpanEvent("admin_notification_queued");
+
+        span.setStatus({ code: 1 });
+
+        return successResponse<LetterGenerationResponse>({
+          success: true,
+          letterId: letterId!,
+          status: "pending_review",
+          isFreeTrial: isFreeTrial,
+          aiDraft: undefined,
+        });
+      } catch (fallbackError) {
+        const fallbackErrorMessage =
+          fallbackError instanceof Error
+            ? fallbackError.message
+            : "Unknown fallback error";
+        console.error(
+          `[GenerateLetter] OpenAI fallback also failed for letter ${letterId}:`,
+          fallbackErrorMessage,
+        );
+        recordSpanEvent("openai_fallback_failed", {
+          error: fallbackErrorMessage,
+        });
+
+        // Both n8n and OpenAI failed - mark as failed and refund
+        await supabase
+          .from("letters")
+          .update({
+            status: "failed",
+            generation_error: `Both n8n and OpenAI failed. n8n: ${n8nErrorMessage}, OpenAI: ${fallbackErrorMessage}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", letterId);
+
+        if (!isFreeTrial && !isSuperAdmin) {
+          await refundLetterAllowance(user.id, 1).catch((err) => {
+            console.error("[GenerateLetter] Failed to refund allowance:", err);
+          });
+        }
+
+        return errorResponses.serverError(
+          "Failed to generate letter. Your credit has been refunded. Please try again.",
+        );
+      }
     }
 
     // n8n workflow already updated Supabase directly with:
