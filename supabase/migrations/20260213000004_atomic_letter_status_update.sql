@@ -119,7 +119,7 @@ BEGIN
     END;
   END IF;
 
-  RETURN QUERY SELECT true, NULL::TEXT, p_letter_id, p_new_status;
+  RETURN QUERY SELECT true, NULL::TEXT, p_letter_id, p_new_status::letter_status;
 END;
 $$;
 
