@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { healthChecker } from '@/lib/monitoring/health-check'
+import { performStartupCheck } from '@/lib/config/startup-check'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -113,10 +114,13 @@ function getOverallStatus(services: HealthCheck['services']): 'healthy' | 'degra
 
 export async function GET() {
   try {
+    // Perform startup check to verify environment
+    const startupCheck = await performStartupCheck()
+    
     // Use comprehensive health checker
     const health = await healthChecker.checkHealth()
 
-    // Add legacy compatibility fields
+    // Add startup check results and legacy compatibility fields
     const legacyHealth = {
       status: health.status,
       timestamp: health.timestamp,
@@ -133,10 +137,18 @@ export async function GET() {
         redis: health.services.rateLimiting
       },
       environment: process.env.NODE_ENV || 'development',
-      metrics: health.metrics
+      metrics: health.metrics,
+      startup: {
+        healthy: startupCheck.healthy,
+        errors: startupCheck.errors,
+        warnings: startupCheck.warnings,
+        checks: startupCheck.checks
+      }
     }
 
-    const statusCode = health.status === 'unhealthy' ? 503 : 200
+    // Return 503 if either health check or startup check fails
+    const statusCode = 
+      !startupCheck.healthy || health.status === 'unhealthy' ? 503 : 200
 
     return NextResponse.json(legacyHealth, { status: statusCode })
   } catch (error: any) {
