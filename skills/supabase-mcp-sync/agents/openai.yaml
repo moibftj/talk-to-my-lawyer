@@ -1,0 +1,4 @@
+interface:
+  display_name: "Supabase MCP Sync"
+  short_description: "Sync Supabase migrations via MCP safely"
+  default_prompt: "Synchronize local Supabase migrations with a target Supabase project via MCP, verify storage/RLS setup, and produce a concise sync report."
