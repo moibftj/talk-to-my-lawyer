@@ -77,7 +77,7 @@
             {
               "id": "id-10",
               "name": "intakeData",
-              "value": "={{ JSON.stringify($json.body.intakeData) }}",
+              "value": "={{ $json.body.intakeData }}",
               "type": "object"
             }
           ]
@@ -252,7 +252,7 @@
             },
             {
               "fieldId": "statutes_cited",
-              "fieldValue": "={{ JSON.stringify($json.output.statutesCited || []) }}"
+              "fieldValue": "={{ Array.isArray($json.output?.statutesCited) ? $json.output.statutesCited : [] }}"
             },
             {
               "fieldId": "legal_basis",
@@ -286,8 +286,10 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ success: true, letterId: $('Extract Form Data').item.json.letterId, status: 'pending_review', supabaseUpdated: true, message: 'Letter generated with jurisdiction research', letterContent: $json.output?.letterContent || '', subject: $json.output?.subject || '' }) }}",
-        "options": {}
+        "responseBody": "={{ { success: !!$json.id, letterId: $('Extract Form Data').item.json.letterId, status: $json.id ? 'pending_review' : 'failed', supabaseUpdated: !!$json.id, message: $json.id ? 'Letter generated successfully' : 'Failed to persist generated letter' } }}",
+        "options": {
+          "responseCode": "={{ $json.id ? 200 : 500 }}"
+        }
       },
       "id": "return-success",
       "name": "Return Success Response",
