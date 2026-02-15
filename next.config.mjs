@@ -65,7 +65,7 @@ const nextConfig = {
     ],
   },
 
-  allowedDevOrigins: true,
+  allowedDevOrigins: ["*"],
   async headers() {
     const headers = [];
 
