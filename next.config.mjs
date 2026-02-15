@@ -65,7 +65,7 @@ const nextConfig = {
     ],
   },
 
-  allowedDevOrigins: ["*"],
+  allowedDevOrigins: ["localhost", "127.0.0.1", "0.0.0.0", "*.replit.dev", "*.sisko.replit.dev"],
   async headers() {
     const headers = [];
 
@@ -114,7 +114,9 @@ const nextConfig = {
         {
           key: "Content-Security-Policy",
           value:
-            "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors *;",
+            process.env.NODE_ENV === "production"
+              ? "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'self';"
+              : "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors *;",
         },
       ],
     });
@@ -137,7 +139,7 @@ const nextConfig = {
                   "img-src 'self' data: https: blob:;",
                   "connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://app.talk-to-my-lawyer.com https://vercel.live https://resend.com wss: ws:;",
                   "frame-src 'self' https://js.stripe.com https://vercel.live;",
-                  "frame-ancestors *;",
+                  "frame-ancestors 'self';",
                   "base-uri 'self';",
                   "form-action 'self';",
                 ].join(" ")
