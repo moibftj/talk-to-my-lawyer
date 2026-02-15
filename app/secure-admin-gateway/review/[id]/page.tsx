@@ -66,6 +66,35 @@ export default async function ReviewLetterDetailPage({
     notFound();
   }
 
+  // Automatically transition to under_review if letter is pending_review
+  if (letter.status === 'pending_review') {
+    const { getAdminSession } = await import('@/lib/auth/admin-session');
+    const adminSession = await getAdminSession();
+    await supabase
+      .from('letters')
+      .update({
+        status: 'under_review',
+        reviewed_by: adminSession?.userId,
+        assigned_to: adminSession?.userId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    // Log the status change
+    await (supabase as any).rpc('log_letter_audit', {
+      p_letter_id: id,
+      p_action: 'review_started',
+      p_old_status: 'pending_review',
+      p_new_status: 'under_review',
+      p_notes: 'Super Admin opened letter for review',
+    });
+
+    // Update the letter object to reflect the new status
+    letter.status = 'under_review';
+    letter.reviewed_by = adminSession?.userId;
+    letter.assigned_to = adminSession?.userId;
+  }
+
   // Fetch audit trail
   const { data: auditTrail } = await supabase
     .from("letter_audit_trail")
