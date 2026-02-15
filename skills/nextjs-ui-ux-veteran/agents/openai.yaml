@@ -1,0 +1,4 @@
+interface:
+  display_name: "Next.js UI/UX Veteran"
+  short_description: "Build polished Next.js UI with motion"
+  default_prompt: "Use $nextjs-ui-ux-veteran to design and implement an accessible, animated, responsive Next.js UI feature for Talk-to-My-Lawyer."
