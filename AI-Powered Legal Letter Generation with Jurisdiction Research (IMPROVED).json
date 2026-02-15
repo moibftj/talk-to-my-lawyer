@@ -5,8 +5,8 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "legal-letter-submission",
-        "authentication": "headerAuth",
-        "responseMode": "lastNode",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
         "options": {}
       },
       "id": "f1622d05-a846-4625-90f3-3a74edf9919b",
@@ -79,6 +79,24 @@
               "name": "intakeData",
               "value": "={{ $json.body.intakeData }}",
               "type": "object"
+            },
+            {
+              "id": "id-11",
+              "name": "senderCountry",
+              "value": "={{ ($json.body.intakeData.senderCountry || 'US').toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "id-12",
+              "name": "recipientCountry",
+              "value": "={{ ($json.body.intakeData.recipientCountry || 'US').toUpperCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "id-13",
+              "name": "courtType",
+              "value": "={{ $json.body.intakeData.courtType || '' }}",
+              "type": "string"
             }
           ]
         },
@@ -251,12 +269,36 @@
               "fieldValue": "={{ $json.output.subject }}"
             },
             {
+              "fieldId": "sender_state",
+              "fieldValue": "={{ $('Extract Form Data').item.json.senderState }}"
+            },
+            {
+              "fieldId": "sender_country",
+              "fieldValue": "={{ $('Extract Form Data').item.json.senderCountry }}"
+            },
+            {
+              "fieldId": "recipient_state",
+              "fieldValue": "={{ $('Extract Form Data').item.json.recipientState }}"
+            },
+            {
+              "fieldId": "recipient_country",
+              "fieldValue": "={{ $('Extract Form Data').item.json.recipientCountry }}"
+            },
+            {
+              "fieldId": "court_type",
+              "fieldValue": "={{ $('Extract Form Data').item.json.courtType || null }}"
+            },
+            {
               "fieldId": "statutes_cited",
               "fieldValue": "={{ Array.isArray($json.output?.statutesCited) ? $json.output.statutesCited : [] }}"
             },
             {
               "fieldId": "legal_basis",
               "fieldValue": "={{ $json.output.legalBasis }}"
+            },
+            {
+              "fieldId": "research_data",
+              "fieldValue": "={{ $('Jurisdiction Research Agent').item.json.output || null }}"
             },
             {
               "fieldId": "next_steps",
