@@ -1,0 +1,4 @@
+interface:
+  display_name: "Talk-to-My-Lawyer Database Architect"
+  short_description: "Architect secure Supabase schema for TTML"
+  default_prompt: "Use $talk-to-my-lawyer-database-architect to design or update secure role-based Supabase schema and operations for Talk-to-My-Lawyer."
