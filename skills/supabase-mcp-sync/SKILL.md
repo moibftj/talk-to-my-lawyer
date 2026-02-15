@@ -19,14 +19,14 @@ Synchronize local SQL migrations to Supabase safely and deterministically. Apply
 
 ## 1) List Available Projects
 ```bash
-manus-mcp-cli tool call list_projects --server supabase
+codex-mcp-cli tool call list_projects --server supabase
 ```
 Record the target `project_id` for all subsequent steps.
 
 ## 2) Check Pending Migrations
 ```bash
 # Export applied migrations from Supabase
-manus-mcp-cli tool call list_migrations --server supabase \
+codex-mcp-cli tool call list_migrations --server supabase \
   --input '{"project_id":"PROJECT_ID"}' > /tmp/applied_migrations.json
 
 # Compare against local repository migrations
@@ -46,7 +46,7 @@ while IFS= read -r file; do
   [ -z "$file" ] && continue
   name="${file%.sql}"
   query="$(sed 's/\"/\\\"/g' "supabase/migrations/$file" | tr '\n' ' ')"
-  manus-mcp-cli tool call apply_migration --server supabase \
+  codex-mcp-cli tool call apply_migration --server supabase \
     --input "{\"project_id\":\"PROJECT_ID\",\"name\":\"$name\",\"query\":\"$query\"}"
 done < /tmp/pending_migrations.txt
 ```
@@ -61,7 +61,7 @@ Storage setup is usually safer through `execute_sql` than `apply_migration`.
 
 ### Create bucket idempotently
 ```bash
-manus-mcp-cli tool call execute_sql --server supabase \
+codex-mcp-cli tool call execute_sql --server supabase \
   --input '{
     "project_id":"PROJECT_ID",
     "query":"INSERT INTO storage.buckets (id, name, public) VALUES ('\''bucket-name'\'', '\''bucket-name'\'', false) ON CONFLICT (id) DO NOTHING;"
@@ -72,7 +72,7 @@ manus-mcp-cli tool call execute_sql --server supabase \
 `storage.objects` policies do not support `IF NOT EXISTS`. Use `DROP POLICY IF EXISTS` followed by `CREATE POLICY`.
 
 ```bash
-manus-mcp-cli tool call execute_sql --server supabase \
+codex-mcp-cli tool call execute_sql --server supabase \
   --input '{
     "project_id":"PROJECT_ID",
     "query":"DROP POLICY IF EXISTS \"Policy name\" ON storage.objects; CREATE POLICY \"Policy name\" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = '\''bucket-name'\'');"
@@ -86,14 +86,14 @@ Run targeted checks after migration and storage changes.
 
 ```bash
 # Verify bucket
-manus-mcp-cli tool call execute_sql --server supabase \
+codex-mcp-cli tool call execute_sql --server supabase \
   --input '{
     "project_id":"PROJECT_ID",
     "query":"SELECT id, name, public, file_size_limit, allowed_mime_types FROM storage.buckets WHERE id = '\''bucket-name'\'';"
   }'
 
 # Verify storage policies
-manus-mcp-cli tool call execute_sql --server supabase \
+codex-mcp-cli tool call execute_sql --server supabase \
   --input '{
     "project_id":"PROJECT_ID",
     "query":"SELECT polname, polcmd FROM pg_policy WHERE polrelid = '\''storage.objects'\''::regclass ORDER BY polname;"
@@ -102,7 +102,7 @@ manus-mcp-cli tool call execute_sql --server supabase \
 
 ## 6) Check Performance Advisories
 ```bash
-manus-mcp-cli tool call get_advisors --server supabase \
+codex-mcp-cli tool call get_advisors --server supabase \
   --input '{"project_id":"PROJECT_ID","type":"performance"}'
 ```
 
