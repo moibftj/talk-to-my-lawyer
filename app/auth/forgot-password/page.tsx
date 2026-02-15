@@ -23,16 +23,27 @@ export default function ForgotPasswordPage() {
     setLoading(true)
 
     try {
+      const normalizedEmail = email.trim().toLowerCase()
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       })
 
-      const data = await response.json()
+      let data: any = null
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        data = await response.json().catch(() => null)
+      } else {
+        const text = await response.text().catch(() => '')
+        data = text ? { error: text } : null
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send reset email')
+        if (response.status === 405) {
+          throw new Error('Password reset endpoint is unavailable. Please try again shortly.')
+        }
+        throw new Error(data?.error || data?.message || `Failed to send reset email (${response.status})`)
       }
 
       setSubmitted(true)

@@ -30,11 +30,12 @@ function LoginContent() {
     setError(null);
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       const supabase = createClient();
       console.log('[Login] Starting login process...');
       
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizedEmail,
         password,
       });
 
@@ -124,7 +125,7 @@ function LoginContent() {
       let friendlyError = 'Failed to sign in';
 
       if (errorMessage.includes('Invalid login credentials')) {
-        friendlyError = 'Incorrect email or password. Please check your credentials and try again.';
+        friendlyError = 'Incorrect email or password. If you just signed up, confirm your email before signing in.';
       } else if (errorMessage.includes('Email not confirmed')) {
         friendlyError = 'Please confirm your email address before signing in. Check your inbox for the confirmation link.';
       } else if (errorMessage.includes('Too many requests')) {

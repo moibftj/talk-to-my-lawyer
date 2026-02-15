@@ -27,6 +27,7 @@
  */
 
 import { type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/proxy'
 import * as Sentry from '@sentry/nextjs'
 
@@ -35,6 +36,12 @@ export const runtime = 'nodejs'
 
 export async function middleware(request: NextRequest) {
   try {
+    // API routes should be handled by route handlers directly.
+    // Bypassing auth/session middleware avoids unexpected API method/status behavior.
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.next({ request })
+    }
+
     return await updateSession(request)
   } catch (error) {
     // Capture middleware errors in Sentry
@@ -85,6 +92,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
