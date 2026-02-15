@@ -1,26 +1,11 @@
 "use client";
 
-import type { ButtonHTMLAttributes } from "react";
 import { motion, useReducedMotion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-// Exclude drag event handlers that conflict between React and framer-motion
-type ConflictingDragProps =
-  | "onDrag"
-  | "onDragStart"
-  | "onDragEnd"
-  | "onDragOver"
-  | "onDragEnter"
-  | "onDragLeave"
-  | "onDrop";
-
-type AnimatedButtonProps = Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  ConflictingDragProps
-> &
-  Pick<HTMLMotionProps<"button">, ConflictingDragProps> & {
-    glow?: boolean;
-  };
+type AnimatedButtonProps = HTMLMotionProps<"button"> & {
+  glow?: boolean;
+};
 
 export function AnimatedButton({
   className,
