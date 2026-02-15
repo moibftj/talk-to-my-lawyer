@@ -1,12 +1,13 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 type ModalTransitionProps = {
   open: boolean
   title: string
   onClose: () => void
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function ModalTransition({ open, title, onClose, children }: ModalTransitionProps) {

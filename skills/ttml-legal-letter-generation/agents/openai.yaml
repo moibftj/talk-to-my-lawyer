@@ -1,0 +1,4 @@
+interface:
+  display_name: "TTML Legal Letter Generation"
+  short_description: "Build AI-to-attorney legal letter workflows"
+  default_prompt: "Use $ttml-legal-letter-generation to implement or refine the end-to-end legal letter generation, review, and delivery workflow in Talk-to-My-Lawyer."

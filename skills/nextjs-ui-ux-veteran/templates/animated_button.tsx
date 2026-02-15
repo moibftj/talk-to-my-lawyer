@@ -1,9 +1,10 @@
 'use client'
 
+import type { ButtonHTMLAttributes } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
-type AnimatedButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type AnimatedButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   glow?: boolean
 }
 
