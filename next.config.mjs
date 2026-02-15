@@ -65,7 +65,7 @@ const nextConfig = {
     ],
   },
 
-  allowedDevOrigins: ["localhost", "127.0.0.1"],
+  allowedDevOrigins: true,
   async headers() {
     const headers = [];
 
@@ -114,7 +114,7 @@ const nextConfig = {
         {
           key: "Content-Security-Policy",
           value:
-            "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'self';",
+            "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors *;",
         },
       ],
     });
@@ -137,7 +137,7 @@ const nextConfig = {
                   "img-src 'self' data: https: blob:;",
                   "connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://app.talk-to-my-lawyer.com https://vercel.live https://resend.com wss: ws:;",
                   "frame-src 'self' https://js.stripe.com https://vercel.live;",
-                  "frame-ancestors 'self';",
+                  "frame-ancestors *;",
                   "base-uri 'self';",
                   "form-action 'self';",
                 ].join(" ")
@@ -147,9 +147,9 @@ const nextConfig = {
                   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;",
                   "font-src 'self' https://fonts.gstatic.com https://vercel.live;",
                   "img-src 'self' data: https: blob:;",
-                  "connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://app.talk-to-my-lawyer.com https://vercel.live https://resend.com ws://localhost:* ws://127.0.0.1:*;",
+                  "connect-src 'self' https://api.stripe.com https://js.stripe.com https://*.supabase.co https://app.talk-to-my-lawyer.com https://vercel.live https://resend.com ws://localhost:* ws://127.0.0.1:* wss://*.replit.dev;",
                   "frame-src 'self' https://js.stripe.com https://vercel.live;",
-                  "frame-ancestors 'self';",
+                  "frame-ancestors *;",
                   "base-uri 'self';",
                   "form-action 'self';",
                 ].join(" "),
